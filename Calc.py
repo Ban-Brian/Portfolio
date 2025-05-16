@@ -122,7 +122,7 @@ def main():
             print("Exiting the application. Goodbye!")
             break
         else:
-            print("Invalid choice. Please select a valid option from the menu.")
+            print("Invalid choice. Please pick a valid option from the menu.")
 
 if __name__ == '__main__':
     try:
