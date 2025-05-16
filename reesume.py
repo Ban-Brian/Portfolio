@@ -7,7 +7,7 @@ resume = {
     },
     "Summary": (
         "Motivated and detail-oriented Applied Statistics major with a strong foundation in data analytics, leadership, "
-        "and teamwork. Proficient in analytical tools such as Python, Excel, and R to derive actionable insights and support "
+        "and teamwork. Proficient in analytical tools such as Python, SQL, and R to derive actionable insights and support "
         "data-driven decision-making. Experienced in managing projects, mentoring teams, and executing strategic initiatives "
         "across diverse groups. Adept at preparing research resources, equipment, and materials, with a strong background in "
         "investigating Pre-Trial data to enhance research outcomes. Seeking a business analytics role to apply analytical expertise, "
@@ -21,13 +21,13 @@ resume = {
     "Skills": [
         "Experimental design",
         "Python programming language",
-        "HTML",
+        "SQL",
         "Research design",
         "R Code",
         "Incidents management"
     ],
     "Memberships": [
-        "Member of ASA since Fall 2024",
+        "Member of American Statistical Association",
         "Web Design Editor of the GMU Literary Club",
         "Chess Club Member"
     ],
@@ -35,24 +35,26 @@ resume = {
         {
             "Position": "Research Assistant",
             "Company": "George Mason University",
-            "Location": "Fairfax, VT",
+            "Location": "Fairfax, VA",
             "Dates": "February 2025 - Current",
             "Responsibilities": [
                 "Adhered to laboratory safety procedures to maintain compliance with quality control standards.",
-                "Monitored and documented safety standards to verify compliance.",
                 "Developed new protocols and improved existing laboratory processes.",
-                "Analyzed results using analytical software and created reports."
+                "Analyzed results using analytical software and created reports.",
+                "Completed AB testing and data analysis to improve research outcomes.",
+                "Used SQL to extract data from databases and perform data analysis."
             ]
         },
         {
-            "Position": "Chapter Development Manager Intern",
+            "Position": " Head Chapter Development Manager ",
             "Company": "Health Link Society",
             "Location": "Remote, VA",
             "Dates": "December 2024 - Current",
             "Responsibilities": [
-                "Leading the expansion of local chapters by developing growth strategies and fostering collaboration among teams.",
-                "Acting as the primary liaison, providing guidance and resources to ensure success while building partnerships with organization.",
-                "Delivering compelling presentations and driving alignment to achieve measurable outcomes."
+                "Leading the expansion of National chapters by developing growth strategies and fostering collaboration among teams.",
+                "Provided training for on boarding chapters as well as other managers.",
+                "Delivering compelling presentations and driving alignment to achieve measurable outcomes.",
+                "Used Tableu to create reports and dashboards for stakeholders with data from R."
             ]
         },
         {
@@ -74,17 +76,16 @@ resume = {
             "Dates": "March 2018 - August 2023",
             "Responsibilities": [
                 "Organized six youth road programs, engaging over 200 participants annually to promote personal growth and community involvement.",
-                "Analyzed attendance and feedback data using Excel to identify trends and improve program offerings.",
                 "Developed a mentorship tracking system in Google Sheets, enhancing retention and engagement rates by 15%.",
-                "Coordinated with cross-functional teams to plan events, securing resources and increasing outreach effectiveness.",
-                "Created presentations in PowerPoint to communicate program impact to stakeholders, resulting in expanded funding and support."
             ]
         }
     ],
     "Education": {
         "Degree": "Bachelor's Degree in Applied Statistics",
+        "Minor": "Criminology and Math",
         "Institution": "George Mason University",
-        "Expected Graduation": "May 2027"
+        "Expected Graduation": "May 2027",
+        "GPA": "3.5",
     }
 }
 

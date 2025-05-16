@@ -1,6 +1,7 @@
 import sys
 import statistics
 import json
+import math
 
 class DataProcessor:
     def __init__(self, data):
@@ -129,3 +130,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\nOperation cancelled by user. Exiting.")
         sys.exit(0)
+
