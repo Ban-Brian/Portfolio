@@ -51,7 +51,7 @@ def create_pdf(output_file):
         story.append(Spacer(1, 1))
         story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
 
-    add_section("Summary", resume["Summary"])
+    add_section("Projects", resume["Projects"])
 
     contact_info = f"Location: {resume['Location']}<br/>Email: {resume['Contact']['Email']}<br/>Phone: {resume['Contact']['Phone']}"
     skills = "<br/>".join(resume["Skills"])
@@ -76,7 +76,8 @@ def create_pdf(output_file):
         f"<b>Minor:</b> {resume['Education']['Minor']}<br/>"
         f"{resume['Education']['Institution']}<br/>"
         f"<b>Expected Graduation:</b> {resume['Education']['Expected Graduation']}<br/>"
-        f"<b>GPA:</b> {resume['Education']['GPA']}"
+        f"<b>GPA:</b> {resume['Education']['GPA']}<br/>"
+        f"<b>Relevant Coursework:</b> {', '.join(resume['Education']['Relevant Coursework'])}"
     )
     websites = (
         f'<a href="{resume["Websites"]["LinkedIn"]}">LinkedIn</a><br/>'

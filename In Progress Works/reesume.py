@@ -5,14 +5,20 @@ resume = {
         "Email": "butlerbrian67@gmail.com",
         "Phone": "619-866-5916"
     },
-    "Summary": (
-        "Motivated and detail-oriented Applied Statistics major with a strong foundation in data analytics, leadership, "
-        "and teamwork. Proficient in analytical tools such as Python, SQL, and R to derive actionable insights and support "
-        "data-driven decision-making. Experienced in managing projects, mentoring teams, and executing strategic initiatives "
-        "across diverse groups. Adept at preparing research resources, equipment, and materials, with a strong background in "
-        "investigating Pre-Trial data to enhance research outcomes. Seeking a business analytics role to apply analytical expertise, "
-        "expand knowledge, and contribute to impactful decision-making in a dynamic environment."
-    ),
+    "Projects": [
+            {
+                "Title": "Exploratory Data Analysis on Pre-Trial Data",
+                "Description": "Performed comprehensive exploratory data analysis using Python and visualization libraries to uncover trends and inform research decisions for academic projects."
+            },
+            {
+                "Title": "Predictive Modeling for Nonprofit Alliance",
+                "Description": "Developed and validated predictive models in Python to identify at-risk groups, supporting targeted outreach strategies and improving client outcomes for the Nonprofit Alliance Against Domestic & Sexual Violence."
+            },
+            {
+                "Title": "Machine Learning Projects",
+                "Description": "Built and evaluated machine learning models for various datasets, applying techniques such as classification, regression, and clustering to solve real-world problems and present actionable insights."
+            }
+        ],
     "Websites": {
         "LinkedIn": "https://www.linkedin.com/in/brian-butler-18036b33b/",
         "GitHub": "https://github.com/Ban-Brian/The-Forge-Website",
@@ -31,7 +37,7 @@ resume = {
         "Web Design Editor of the GMU Literary Club",
         "Chess Club Member"
     ],
-    "Work History": [
+    "Work Experience": [
         {
             "Position": "Research Assistant",
             "Company": "George Mason University",
@@ -86,6 +92,12 @@ resume = {
         "Institution": "George Mason University",
         "Expected Graduation": "May 2027",
         "GPA": "3.5",
+        "Relevant Coursework": [
+        "Calculus ",
+        "Discrete Mathematics",
+        "Business Analytics 201",
+        "Computer Data Science 130"
+    ]
     }
 }
 
