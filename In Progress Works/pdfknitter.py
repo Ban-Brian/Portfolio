@@ -5,15 +5,19 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable,
 from reesume import resume
 
 def create_pdf(output_file):
-    doc = SimpleDocTemplate(output_file, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=24, bottomMargin=12)
+    doc = SimpleDocTemplate(
+        output_file,
+        pagesize=letter,
+        rightMargin=50, leftMargin=50, topMargin=20, bottomMargin=20
+    )
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
         name='TitleStyle',
         parent=styles['Title'],
         fontName='Times-Roman',
-        fontSize=16.5,
-        spaceAfter=3,
+        fontSize=13,
+        spaceAfter=1,
         backColor=colors.lightgrey,
         wordWrap='CJK'
     )
@@ -21,38 +25,41 @@ def create_pdf(output_file):
         name='SectionStyle',
         parent=styles['Heading2'],
         fontName='Times-Roman',
-        fontSize=10.5,
+        fontSize=9.5,
         spaceAfter=1,
         textColor=colors.darkblue,
         wordWrap='CJK',
-        alignment=1  # Center-align the section titles
+        alignment=1
     )
     content_style = ParagraphStyle(
         name='ContentStyle',
         parent=styles['Normal'],
         fontName='Times-Roman',
-        fontSize=8.5,
-        leading=9.5,
+        fontSize=8,
+        leading=8.5,
         spaceAfter=1,
         textColor=colors.black,
         wordWrap='CJK'
     )
 
-    story = []
-
-    title = Paragraph(resume["Name"], title_style)
-    story.append(title)
-    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-
     def add_section(title, content):
-        story.append(Paragraph(title, section_style))
         story.append(Spacer(1, 3))
-        story.append(Paragraph(content, content_style))
+        story.append(Paragraph(title, section_style))
         story.append(Spacer(1, 1))
+        story.append(Paragraph(content, content_style))
+        story.append(Spacer(1, 2))
         story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
 
-    add_section("Projects", resume["Projects"])
+    story = []
 
+    # Title
+    title = Paragraph(resume["Name"], title_style)
+    story.append(title)
+    story.append(Spacer(1, 3))
+    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
+    story.append(Spacer(1, 3))
+
+    # Contact Info and Skills
     contact_info = f"Location: {resume['Location']}<br/>Email: {resume['Contact']['Email']}<br/>Phone: {resume['Contact']['Phone']}"
     skills = "<br/>".join(resume["Skills"])
 
@@ -64,12 +71,14 @@ def create_pdf(output_file):
     table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2)
     ]))
     story.append(table)
-    story.append(Spacer(1, 1))
+    story.append(Spacer(1, 3))
     story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
+    story.append(Spacer(1, 3))
 
     education = (
         f"<b>{resume['Education']['Degree']}</b><br/>"
@@ -93,19 +102,22 @@ def create_pdf(output_file):
     table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2)
     ]))
     story.append(table)
-    story.append(Spacer(1, 1))
+    story.append(Spacer(1, 3))
     story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
+    story.append(Spacer(1, 3))
 
+    # Work Experience
     add_section("Work Experience", "")
 
-    for job in resume["Work History"]:
+    for job in resume["Work Experience"]:
         job_title = f"<b>{job['Position']}</b><br/>{job['Company']} - {job['Location']}<br/>{job['Dates']}"
         responsibilities = [
-            ListItem(Paragraph(responsibility, content_style), leftIndent=10, bulletIndent=0)
+            ListItem(Paragraph(responsibility, content_style), leftIndent=12, bulletIndent=0)
             for responsibility in job["Responsibilities"]
         ]
         job_data = [
@@ -115,18 +127,26 @@ def create_pdf(output_file):
         job_table = Table(job_data, colWidths=[doc.width])
         job_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2)
         ]))
         story.append(job_table)
         story.append(Spacer(1, 3))
 
     story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-    memberships = "<br/>".join(resume["Memberships"])
-    add_section("Memberships", memberships)
+    story.append(Spacer(1, 3))
+
+    project_descriptions = ""
+    for project in resume["Projects"]:
+        project_descriptions += (
+            f"<b>{project['Title']}</b><br/><i>{project['Dates']}</i><br/>{project['Description']}<br/><br/>"
+        )
+    add_section("Projects", project_descriptions)
 
     doc.build(story)
 
-output_file = "resume.pdf"
-create_pdf(output_file)
+if __name__ == "__main__":
+    create_pdf("resume.pdf")
+    print("PDF created.")
