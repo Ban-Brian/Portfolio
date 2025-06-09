@@ -5,30 +5,33 @@ resume = {
         "Email": "butlerbrian67@gmail.com",
         "Phone": "619-866-5916"
     },
-    "Projects": [
-            {
-                "Title": "Exploratory Data Analysis on Pre-Trial Data",
-                "Description": "Performed comprehensive exploratory data analysis using Python and visualization libraries to uncover trends and inform research decisions for academic projects."
-            },
-            {
-                "Title": "Predictive Modeling for Nonprofit Alliance",
-                "Description": "Developed and validated predictive models in Python to identify at-risk groups, supporting targeted outreach strategies and improving client outcomes for the Nonprofit Alliance Against Domestic & Sexual Violence."
-            },
-            {
-                "Title": "Machine Learning Projects",
-                "Description": "Built and evaluated machine learning models for various datasets, applying techniques such as classification, regression, and clustering to solve real-world problems and present actionable insights."
-            }
-        ],
+"Projects": [
+    {
+        "Title": "Exploratory Data Analysis on Pre-Trial Data",
+        "Dates": "February 2025 - Current",
+        "Description": "Used Python (Pandas, Seaborn, Matplotlib) to clean, transform, and visualize pre-trial datasets. Identified key variables and trends, and presented findings using dashboards and reports to Fairfax county."
+    },
+    {
+        "Title": "Predictive Modeling for Nonprofit Alliance",
+        "Dates": "June 2024 - August 2024",
+        "Description": "Built and validated machine learning models in Python (XGBoost) to identify at-risk groups from survey and demographic data. Supported targeted outreach and communicated results providing insights to create solutions to discovered issues."
+    },
+    {
+        "Title": "College Acceptance Rate Prediction using Machine Learning",
+        "Dates": "April 2024 - May 2024",
+        "Description": "Created classification models (Logistic Regression, Random Forest) to predict college acceptance rates. Performed feature engineering, evaluated model performance, and shared results with peers."
+    }
+],
     "Websites": {
         "LinkedIn": "https://www.linkedin.com/in/brian-butler-18036b33b/",
         "GitHub": "https://github.com/Ban-Brian/The-Forge-Website",
         "LeetCode": "https://leetcode.com/u/Ban_Brian/"
     },
     "Skills": [
-        "Experimental design",
+        "Machine Learning; TENSORS, Keras, XGBoost",
         "Python programming language",
         "SQL",
-        "Research design",
+        "Predictive Modeling",
         "R Code",
         "Incidents management"
     ],
@@ -52,15 +55,15 @@ resume = {
             ]
         },
         {
-            "Position": " Head Chapter Development Manager ",
-            "Company": "Health Link Society",
-            "Location": "Remote, VA",
-            "Dates": "December 2024 - Current",
+            "Position": "Summer Intern",
+            "Company": "Department of Commerce, American Samoa Government",
+            "Location": "Pago Pago, Eastern District, American Samoa",
+            "Dates": "May 2025 - Present",
             "Responsibilities": [
-                "Leading the expansion of National chapters by developing growth strategies and fostering collaboration among teams.",
-                "Provided training for on boarding chapters as well as other managers.",
-                "Delivering compelling presentations and driving alignment to achieve measurable outcomes.",
-                "Used Tableu to create reports and dashboards for stakeholders with data from R."
+                "Supported economic research and data collection for local development projects.",
+                "Provided actionable recommendations that encouraged positive changes for approximately 2,000 businesses.",
+                "Collaborated with team members on-site to analyze and interpret economic trends.",
+                "Participated in community outreach and engagement initiatives."
             ]
         },
         {
@@ -76,15 +79,17 @@ resume = {
             ]
         },
         {
-            "Position": "Youth Outreach Leader",
-            "Company": "Rock Church",
-            "Location": "San Marcos, CA",
-            "Dates": "March 2018 - August 2023",
+               "Position": "Head Chapter Development Manager",
+            "Company": "Health Link Society",
+            "Location": "Remote, VA",
+            "Dates": "December 2024 - May 2025",
             "Responsibilities": [
-                "Organized six youth road programs, engaging over 200 participants annually to promote personal growth and community involvement.",
-                "Developed a mentorship tracking system in Google Sheets, enhancing retention and engagement rates by 15%.",
+                "Leading the expansion of National chapters by developing growth strategies and fostering collaboration among teams.",
+                "Provided training for on boarding chapters as well as other managers.",
+                "Delivering compelling presentations and driving alignment to achieve measurable outcomes.",
+                "Used Tableu to create reports and dashboards for stakeholders with data from R."
             ]
-        }
+        },
     ],
     "Education": {
         "Degree": "Bachelor's Degree in Applied Statistics",
