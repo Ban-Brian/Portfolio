@@ -1,0 +1,59 @@
+INPUT
+500
+350
+25
+25
+30
+
+OUTPUT
+How many books in the book order?How many pages in the book?What is the length of the shipping box?What is the width of the shipping box?What is the height of the shipping box?
+The volume of the shipping boxes is 18750.0 cubic inches.
+Each book is 2.6 inches thick.
+66 books will fit in each box.
+There will be 7 full boxes and 38 books for an additional box.
+The extra volume in all the boxes totals 46000.0 cubic inches.
+
+INPUT
+710
+500
+30
+24
+35
+
+OUTPUT
+How many books in the book order?How many pages in the book?What is the length of the shipping box?What is the width of the shipping box?What is the height of the shipping box?
+The volume of the shipping boxes is 25200.0 cubic inches.
+Each book is 3.5 inches thick.
+90 books will fit in each box.
+There will be 7 full boxes and 80 books for an additional box.
+The extra volume in all the boxes totals 2800.0 cubic inches.
+
+INPUT
+100
+375
+21
+25
+25
+
+OUTPUT
+How many books in the book order?How many pages in the book?What is the length of the shipping box?What is the width of the shipping box?What is the height of the shipping box?
+The volume of the shipping boxes is 13125.0 cubic inches.
+Each book is 2.8 inches thick.
+48 books will fit in each box.
+There will be 2 full boxes and 4 books for an additional box.
+The extra volume in all the boxes totals 16975.0 cubic inches.
+
+INPUT
+370
+175
+20
+16
+16.1
+
+OUTPUT
+How many books in the book order?How many pages in the book?What is the length of the shipping box?What is the width of the shipping box?What is the height of the shipping box?
+The volume of the shipping boxes is 5152.0 cubic inches.
+Each book is 1.6 inches thick.
+40 books will fit in each box.
+There will be 9 full boxes and 10 books for an additional box.
+The extra volume in all the boxes totals 4160.0 cubic inches.
