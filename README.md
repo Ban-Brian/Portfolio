@@ -1,0 +1,1 @@
+Some of this and some of that. Some elegant Leet code solves and some side projects. A lot of the work is chalked out but is available upon request because it invovles some on going research with the lab. 
