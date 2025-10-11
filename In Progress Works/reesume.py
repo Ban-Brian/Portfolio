@@ -1,69 +1,74 @@
 resume = {
     "Name": "Brian Butler",
-    "Location": "Fairfax, VA 22030",
-       "Contact": {
+    "Location": "Fairfax, VA 22030", #
+    "Contact": {
         "Email": "butlerbrian67@gmail.com",
         "Phone": "619-866-5916"
     },
-"Projects": [
+    "Projects": [
     {
         "Title": "Exploratory Data Analysis on Pre-Trial Data",
-        "Dates": "February 2025 - Current",
-        "Description": "Used Python (Pandas, Seaborn, Matplotlib) to clean, transform, and visualize pre-trial datasets. Identified key variables and trends, and presented findings using dashboards and reports to Fairfax county."
+        "Dates": "Feb 2025 - Current",
+        "Description": "Analyzed 20,000+ records using Python (Pandas, Seaborn, Matplotlib), identifying 5+ key risk factors and delivering actionable insights via dashboards to Fairfax County stakeholders."
+    },
+    {
+        "Title": "Cost-of-Living Index Forecasting for American Samoa",
+        "Dates": "May 2025 - Aug 2025",
+        "Description": "Built multivariate time series model in Python to forecast cost-of-living trends for 50,000 residents, supporting government planning with predictive insights."
     },
     {
         "Title": "Predictive Modeling for Nonprofit Alliance",
-        "Dates": "June 2024 - August 2024",
-        "Description": "Built and validated machine learning models in Python (XGBoost) to identify at-risk groups from survey and demographic data. Supported targeted outreach and communicated results providing insights to create solutions to discovered issues."
+        "Dates": "June 2024 - Aug 2024",
+        "Description": "Built XGBoost models on 10,000+ entries achieving 87% accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured $25K funding."
     },
     {
-        "Title": "College Acceptance Rate Prediction using Machine Learning",
-        "Dates": "April 2024 - May 2024",
-        "Description": "Created classification models (Logistic Regression, Random Forest) to predict college acceptance rates. Performed feature engineering, evaluated model performance, and shared results with peers."
+        "Title": "Baseline Trend Analysis & Outcome Projections Dashboard",
+        "Dates": "Jan 2025 - Mar 2025",
+        "Description": "Developed Python dashboard to track weekly client % and project outcomes for 500+ records; used LinearRegression to forecast 10-week trends, improving stakeholder planning and resource allocation."
     }
 ],
     "Websites": {
         "LinkedIn": "https://www.linkedin.com/in/brian-butler-18036b33b/",
-        "GitHub": "https://github.com/Ban-Brian/The-Forge-Website",
+        "GitHub": "https://github.com/Ban-Brian",
         "LeetCode": "https://leetcode.com/u/Ban_Brian/"
     },
     "Skills": [
-        "Machine Learning; TENSORS, Keras, XGBoost",
-        "Python programming language",
-        "SQL",
-        "Predictive Modeling",
-        "R Code",
-        "Incidents management"
+        "Machine Learning (TENSORS, Keras, XGBoost, Scikit-Learn)",
+        "Python Programming (NumPy, Pandas, Matplotlib, Seaborn)",
+        "SQL (Joins, CTEs, Subqueries, Window Functions)",
+        "Predictive Modeling (Classification, Regression, A/B Testing)",
+        "R (Tidyverse, ggplot2, dplyr)",
+        "Data Visualization (Tableau, Excel, Seaborn)"
     ],
     "Memberships": [
-        "Member of American Statistical Association",
-        "Web Design Editor of the GMU Literary Club",
-        "Chess Club Member"
+        "Member of American Statistical Association (ASA)",
+        "Web Design Editor, GMU Literary Club ",
+        "Active Chess Club Member with 1700+ Elo",
+        "Billiards Club Member",
+        "George Mason Sports Analytics Club Member"
     ],
     "Work Experience": [
         {
             "Position": "Research Assistant",
             "Company": "George Mason University",
             "Location": "Fairfax, VA",
-            "Dates": "February 2025 - Current",
+            "Dates": "February 2025 - Present",
             "Responsibilities": [
-                "Adhered to laboratory safety procedures to maintain compliance with quality control standards.",
-                "Developed new protocols and improved existing laboratory processes.",
-                "Analyzed results using analytical software and created reports.",
-                "Completed AB testing and data analysis to improve research outcomes.",
-                "Used SQL to extract data from databases and perform data analysis."
+                "Optimized data workflows with Python and Excel, increasing experiment throughput by 20%.",
+                "Improved result reliability by 15% through A/B testing and statistical analysis in R and Python.",
+                "Automated weekly reporting with Python and Excel, creating dashboards to track lab metrics.",
             ]
         },
         {
             "Position": "Summer Intern",
             "Company": "Department of Commerce, American Samoa Government",
             "Location": "Pago Pago, Eastern District, American Samoa",
-            "Dates": "May 2025 - Present",
+            "Dates": "May 2025 - August 2025",
             "Responsibilities": [
-                "Supported economic research and data collection for local development projects with .",
-                "Provided actionable recommendations that encouraged positive changes for approximately 2,000 businesses.",
-                "Collaborated with team members on-site to analyze and interpret economic trends.",
-                "Used Excel to review data and organize findings into easy to understand graphs.",
+                "Analyzed economic data impacting ~1,000 local businesses using Excel and statistical tools.",
+                "Identified 3 major growth sectors through trend analysis and community surveys.",
+                "Worked on a tourism development initiative expected to increase international visitors by 15%.",
+                "Created 10+ economic dashboards and visual summaries for senior officials and public reports."
             ]
         },
         {
@@ -72,39 +77,23 @@ resume = {
             "Location": "San Diego, CA",
             "Dates": "June 2024 - August 2024",
             "Responsibilities": [
-                "Utilized Python and Excel to analyze survey data, identifying resource gaps and informing a report on underserved populations.",
-                "Conducted a statistical evaluation of a pilot intervention program using SPSS, demonstrating a 25% improvement in client outcomes.",
-                "Built predictive models in Python to identify at-risk groups, supporting targeted outreach strategies.",
-                "Designed data visualizations in Tableau for grant proposals, contributing to securing funding for two new initiatives."
-            ]
-        },
-        {
-               "Position": "Head Chapter Development Manager",
-            "Company": "Health Link Society",
-            "Location": "Remote, VA",
-            "Dates": "December 2024 - May 2025",
-            "Responsibilities": [
-                "Leading the expansion of National chapters by developing growth strategies and fostering collaboration among teams.",
-                "Provided training for on boarding chapters as well as other managers.",
-                "Delivering compelling presentations and driving alignment to achieve measurable outcomes.",
+                "Processed and analyzed survey data from over 150  respondents using Python and Excel.",
+                "Evaluated pilot intervention effectiveness in SPSS, showing 25% improvement in outcomes.",
+                "Built predictive models to identify at-risk populations with 70% precision.",
+                "Developed 2 Tableau dashboards used in 2 grant proposals."
             ]
         },
     ],
     "Education": {
-        "Degree": "Bachelor's Degree in Applied Statistics",
-        "Minor": "Criminology and Math",
+        "Degree": "Bachelor's Degree in Mathematical Statistics",
+        "Minor": "Criminology",
         "Institution": "George Mason University",
         "Expected Graduation": "May 2027",
-        "GPA": "3.5",
         "Relevant Coursework": [
-        "Calculus ",
-        "Discrete Mathematics",
-        "Business Analytics 201",
-        "Computer Data Science 130"
-    ]
+            "Statistics",
+            "Discrete Mathematics",
+            "Business Analytics ",
+            "Computer Science for Data (CDS 130)",
+        ]
     }
 }
-
-# Print resume for verification
-import json
-print(json.dumps(resume, indent=4))

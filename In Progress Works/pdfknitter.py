@@ -1,152 +1,135 @@
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle, ListFlowable, ListItem
-from reesume import resume
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Table, TableStyle
+import re
+from reesume import resume  # Your resume dictionary
 
 def create_pdf(output_file):
     doc = SimpleDocTemplate(
         output_file,
         pagesize=letter,
-        rightMargin=50, leftMargin=50, topMargin=20, bottomMargin=20
+        rightMargin=40, leftMargin=40,
+        topMargin=30, bottomMargin=30
     )
+
     styles = getSampleStyleSheet()
 
-    title_style = ParagraphStyle(
-        name='TitleStyle',
+    # =========================
+    # Styles
+    # =========================
+    name_style = ParagraphStyle(
+        'Name',
         parent=styles['Title'],
-        fontName='Times-Roman',
-        fontSize=13,
-        spaceAfter=1,
-        backColor=colors.lightgrey,
-        wordWrap='CJK'
-    )
-    section_style = ParagraphStyle(
-        name='SectionStyle',
-        parent=styles['Heading2'],
-        fontName='Times-Roman',
-        fontSize=9.5,
-        spaceAfter=1,
-        textColor=colors.darkblue,
-        wordWrap='CJK',
-        alignment=1
-    )
-    content_style = ParagraphStyle(
-        name='ContentStyle',
-        parent=styles['Normal'],
-        fontName='Times-Roman',
-        fontSize=8,
-        leading=8.5,
-        spaceAfter=1,
-        textColor=colors.black,
-        wordWrap='CJK'
+        fontSize=22,
+        leading=26,
+        alignment=1,
+        spaceAfter=4,
+        textColor=colors.darkblue
     )
 
-    def add_section(title, content):
-        story.append(Spacer(1, 3))
-        story.append(Paragraph(title, section_style))
-        story.append(Spacer(1, 1))
-        story.append(Paragraph(content, content_style))
-        story.append(Spacer(1, 2))
-        story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
+    contact_style = ParagraphStyle(
+        'Contact',
+        parent=styles['Normal'],
+        fontSize=9.5,
+        leading=11,
+        alignment=1,
+        spaceAfter=12
+    )
+
+    section_style = ParagraphStyle(
+        'Section',
+        parent=styles['Heading2'],
+        fontSize=11,
+        fontName='Helvetica-Bold',
+        spaceBefore=12,
+        spaceAfter=6,
+        textColor=colors.black
+    )
+
+    sub_section_style = ParagraphStyle(
+        'SubSection',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica-Bold',
+        spaceAfter=2
+    )
+
+    content_style = ParagraphStyle(
+        'Content',
+        parent=styles['Normal'],
+        fontSize=9.5,
+        leading=12,
+        spaceAfter=2
+    )
+
+    def bold_numbers(text):
+        return re.sub(r'(\d+)', r'<b>\1</b>', text)
 
     story = []
 
-    # Title
-    title = Paragraph(resume["Name"], title_style)
-    story.append(title)
-    story.append(Spacer(1, 3))
-    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-    story.append(Spacer(1, 3))
+    # =========================
+    # Header
+    # =========================
+    story.append(Paragraph(resume["Name"], name_style))
+    contact_info = f"{resume['Location']} | {resume['Contact']['Email']} | {resume['Contact']['Phone']}"
+    story.append(Paragraph(contact_info, contact_style))
+    websites = (
+        f'<link href="{resume["Websites"]["LinkedIn"]}">LinkedIn</link> | '
+        f'<link href="{resume["Websites"]["GitHub"]}">GitHub</link> | '
+        f'<link href="{resume["Websites"]["LeetCode"]}">LeetCode</link>'
+    )
+    story.append(Paragraph(websites, contact_style))
 
-    # Contact Info and Skills
-    contact_info = f"Location: {resume['Location']}<br/>Email: {resume['Contact']['Email']}<br/>Phone: {resume['Contact']['Phone']}"
-    skills = "<br/>".join(resume["Skills"])
-
-    data = [
-        [Paragraph("Contact Information", section_style), Paragraph("Skills", section_style)],
-        [Paragraph(contact_info, content_style), Paragraph(skills, content_style)]
-    ]
-    table = Table(data, colWidths=[doc.width / 2.0] * 2)
-    table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2)
-    ]))
-    story.append(table)
-    story.append(Spacer(1, 3))
-    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-    story.append(Spacer(1, 3))
-
+    # =========================
+    # Education
+    # =========================
+    story.append(Paragraph("EDUCATION", section_style))
     education = (
-        f"<b>{resume['Education']['Degree']}</b><br/>"
-        f"<b>Minor:</b> {resume['Education']['Minor']}<br/>"
-        f"{resume['Education']['Institution']}<br/>"
-        f"<b>Expected Graduation:</b> {resume['Education']['Expected Graduation']}<br/>"
-        f"<b>GPA:</b> {resume['Education']['GPA']}<br/>"
+        f"<b>{resume['Education']['Degree']}</b>, Minor: <b>{resume['Education']['Minor']}</b><br/>"
+        f"<b>{resume['Education']['Institution']}</b> | Expected Graduation: <b>{resume['Education']['Expected Graduation']}</b><br/>"
         f"<b>Relevant Coursework:</b> {', '.join(resume['Education']['Relevant Coursework'])}"
     )
-    websites = (
-        f'<a href="{resume["Websites"]["LinkedIn"]}">LinkedIn</a><br/>'
-        f'<a href="{resume["Websites"]["GitHub"]}">GitHub</a><br/>'
-        f'<a href="{resume["Websites"]["LeetCode"]}">LeetCode</a>'
-    )
+    story.append(Paragraph(education, content_style))
 
-    data = [
-        [Paragraph("Education", section_style), Paragraph("Websites, Portfolios, Profiles", section_style)],
-        [Paragraph(education, content_style), Paragraph(websites, content_style)]
-    ]
-    table = Table(data, colWidths=[doc.width / 2.0] * 2)
-    table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2)
-    ]))
-    story.append(table)
-    story.append(Spacer(1, 3))
-    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-    story.append(Spacer(1, 3))
-
+    # =========================
     # Work Experience
-    add_section("Work Experience", "")
-
+    # =========================
+    story.append(Paragraph("WORK EXPERIENCE", section_style))
     for job in resume["Work Experience"]:
-        job_title = f"<b>{job['Position']}</b><br/>{job['Company']} - {job['Location']}<br/>{job['Dates']}"
-        responsibilities = [
-            ListItem(Paragraph(responsibility, content_style), leftIndent=12, bulletIndent=0)
-            for responsibility in job["Responsibilities"]
-        ]
-        job_data = [
-            [Paragraph(job_title, content_style)],
-            [ListFlowable(responsibilities, bulletType='bullet')]
-        ]
-        job_table = Table(job_data, colWidths=[doc.width])
-        job_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 2)
-        ]))
-        story.append(job_table)
-        story.append(Spacer(1, 3))
+        # Bold job title and company, align dates right
+        job_header = f"<b>{job['Position']}</b>, <b>{job['Company']}</b> | {job['Location']} | <b>{job['Dates']}</b>"
+        story.append(Paragraph(job_header, sub_section_style))
+        # Bullets with numbers bolded
+        bullets = [ListItem(Paragraph(bold_numbers(resp), content_style), leftIndent=12) for resp in job["Responsibilities"]]
+        story.append(ListFlowable(bullets, bulletType='bullet'))
+        story.append(Spacer(1, 4))
 
-    story.append(HRFlowable(width=doc.width, thickness=1, color=colors.black))
-    story.append(Spacer(1, 3))
-
-    project_descriptions = ""
+    # =========================
+    # Projects
+    # =========================
+    story.append(Paragraph("PROJECTS", section_style))
     for project in resume["Projects"]:
-        project_descriptions += (
-            f"<b>{project['Title']}</b><br/><i>{project['Dates']}</i><br/>{project['Description']}<br/><br/>"
-        )
-    add_section("Projects", project_descriptions)
+        proj_header = f"<b>{project['Title']}</b> | <i>{project['Dates']}</i>"
+        story.append(Paragraph(proj_header, sub_section_style))
+        story.append(Paragraph(bold_numbers(project['Description']), content_style))
+        story.append(Spacer(1, 2))
 
+    # =========================
+    # Skills & Memberships (side-by-side columns)
+    # =========================
+    story.append(Spacer(1, 6))
+    skills_content = Paragraph('<b>Technical Skills:</b><br/>' + ' | '.join(resume['Skills']), content_style)
+    memberships_content = Paragraph('<b>Memberships:</b><br/>' + '<br/>'.join(resume['Memberships']), content_style)
+    table = Table([[skills_content, memberships_content]], colWidths=[doc.width/2-5, doc.width/2-5])
+    table.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+    story.append(table)
+
+    # =========================
+    # Build PDF
+    # =========================
     doc.build(story)
+    print("PDF created in McCombs style!")
 
 if __name__ == "__main__":
-    create_pdf("resume.pdf")
-    print("PDF created.")
+    create_pdf("resume_mccombs.pdf")
