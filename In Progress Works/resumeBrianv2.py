@@ -17,8 +17,8 @@ brian_butler_data = {
     "about": "A self-taught and social problem solver who can efficiently integrate new ideas and is emboldened about discovering effective courses of action through data analysis. Actively seeking opportunities related to data analysis, especially in the tech, consulting, and research industries.",
     "education": {
         "university": "George Mason University",
-        "degree": "Bachelor of Applied Statistics",
-        "details": "Deans List : 2023 -2025 | Minor in Criminology and Math | GPA: 3.5/4.0"
+        "degree": "Bachelor of Mathematical Statistics",
+        "details": "Deans List : 2023 -2025 | Minor in Criminology | GPA: 3.5/4.0"
     },
     "experience": [
 
