@@ -1,213 +1,194 @@
-import re
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Table, TableStyle
 from reportlab.lib.units import inch
 
-brian_butler_data = {
-    "name": "Brian Butler",
-    "headline": "Aspiring Data Analyst",
-    "contact": {
-        "location": "Fairfax, VA | San Diego, CA",
-        "linkedin": "https://www.linkedin.com/in/brian-butler-18036b33b/",
-        "email": "butlerbrian67@gmail.com",
-        "phone": "619-866-5916"
-    },
-    "about": "A self-taught and social problem solver who can efficiently integrate new ideas and is emboldened about discovering effective courses of action through data analysis. Actively seeking opportunities related to data analysis, especially in the tech, consulting, and research industries.",
-    "education": {
-        "university": "George Mason University",
-        "degree": "Bachelor of Mathematical Statistics",
-        "details": "Deans List : 2023 -2025 | Minor in Criminology | GPA: 3.5/4.0"
-    },
-    "experience": [
-
-        {
-            "company": "LEAP (Leadership Education For Asian Pacifics)",
-            "role": "Fellow",
-            "location": "Remote",
-            "dates": "Aug 2025 - Present",
-            "description": [
-                "Develop leadership skills through workshops, training, and hands-on opportunities designed to equip students with practical tools for success.",
-                "Gain exposure to diverse industries by connecting with professionals, exploring career pathways, and broadening post-graduate possibilities.",
-                "Receive personalized mentorship and support tailored to each fellow’s goals, ensuring guidance and preparation for life after college."
-            ]
-        },
-        {
-            "company": "George Mason University",
-            "role": "Researcher with Early Justice Strategies Lab",
-            "location": "Fairfax County, VA",
-            "dates": "Feb 2025 - Present",
-            "description": [
-                "Analyzed results using analytical software and created reports for strategic review.",
-                "Completed A/B testing and data analysis to improve research outcomes and methodologies.",
-                "Used Excel to extract data from databases and perform data analysis for better actionable insights."
-            ]
-        },
-        {
-            "company": "American Samoa Government",
-            "role": "Summer Intern for Department of Commerce",
-            "location": "Pago Pago, American Samoa",
-            "dates": "May 2025 - Aug 2025",
-            "description": [
-                "Applied machine learning in Python to identify key patterns and optimize the organization of the Statistical Yearbook.",
-                "Developed a multivariate predictive model in Python and Excel to forecast cost-of-living indices, applying regression and time series forecasting.",
-                "Conducted cost analysis and feasibility modeling in Excel for the Pago Pago Sky Tram project, evaluating a projected $35 million capital investment."
-            ]
-        },
-        {
-            "company": "Health-Link Society",
-            "role": "Head Chapter Development Manager",
-            "location": "Washington DC-Baltimore Area",
-            "dates": "Dec 2024 - May 2025",
-            "description": [
-                "Identified opportunities for new chapter development by conducting demographic and statistical research.",
-                "Allocated financial support to chapters through fundraising and grant acquisitions, resulting in a 30% increase in chapter funding.",
-                "Engaged with prospective chapters and forged partnerships, contributing to a 20% growth in chapter membership."
-            ]
-        },
-        {
-            "company": "Nonprofit Alliance Against Domestic & Sexual Violence",
-            "role": "Research Intern",
-            "location": "Remote",
-            "dates": "Jun 2024 - Aug 2024",
-            "description": [
-                "Utilized Python and Excel to analyze survey data, identifying resource gaps and informing a report on underserved populations.",
-                "Conducted a statistical evaluation of a pilot intervention program using SPSS, demonstrating a 25% improvement in client outcomes.",
-                "Designed data visualizations in Tableau for grant proposals, contributing to securing funding for two new initiatives."
-            ]
-        }
-    ],
-    "certifications": [
-        {
-            "title": "Google Analytics Certification",
-            "issuer": "Google Skillshop",
-            "date": "Issued Jun 2025"
-        }
-    ],
-    "skills": {
-        "Industry Knowledge": "Business Analytics, Data Visualization, Data Analysis, A/B Testing, Statistical Modeling",
-        "Languages & Software": "Python (Pandas, Scikit-learn), SQL, R, Tableau, Power BI, Excel, SPSS, Git"
-    }
-}
-
 
 def create_resume_pdf(output_filename):
     """
-    Generates a compact, single-page PDF resume.
+    Generates a visually full, one-page resume for Brian Butler that fills the page and includes clickable blue links.
     """
     doc = SimpleDocTemplate(
         output_filename,
         pagesize=letter,
         leftMargin=0.6 * inch,
         rightMargin=0.6 * inch,
-        topMargin=0.4 * inch,
-        bottomMargin=0.4 * inch
+        topMargin=0.5 * inch,
+        bottomMargin=0.5 * inch
     )
 
     styles = getSampleStyleSheet()
-    story = []
 
+    # --- TEXT STYLES ---
     name_style = ParagraphStyle(
         'Name',
-        parent=styles['h1'],
+        parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=19,  # TWEAK: Reduced from 22
+        fontSize=17,
         alignment=1,
-        spaceAfter=1  # TWEAK: Reduced from 2
+        spaceAfter=6
     )
+
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
-        fontSize=9,  # TWEAK: Reduced from 9.5
+        fontSize=9.5,
         alignment=1,
-        spaceAfter=8,  # TWEAK: Reduced from 12
-        textColor=colors.darkgrey
+        spaceAfter=8
     )
-    section_title_style = ParagraphStyle(
-        'SectionTitle',
-        parent=styles['h2'],
+
+    section_header = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=10,
-        leading=12,
-        textColor=colors.black
+        fontSize=11,
+        textColor=colors.black,
+        spaceBefore=10,
+        spaceAfter=4
     )
+
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9,  # TWEAK: Reduced from 9.5
-        leading=11,  # TWEAK: Reduced from 14 for tighter line spacing
-        spaceAfter=2  # TWEAK: Reduced from 6
+        fontSize=9.5,
+        leading=11.5,
+        spaceAfter=2
     )
 
-    def add_section_header(title):
-        p = Paragraph(title.upper(), section_title_style)
-        table = Table([[p]], colWidths=[doc.width])
-        table.setStyle(TableStyle([
-            ('LINEBELOW', (0, 0), (-1, -1), 1, colors.black),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # TWEAK: Reduced from 3
-            ('TOPPADDING', (0, 0), (-1, -1), 8),  # TWEAK: Reduced from 10
-        ]))
-        story.append(table)
-        story.append(Spacer(1, 2))  # TWEAK: Reduced from 4
-
-
-    story.append(Paragraph(brian_butler_data['name'], name_style))
-    contact_info = (
-        f"{brian_butler_data['contact']['location']} &nbsp;&nbsp;|&nbsp;&nbsp; "
-        f"{brian_butler_data['contact']['phone']} &nbsp;&nbsp;|&nbsp;&nbsp; "
-        f"{brian_butler_data['contact']['email']} &nbsp;&nbsp;|&nbsp;&nbsp; "
-        f"{brian_butler_data['contact']['linkedin']}"
+    link_style = ParagraphStyle(
+        'Link',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9.5,
+        textColor=colors.blue,
+        alignment=1,
+        leading=11,
+        spaceBefore=6
     )
-    story.append(Paragraph(contact_info, contact_style))
 
-    add_section_header("About")
-    story.append(Paragraph(brian_butler_data['about'], body_style))
+    story = []
 
-    add_section_header("Education")
-    edu = brian_butler_data['education']
-    edu_text = f"<b>{edu['university']}</b><br/>{edu['degree']}<br/><i>{edu['details']}</i>"
-    story.append(Paragraph(edu_text, body_style))
+    # --- HEADER ---
+    story.append(Paragraph("Brian Butler", name_style))
+    story.append(Paragraph("Fairfax, VA 22030 | butlerbrian67@gmail.com | 619-866-5916", contact_style))
+    links_html = (
+        '<a href="https://leetcode.com/u/Ban_Brian/" color="blue"><u>LeetCode</u></a> | '
+        '<a href="https://www.linkedin.com/in/brian-butler-18036b33b/" color="blue"><u>LinkedIn</u></a> | '
+        '<a href="https://github.com/Ban-Brian" color="blue"><u>GitHub</u></a>'
+    )
+    story.append(Paragraph(links_html, link_style))
+    story.append(Spacer(1, 6))
 
-    add_section_header("Experience")
-    for job in brian_butler_data['experience']:
-        left_col = f"<b>{job['role']}</b>, <i>{job['company']}</i>, {job['location']}"
-        right_col = f"<b>{job['dates']}</b>"
+    # --- EDUCATION ---
+    story.append(Paragraph("EDUCATION", section_header))
+    story.append(Paragraph(
+        "Bachelor's Degree in Mathematical Statistics, Minor: Criminology | George Mason University | Expected Graduation: May 2027",
+        body_style))
+    story.append(Paragraph(
+        "Relevant Coursework: Statistics, Discrete Mathematics, Business Analytics, Computer Science for Data (CDS 130)",
+        body_style
+    ))
+    story.append(Spacer(1, 8))
 
-        table = Table(
-            [[Paragraph(left_col, body_style), Paragraph(right_col, body_style)]],
-            colWidths=[doc.width * 0.75, doc.width * 0.25]  # Adjusted column widths for better balance
+    # --- WORK EXPERIENCE ---
+    story.append(Paragraph("WORK EXPERIENCE", section_header))
+    work_experiences = [
+        {
+            "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
+            "bullets": [
+                "Optimized data workflows with Python and Excel, increasing experiment throughput by <b>20%</b>.",
+                "Improved result reliability by <b>15%</b> through A/B testing and statistical analysis in R and Python.",
+                "Automated weekly reporting with Python and Excel, creating dashboards to track lab metrics."
+            ]
+        },
+        {
+            "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
+            "bullets": [
+                "Analyzed economic data impacting ~<b>1,000</b> local businesses using Excel and statistical tools.",
+                "Identified <b>3</b> major growth sectors through trend analysis and community surveys.",
+                "Worked on a tourism development initiative expected to increase international visitors by <b>15%</b>.",
+                "Created <b>10+</b> economic dashboards and visual summaries for senior officials and public reports."
+            ]
+        },
+        {
+            "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
+            "bullets": [
+                "Processed and analyzed survey data from over <b>150</b> respondents using Python and Excel.",
+                "Evaluated pilot intervention effectiveness in SPSS, showing <b>25%</b> improvement in outcomes.",
+                "Built predictive models to identify at-risk populations with <b>70%</b> precision.",
+                "Developed <b>2</b> Tableau dashboards used in <b>2</b> grant proposals."
+            ]
+        }
+    ]
+
+    for job in work_experiences:
+        story.append(Paragraph(job["title"], body_style))
+        bullets = [ListItem(Paragraph(b, body_style), leftIndent=12, bulletIndent=6) for b in job["bullets"]]
+        story.append(ListFlowable(bullets, bulletType='bullet'))
+        story.append(Spacer(1, 5))
+
+    # --- PROJECTS ---
+    story.append(Paragraph("PROJECTS", section_header))
+    projects = [
+        {
+            "title": "Exploratory Data Analysis on Pre-Trial Data | Feb 2025 - Current",
+            "desc": "Analyzed <b>20,000+</b> records using Python (Pandas, Seaborn, Matplotlib), identifying <b>5+</b> key risk factors and delivering actionable insights via dashboards to Fairfax County stakeholders."
+        },
+        {
+            "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
+            "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
+        },
+        {
+            "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
+            "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25K</b> funding."
+        },
+        {
+            "title": "Baseline Trend Analysis & Outcome Projections Dashboard | Jan 2025 - Mar 2025",
+            "desc": "Developed Python dashboard to track weekly client % and project outcomes for <b>500+</b> records; used LinearRegression to forecast <b>10-week</b> trends, improving stakeholder planning and resource allocation."
+        }
+    ]
+
+    for project in projects:
+        story.append(Paragraph(project["title"], body_style))
+        story.append(Paragraph(project["desc"], body_style))
+        story.append(Spacer(1, 5))
+
+    # --- TECHNICAL SKILLS & MEMBERSHIPS SIDE BY SIDE ---
+    story.append(Spacer(1, 10))
+    tech_skills = [
+        Paragraph("TECHNICAL SKILLS", section_header),
+        Paragraph(
+            "Machine Learning (TENSORS, Keras, XGBoost, Scikit-Learn) | Python Programming (NumPy, Pandas, Matplotlib, Seaborn) | SQL (Joins, CTEs, Subqueries, Window Functions) | Predictive Modeling (Classification, Regression, A/B Testing) | R (Tidyverse, ggplot2, dplyr) | Data Visualization (Tableau, Excel, Seaborn)",
+            body_style
         )
-        table.setStyle(TableStyle([('ALIGN', (1, 0), (1, 0), 'RIGHT'), ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                                   ('BOTTOMPADDING', (0, 0), (-1, -1), 1)]))
-        story.append(table)
+    ]
 
-        bullets = [ListItem(Paragraph(item, body_style), leftIndent=15, bulletIndent=8) for item in job['description']]
-        story.append(ListFlowable(bullets, bulletType='bullet', start='•'))
-        story.append(Spacer(1, 4))  # TWEAK: Reduced from 8
+    memberships = [
+        Paragraph("MEMBERSHIPS", section_header),
+        Paragraph("Member of American Statistical Association (ASA)", body_style),
+        Paragraph("Web Design Editor, GMU Literary Club", body_style),
+        Paragraph("Active Chess Club Member with <b>1700+</b> Elo", body_style),
+        Paragraph("Billiards Club Member", body_style),
+        Paragraph("George Mason Sports Analytics Club Member", body_style)
+    ]
 
-    add_section_header("Licenses & Certifications")
-    for cert in brian_butler_data['certifications']:
-        left_col = f"<b>{cert['title']}</b> - <i>{cert['issuer']}</i>"
-        right_col = f"<b>{cert['date']}</b>"
-        table = Table(
-            [[Paragraph(left_col, body_style), Paragraph(right_col, body_style)]],
-            colWidths=[doc.width * 0.75, doc.width * 0.25]
-        )
-        table.setStyle(TableStyle([('ALIGN', (1, 0), (1, 0), 'RIGHT')]))
-        story.append(table)
+    two_col_table = Table(
+        [[tech_skills, memberships]],
+        colWidths=[3.75 * inch, 2.85 * inch]
+    )
+    two_col_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(two_col_table)
 
-    add_section_header("Skills")
-    skills_text = ""
-    for key, value in brian_butler_data['skills'].items():
-        skills_text += f"<b>{key}:</b> {value}<br/>"
-    story.append(Paragraph(skills_text, body_style))
-
-    # --- Build PDF ---
+    # --- BUILD ---
     doc.build(story)
-    print(f"PDF '{output_filename}' created successfully.")
+    print(f"PDF '{output_filename}' created successfully with embedded blue links.")
 
 
 if __name__ == "__main__":
-    create_resume_pdf("Brian_Butler_Resume_Compact.pdf")
+    create_resume_pdf("Brian_Butler_Resume_Full_Page_Links.pdf")
