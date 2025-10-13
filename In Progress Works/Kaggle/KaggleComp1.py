@@ -169,49 +169,56 @@ for col in cat_cols:
 print("\n[5/10] Configuring 3-model ensemble...")
 
 XGBOOST_PARAMS = {
-    'max_depth': 8,
-    'learning_rate': 0.02,
+    'max_depth': 6,  # Reduced from 8
+    'learning_rate': 0.01,  # Reduced from 0.02
     'n_estimators': 100000,
-    'subsample': 0.8,
-    'colsample_bytree': 0.8,
-    'colsample_bylevel': 0.8,
-    'min_child_weight': 3,
-    'gamma': 0.01,
-    'reg_alpha': 0.1,
-    'reg_lambda': 0.5,
+    'subsample': 0.7,  # Reduced from 0.8
+    'colsample_bytree': 0.7,  # Reduced from 0.8
+    'colsample_bylevel': 0.7,  # Reduced from 0.8
+    'min_child_weight': 5,  # Increased from 3
+    'gamma': 0.1,  # Increased from 0.01
+    'reg_alpha': 0.3,  # Increased from 0.1
+    'reg_lambda': 1.0,  # Increased from 0.5
+    'max_delta_step': 1,
     'tree_method': 'hist',
     'eval_metric': 'rmse',
     'random_state': 42,
     'enable_categorical': True,
+    'early_stopping_rounds': 100,  # More aggressive early stopping
 }
 
 LIGHTGBM_PARAMS = {
-    'max_depth': 7,
-    'learning_rate': 0.02,
+    'max_depth': 5,  # Reduced from 7
+    'learning_rate': 0.01,  # Reduced from 0.02
     'n_estimators': 100000,
-    'subsample': 0.8,
-    'colsample_bytree': 0.8,
-    'min_child_samples': 20,
-    'reg_alpha': 0.1,
-    'reg_lambda': 0.5,
+    'subsample': 0.7,  # Reduced from 0.8
+    'colsample_bytree': 0.7,  # Reduced from 0.8
+    'min_child_samples': 30,  # Increased from 20
+    'reg_alpha': 0.3,  # Increased from 0.1
+    'reg_lambda': 1.0,  # Increased from 0.5
+    'min_gain_to_split': 0.01,  # Added
+    'max_bin': 255,  # Added
     'metric': 'rmse',
     'random_state': 42,
     'verbose': -1,
-    'early_stopping_rounds': 200,
+    'early_stopping_rounds': 100,  # More aggressive
 }
 
 CATBOOST_PARAMS = {
-    'depth': 6,
-    'learning_rate': 0.02,
+    'depth': 5,  # Reduced from 6
+    'learning_rate': 0.01,  # Reduced from 0.02
     'iterations': 100000,
-    'subsample': 0.8,
-    'colsample_bylevel': 0.8,
-    'min_data_in_leaf': 20,
-    'reg_lambda': 0.5,
+    'subsample': 0.7,  # Reduced from 0.8
+    'colsample_bylevel': 0.7,  # Reduced from 0.8
+    'min_data_in_leaf': 30,  # Increased from 20
+    'reg_lambda': 1.0,  # Increased from 0.5
+    'l2_leaf_reg': 3.0,  # Added for additional regularization
+    'random_strength': 1.0,  # Added for randomness
+    'bagging_temperature': 1.0,  # Added
     'eval_metric': 'RMSE',
     'random_seed': 42,
     'verbose': False,
-    'early_stopping_rounds': 200,
+    'early_stopping_rounds': 100,  # More aggressive
 }
 
 # ==================== REPEATED CROSS-VALIDATION ====================
@@ -253,7 +260,7 @@ for train_idx, val_idx in rkf.split(X_train_full, y_train):
 
     # Apply Target Encoding within fold (prevents leakage)
     print("  → Applying target encoding...")
-    te = TargetEncoder(cols=TE_columns + cat_cols, smoothing=1.0, min_samples_leaf=20)
+    te = TargetEncoder(cols=TE_columns + cat_cols, smoothing=2.0, min_samples_leaf=50)  # Increased smoothing
 
     X_train_fold = te.fit_transform(X_train_fold, y_train_fold)
     X_val = te.transform(X_val)
@@ -333,8 +340,8 @@ avg_importance_cat = np.mean(feature_importance_cat, axis=0)
 combined_importance = (avg_importance_xgb + avg_importance_lgb + avg_importance_cat) / 3
 feature_names = X_train_fold.columns
 
-# Remove features with very low importance (noise reduction)
-importance_threshold = np.percentile(combined_importance, 10)  # Keep top 90%
+# Remove features with very low importance (more aggressive noise reduction)
+importance_threshold = np.percentile(combined_importance, 25)  # Keep top 75% (was 90%)
 important_features = feature_names[combined_importance > importance_threshold].tolist()
 
 print(
