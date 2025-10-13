@@ -268,7 +268,7 @@ for train_idx, val_idx in rkf.split(X_train_full, y_train):
 
     # Train XGBoost
     print("  → Training XGBoost...")
-    xgb_model = XGBRegressor(**XGBOOST_PARAMS, early_stopping_rounds=EARLY_STOPPING)
+    xgb_model = XGBRegressor(**XGBOOST_PARAMS)
     start = time.time()
     xgb_model.fit(
         X_train_fold, y_train_fold,
