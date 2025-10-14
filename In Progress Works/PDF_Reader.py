@@ -1,82 +1,151 @@
 import os
+import re
+import pdfplumber
 import pandas as pd
-from openpyxl import load_workbook
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import datetime, timedelta
 
-# --- File path ---
-file_path = "/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft.xlsx"
+# === FILE CONFIG ===
+folder_path = "/Users/brianbutler/Desktop/EJSL"
+output_csv = os.path.join(folder_path, "peer_study_weekly_data.csv")
+baseline_png = os.path.join(folder_path, "baseline_trends.png")
+outcomes_png = os.path.join(folder_path, "outcome_trends.png")
 
-# --- Check if file exists ---
-if not os.path.exists(file_path):
-    raise FileNotFoundError(f"Excel file not found at: {file_path}")
+# === HELPER FUNCTIONS ===
+def extract_numbers_from_text(text):
+    """Extract all numbers (ints) from a text block in order."""
+    text = text.replace("", "-").replace("\n", " ").replace("\r", " ")
+    text = re.sub(r"[^\x00-\x7F]+", " ", text)
+    return [int(num) for num in re.findall(r"\d+", text)]
 
-# --- Load the workbook ---
-wb = load_workbook(filename=file_path, data_only=True)  # data_only=True reads evaluated values
+def extract_percents_from_text(text):
+    """Extract all percentages from a text block in order."""
+    text = text.replace("", "-").replace("\n", " ").replace("\r", " ")
+    text = re.sub(r"[^\x00-\x7F]+", " ", text)
+    return [int(num) for num in re.findall(r"(\d+)%", text)]
 
-# --- Load "Notes of All the Numbers" sheet into DataFrame ---
-sheet_name = "Notes of All the Numbers"
-df = pd.DataFrame(wb[sheet_name].values)
+def parse_pdf_weekly(text):
+    """Extract a single row of numeric data per date range from text."""
+    entries = []
 
-# --- Extract PORT weekly data ---
-port_weekly = []
-for i, row in df.iloc[2:21].iterrows():  # rows 2-20
-    week_label = row[0]
-    if week_label and "to" in str(week_label):
-        port_weekly.append({
-            "weekNum": i - 1,
-            "week": week_label,
-            "activeAdmissions": row[1] if pd.notnull(row[1]) else 0,
-            "clientsWithBaselines": row[2] if pd.notnull(row[2]) else 0,
-            "percent": row[3] if pd.notnull(row[3]) else 0
-        })
+    # Extract date range (start date)
+    date_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})\s*[-–]?\s*(\d{1,2}/\d{1,2}/\d{4})", text)
+    if not date_match:
+        return []
 
-# --- Extract PJ2H weekly data ---
-pj2h_weekly = []
-for i, row in df.iloc[2:21].iterrows():  # rows 2-20
-    week_label = row[5]
-    if week_label and "to" in str(week_label):
-        pj2h_weekly.append({
-            "weekNum": i - 1,
-            "week": week_label,
-            "activeAdmissions": row[6] if pd.notnull(row[6]) else 0,
-            "clientsWithBaselines": row[7] if pd.notnull(row[7]) else 0,
-            "percent": row[8] if pd.notnull(row[8]) else 0
-        })
+    start_date = datetime.strptime(date_match.group(1), "%m/%d/%Y")
 
-# --- Function to print weekly progression ---
-def print_weekly_progress(data, program_name):
-    print(f"\n=== {program_name} PROGRAM - WEEKLY PROGRESSION ANALYSIS ===\n")
-    print("Baseline Completion Rates:")
-    for idx, week in enumerate(data):
-        change = ""
-        if idx > 0:
-            diff = week["clientsWithBaselines"] - data[idx-1]["clientsWithBaselines"]
-            change = f"(+{diff})" if diff >= 0 else f"({diff})"
-        print(f"Week {week['weekNum']}: {week['clientsWithBaselines']} baselines {change} - {week['percent']*100:.1f}% completion rate")
+    # Extract numbers
+    nums = extract_numbers_from_text(text)
+    percents = extract_percents_from_text(text)
 
-# --- Print PORT and PJ2H weekly progression ---
-print_weekly_progress(port_weekly, "PORT")
-print_weekly_progress(pj2h_weekly, "PJ2H")
+    # Map numbers to columns (adjust indices based on your PDF)
+    active_admissions = nums[0] if len(nums) > 0 else 0
+    active_baselines = nums[1] if len(nums) > 1 else 0
+    all_baselines = nums[2] if len(nums) > 2 else 0
+    short_term = nums[3] if len(nums) > 3 else 0
+    long_term = nums[4] if len(nums) > 4 else 0
 
-# --- Calculate trend analysis ---
-port_avg_growth = (port_weekly[-1]["clientsWithBaselines"] - port_weekly[0]["clientsWithBaselines"]) / (len(port_weekly) - 1)
-pj2h_avg_growth = (pj2h_weekly[-1]["clientsWithBaselines"] - pj2h_weekly[0]["clientsWithBaselines"]) / (len(pj2h_weekly) - 1)
+    percent_active = percents[0] if len(percents) > 0 else 0
+    percent_all = percents[1] if len(percents) > 1 else 0
 
-print("\n=== TREND ANALYSIS ===")
-print(f"PORT average weekly change: {port_avg_growth:.2f} baselines/week")
-print(f"PJ2H average weekly change: {pj2h_avg_growth:.2f} baselines/week")
+    entries.append({
+        "week_start_date": start_date,
+        "active_admissions": active_admissions,
+        "active_baselines": active_baselines,
+        "all_baselines": all_baselines,
+        "percent_active": percent_active,
+        "percent_all": percent_all,
+        "short_term": short_term,
+        "long_term": long_term
+    })
+    return entries
 
-# --- Extract "Total Values of Programs" sheet ---
-total_sheet_name = "Total Values of Programs"
-df_total = pd.DataFrame(wb[total_sheet_name].values)
-df_total.columns = df_total.iloc[0]  # first row as header
-df_total = df_total[1:]  # drop header row
+# === READ ALL PDFs ===
+def read_all_pdfs_weekly(folder):
+    all_data = []
+    for filename in os.listdir(folder):
+        if filename.lower().endswith(".pdf"):
+            pdf_path = os.path.join(folder, filename)
+            print(f"📘 Reading {pdf_path} ...")
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text() or ""
+                    # Extract all numeric data per page
+                    all_data.extend(parse_pdf_weekly(text))
+    return pd.DataFrame(all_data)
 
-# --- Group by Program and summarize ---
-print("\n=== TOTAL VALUES SUMMARY ===")
-grouped = df_total.groupby("Program")
-for program, group in grouped:
-    print(f"\n{program}:")
-    for _, row in group.iterrows():
-        metric = row["Metric"]
-        value = row["Value"]
-        print(f"  {metric}: {value}")
+# === DATA PROCESSING ===
+def compute_growth(df, col):
+    df = df.sort_values("week_start_date").reset_index(drop=True)
+    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    df[f"{col}_change"] = df[col].diff().fillna(0)
+    return df
+
+def project_trend(df, col, weeks_forward=8):
+    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    x = np.arange(len(df))
+    y = df[col].fillna(0)
+    if len(df) < 2 or y.sum() == 0:
+        return y, []
+    coeffs = np.polyfit(x, y, 1)
+    proj = np.poly1d(coeffs)
+    proj_x = np.arange(len(df) + weeks_forward)
+    proj_y = proj(proj_x)
+    future_dates = [df["week_start_date"].iloc[-1] + timedelta(weeks=i) for i in range(1, weeks_forward + 1)]
+    return proj_y, future_dates
+
+# === MAIN SCRIPT ===
+df_all = read_all_pdfs_weekly(folder_path)
+
+if df_all.empty:
+    raise ValueError("⚠️ No valid data found in PDFs.")
+
+# Ensure numeric columns
+numeric_cols = [
+    "active_admissions", "active_baselines", "all_baselines",
+    "percent_active", "percent_all", "short_term", "long_term"
+]
+for col in numeric_cols:
+    df_all[col] = pd.to_numeric(df_all[col], errors="coerce").fillna(0)
+
+# Save CSV
+df_all.to_csv(output_csv, index=False)
+print(f"✅ Weekly data saved to {output_csv}")
+print(df_all.head())
+
+# === VISUALIZATION ===
+
+# --- Baselines trend chart ---
+df_baselines = compute_growth(df_all, "active_baselines")
+plt.figure(figsize=(11, 6))
+plt.plot(df_baselines["week_start_date"], df_baselines["active_baselines"], "o-", label="Actual")
+proj_y, future_dates = project_trend(df_baselines, "active_baselines")
+if future_dates:
+    future_proj_y = proj_y[-len(future_dates):]
+    plt.plot(future_dates, future_proj_y, "--", label="Projected")
+plt.title("Active Baselines Progression Week by Week")
+plt.xlabel("Week Start Date")
+plt.ylabel("Active Clients With Baselines")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.savefig(baseline_png)
+plt.close()
+
+# --- Short-term vs Long-term outcomes ---
+plt.figure(figsize=(11, 6))
+plt.plot(df_all["week_start_date"], df_all["short_term"], "o-", label="Short-Term")
+plt.plot(df_all["week_start_date"], df_all["long_term"], "o--", label="Long-Term", alpha=0.6)
+plt.title("Short-Term vs Long-Term Outcomes Week by Week")
+plt.xlabel("Week Start Date")
+plt.ylabel("Outcomes Completed")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.savefig(outcomes_png)
+plt.close()
+
+print(f"✅ Baseline trend chart saved to {baseline_png}")
+print(f"✅ Outcome comparison chart saved to {outcomes_png}")

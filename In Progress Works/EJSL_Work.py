@@ -1,278 +1,595 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+import warnings
 from datetime import datetime, timedelta
-import os
+
+warnings.filterwarnings('ignore')
+sns.set_style("whitegrid")
 
 # -------------------------------
-# 1) Locate Excel file
+# Configuration
 # -------------------------------
-# Use the specific file path for the EJSL dashboard
-file_path = "/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft.xlsx"
+FILEPATH = '/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft.xlsx'
+OUTPUT_DIR = '/Users/brianbutler/Desktop/EJSL/'
 
-if not os.path.exists(file_path):
-    raise FileNotFoundError(f"Cannot find Excel file at {file_path}")
+print("=" * 80)
+print("EJSL DASHBOARD ANALYSIS - TIDY FORMAT")
+print("=" * 80)
 
-xl = pd.ExcelFile(file_path, engine="openpyxl")
-print("Available sheets:", xl.sheet_names)
+xls = pd.ExcelFile(FILEPATH)
+print(f"\nAvailable sheets: {xls.sheet_names}\n")
 
-# -------------------------------
-# 2) Parse weekly baseline % table
-# -------------------------------
-weekly_df = xl.parse("Total Client % with All", header=0)
-weekly_df.columns = weekly_df.columns.str.strip()
-
-keep = ["Week (2025)", "PJ2H %", "PORT %", "BHOP %"]
-
-for col in keep:
-    if col not in weekly_df.columns:
-        raise KeyError(f"Expected column '{col}' not found in weekly data")
-
-weekly_df = weekly_df.dropna(subset=keep)
-weekly_df["Week (2025)"] = weekly_df["Week (2025)"].astype(str)
-weekly_df[keep[1:]] = weekly_df[keep[1:]].astype(float)
-
-# Calculate weekly changes (absolute number change)
-weekly_df["PJ2H Δ%"] = weekly_df["PJ2H %"].diff()
-weekly_df["PORT Δ%"] = weekly_df["PORT %"].diff()
-weekly_df["BHOP Δ%"] = weekly_df["BHOP %"].diff()
-
-print("\n=== WEEK-OVER-WEEK BASELINE % CHANGES ===")
-print(weekly_df[["Week (2025)", "PJ2H %", "PJ2H Δ%", "PORT %", "PORT Δ%", "BHOP %", "BHOP Δ%"]].tail(10))
-
-# Calculate average weekly change
-print("\n=== AVERAGE WEEKLY CHANGE ===")
-print(f"PJ2H: {weekly_df['PJ2H Δ%'].mean():.2f}% per week")
-print(f"PORT: {weekly_df['PORT Δ%'].mean():.2f}% per week")
-print(f"BHOP: {weekly_df['BHOP Δ%'].mean():.2f}% per week")
 
 # -------------------------------
-# 3) Project baselines to November
+# Helper Functions
 # -------------------------------
-weeks = np.arange(len(weekly_df))
+def parse_week_start(val):
+    """Parse week ranges like 'April 13, 2025 to April 19, 2025' to week start date"""
+    if pd.isna(val):
+        return pd.NaT
+    s = str(val).strip()
+    if ' to ' in s:
+        s = s.split(' to ')[0]
+    try:
+        return pd.to_datetime(s, errors='coerce')
+    except:
+        return pd.NaT
 
-# Determine how many weeks to project (to end of November 2025)
-# Assume current data ends around mid-October, project ~6 weeks to end of Nov
-future_weeks = np.arange(len(weekly_df), len(weekly_df) + 6)
-
-
-def project_trend(series, weeks_idx, future_idx):
-    lr = LinearRegression()
-    lr.fit(weeks_idx.reshape(-1, 1), series.values)
-    all_idx = np.concatenate([weeks_idx, future_idx])
-    predictions = lr.predict(all_idx.reshape(-1, 1))
-
-    # Calculate weekly growth rate
-    slope = lr.coef_[0]
-
-    return all_idx, predictions, slope
-
-
-pj2h_idx, pj2h_proj, pj2h_slope = project_trend(weekly_df["PJ2H %"], weeks, future_weeks)
-port_idx, port_proj, port_slope = project_trend(weekly_df["PORT %"], weeks, future_weeks)
-bhop_idx, bhop_proj, bhop_slope = project_trend(weekly_df["BHOP %"], weeks, future_weeks)
-
-print(f"\n=== BASELINE % GROWTH RATES (per week) ===")
-print(f"PJ2H: {pj2h_slope:.3f}% per week")
-print(f"PORT: {port_slope:.3f}% per week")
-print(f"BHOP: {bhop_slope:.3f}% per week")
 
 # -------------------------------
-# 4) Load outcomes data
+# 1) Fix Headers - Notes of All the Numbers
 # -------------------------------
-# Look for sheets that might contain outcomes data
-prog_sheets = [s for s in xl.sheet_names if "Progress" in s]
+print("=" * 80)
+print("STEP 1: EXTRACTING & TIDYING WEEKLY BASELINES")
+print("=" * 80)
 
-print(f"\n=== FOUND PROGRESS SHEETS ===")
-for sheet in prog_sheets:
-    print(f"  - {sheet}")
+df_raw = pd.read_excel(FILEPATH, sheet_name='Notes of All the Numbers', header=0)
+print(f"Raw shape: {df_raw.shape}")
+print(f"Columns found: {list(df_raw.columns)}\n")
 
-if len(prog_sheets) == 0:
-    print("\nNo 'Progress' sheets found. Looking for alternative outcome data...")
-    # Look for any sheets that might have outcome data
-    prog_sheets = [s for s in xl.sheet_names if any(keyword in s.lower() for keyword in ['outcome', 'result', 'data'])]
+# Find PORT columns by searching for keywords
+port_week_col = None
+port_active_col = None
+port_baseline_col = None
+port_percent_col = None
 
-if len(prog_sheets) < 1:
-    print("\nWarning: No outcome sheets found. Skipping outcomes analysis.")
-    skip_outcomes = True
+pj2h_week_col = None
+pj2h_cols = []
+
+for i, col in enumerate(df_raw.columns):
+    col_str = str(col).strip()
+    col_upper = col_str.upper()
+
+    # PORT columns
+    if 'PORT' in col_upper and 'WEEK' in col_upper and port_week_col is None:
+        port_week_col = col
+        print(f"  Found PORT week column: '{col}'")
+    elif port_week_col and port_active_col is None and i > 0:
+        # Next column after PORT week is likely Current Active
+        port_active_col = col
+        print(f"  Found PORT active column: '{col}'")
+    elif port_active_col and port_baseline_col is None:
+        # Next is Clients With Baselines
+        port_baseline_col = col
+        print(f"  Found PORT baseline column: '{col}'")
+    elif port_baseline_col and port_percent_col is None:
+        # Next is Percent
+        port_percent_col = col
+        print(f"  Found PORT percent column: '{col}'")
+
+    # PJ2H columns
+    if ('PJ2H' in col_upper or 'PS2H' in col_upper or 'PPJ2H' in col_upper) and 'WEEK' in col_upper:
+        pj2h_week_col = col
+        print(f"  Found PJ2H week column: '{col}'")
+        # Next 3 columns are the PJ2H data
+        if i + 3 < len(df_raw.columns):
+            pj2h_cols = [df_raw.columns[i], df_raw.columns[i + 1],
+                         df_raw.columns[i + 2], df_raw.columns[i + 3]]
+            print(f"  PJ2H block columns: {pj2h_cols}")
+
+# Build PORT dataframe
+if all([port_week_col, port_active_col, port_baseline_col, port_percent_col]):
+    port_df = df_raw[[port_week_col, port_active_col, port_baseline_col, port_percent_col]].copy()
+    port_df.columns = ['Week', 'Current_Active', 'Clients_With_Baselines', 'Percent']
+    port_df['Program'] = 'PORT'
+    print("\n✓ PORT data extracted")
 else:
-    skip_outcomes = False
-    # Use the last sheet if only one exists, otherwise use last two
-    if len(prog_sheets) == 1:
-        sheet_prev, sheet_latest = prog_sheets[0], prog_sheets[0]
-        print(f"\nUsing single sheet '{sheet_latest}' for outcomes")
-    else:
-        sheet_prev, sheet_latest = prog_sheets[-2], prog_sheets[-1]
-        print(f"\n=== OUTCOMES COMPARISON ===")
-        print(f"Using '{sheet_prev}' vs '{sheet_latest}'")
+    print("\n⚠ Could not find all PORT columns")
+    port_df = pd.DataFrame()
 
-
-def load_outcomes(sheet_name):
-    # Read more rows to ensure we capture the data
-    df = xl.parse(sheet_name, nrows=50)
-    df_numeric = df.apply(pd.to_numeric, errors="coerce")
-    numeric_values = df_numeric.values.flatten()
-    numeric_values = numeric_values[~np.isnan(numeric_values)]
-
-    # Filter to reasonable outcome values (typically between 1 and 500)
-    numeric_values = numeric_values[(numeric_values > 0) & (numeric_values < 1000)]
-
-    if len(numeric_values) < 2:
-        print(f"Warning: Sheet '{sheet_name}' found {len(numeric_values)} numeric values")
-        print(f"Available numeric values: {numeric_values[:10]}")
-        # Return default values if not found
-        return 0, 0
-
-    # Take first two reasonable values as short and long outcomes
-    short, long = numeric_values[0], numeric_values[1]
-    return short, long
-
-
-if not skip_outcomes:
-    short_prev, long_prev = load_outcomes(sheet_prev)
-    short_latest, long_latest = load_outcomes(sheet_latest)
-
-    print(f"Short-term outcomes: {short_prev} → {short_latest} (Δ: +{short_latest - short_prev})")
-    print(f"Long-term outcomes: {long_prev} → {long_latest} (Δ: +{long_latest - long_prev})")
+# Build PJ2H dataframe
+if len(pj2h_cols) == 4:
+    pj2h_df = df_raw[pj2h_cols].copy()
+    pj2h_df.columns = ['Week', 'Current_Active', 'Clients_With_Baselines', 'Percent']
+    pj2h_df['Program'] = 'PJ2H'
+    print("✓ PJ2H data extracted")
 else:
-    short_prev, long_prev = 0, 0
-    short_latest, long_latest = 0, 0
-    print("Skipping outcomes analysis - no data found")
+    print("⚠ Could not find all PJ2H columns")
+    pj2h_df = pd.DataFrame()
+
+# Stack into tidy format
+dataframes_to_concat = []
+if len(port_df) > 0:
+    dataframes_to_concat.append(port_df)
+if len(pj2h_df) > 0:
+    dataframes_to_concat.append(pj2h_df)
+
+if len(dataframes_to_concat) == 0:
+    raise ValueError("Could not extract any data from 'Notes of All the Numbers' sheet")
+
+weekly_tidy = pd.concat(dataframes_to_concat, ignore_index=True)
+
+# Clean data
+weekly_tidy['WeekStart'] = weekly_tidy['Week'].apply(parse_week_start)
+weekly_tidy = weekly_tidy.dropna(subset=['WeekStart'])
+
+for col in ['Current_Active', 'Clients_With_Baselines', 'Percent']:
+    weekly_tidy[col] = pd.to_numeric(weekly_tidy[col], errors='coerce')
+
+weekly_tidy = weekly_tidy.dropna(subset=['Clients_With_Baselines'])
+weekly_tidy = weekly_tidy.sort_values(['Program', 'WeekStart']).reset_index(drop=True)
+
+# Compute weekly increments (how many MORE each week)
+weekly_tidy['Weekly_Increment'] = weekly_tidy.groupby('Program')['Clients_With_Baselines'].diff()
+weekly_tidy['Weekly_Increment'] = weekly_tidy['Weekly_Increment'].fillna(
+    weekly_tidy['Clients_With_Baselines']
+)
+
+print("✓ Tidy weekly baseline table created")
+print(f"  Shape: {weekly_tidy.shape}")
+print(f"  Programs: {weekly_tidy['Program'].unique()}")
+print(f"  Date range: {weekly_tidy['WeekStart'].min()} to {weekly_tidy['WeekStart'].max()}")
+print(f"\nLast 8 rows:")
+print(weekly_tidy.tail(8)[['Program', 'Week', 'Clients_With_Baselines',
+                           'Weekly_Increment', 'Percent']].to_string(index=False))
 
 # -------------------------------
-# 5) Plot BASELINE % trends with projection to November
+# 2) Tidy 9.15 Progress Sheet
 # -------------------------------
-fig, ax = plt.subplots(figsize=(14, 7))
+print("\n" + "=" * 80)
+print("STEP 2: TIDYING 9.15 PROGRESS INTO PROGRAM-METRIC-VALUE TABLE")
+print("=" * 80)
 
-# Plot actual data points
-ax.scatter(weeks, weekly_df["PJ2H %"], c="blue", s=50, alpha=0.6, label="PJ2H % (actual)")
-ax.scatter(weeks, weekly_df["PORT %"], c="green", s=50, alpha=0.6, label="PORT % (actual)")
-ax.scatter(weeks, weekly_df["BHOP %"], c="red", s=50, alpha=0.6, label="BHOP % (actual)")
+# Read with no header first to find structure
+df_915_raw = pd.read_excel(FILEPATH, sheet_name='9.15 Progress', header=None)
+print(f"Raw 9.15 Progress shape: {df_915_raw.shape}")
+print("\nFirst 15 rows:")
+print(df_915_raw.head(15).to_string())
 
-# Plot projection lines
-split_point = len(weeks)
-ax.plot(pj2h_idx[:split_point], pj2h_proj[:split_point], "-", c="blue", linewidth=2)
-ax.plot(pj2h_idx[split_point - 1:], pj2h_proj[split_point - 1:], "--", c="blue", linewidth=2, alpha=0.7,
-        label=f"PJ2H % proj ({pj2h_slope:.2f}%/wk)")
+# Find header row (contains PORT, PJ2H, etc.)
+header_row = None
+for i in range(min(15, len(df_915_raw))):
+    row_str = ' '.join([str(x) for x in df_915_raw.iloc[i].values])
+    if 'PORT' in row_str and ('PJ2H' in row_str or 'PS2H' in row_str):
+        header_row = i
+        print(f"\n✓ Found header row at index {i}")
+        break
 
-ax.plot(port_idx[:split_point], port_proj[:split_point], "-", c="green", linewidth=2)
-ax.plot(port_idx[split_point - 1:], port_proj[split_point - 1:], "--", c="green", linewidth=2, alpha=0.7,
-        label=f"PORT % proj ({port_slope:.2f}%/wk)")
+if header_row is None:
+    header_row = 0
+    print("⚠ Using first row as header")
 
-ax.plot(bhop_idx[:split_point], bhop_proj[:split_point], "-", c="red", linewidth=2)
-ax.plot(bhop_idx[split_point - 1:], bhop_proj[split_point - 1:], "--", c="red", linewidth=2, alpha=0.7,
-        label=f"BHOP % proj ({bhop_slope:.2f}%/wk)")
+# Re-read with correct header
+df_915 = pd.read_excel(FILEPATH, sheet_name='9.15 Progress', header=header_row)
+print(f"\nColumns after header fix: {list(df_915.columns)}")
 
-# Add vertical line at projection start
-ax.axvline(x=split_point - 0.5, color='gray', linestyle=':', alpha=0.5, label='Projection starts')
+# Build tidy program-metric-value table
+outcomes_915 = []
 
-ax.set_title("Baseline Completion % by Program - Trend & Projection to November 2025", fontsize=14, fontweight='bold')
-ax.set_xlabel("Week Index", fontsize=12)
-ax.set_ylabel("% of Clients with Baselines Completed", fontsize=12)
-ax.legend(loc='best', fontsize=10)
-ax.grid(True, alpha=0.3)
+# Identify metric column (usually first column with row labels)
+metric_col = df_915.columns[0]
+
+for idx, row in df_915.iterrows():
+    metric_name = str(row[metric_col]).strip()
+
+    # Skip if not a valid metric
+    if metric_name in ['nan', '', 'None'] or metric_name.startswith('Unnamed'):
+        continue
+
+    # Extract values for each program
+    for col in df_915.columns[1:]:  # Skip first column (metrics)
+        col_name = str(col).upper().strip()
+
+        # Determine program
+        program = None
+        if 'PORT' in col_name and 'REPORT' not in col_name:
+            program = 'PORT'
+        elif 'PJ2H' in col_name or 'PS2H' in col_name:
+            program = 'PJ2H'
+        elif 'BHOP' in col_name:
+            program = 'BHOP'
+
+        if program:
+            try:
+                value = pd.to_numeric(row[col], errors='coerce')
+                if not pd.isna(value):
+                    outcomes_915.append({
+                        'Program': program,
+                        'Metric': metric_name,
+                        'Value': value,
+                        'Sheet': '9.15 Progress'
+                    })
+            except:
+                pass
+
+outcomes_915_df = pd.DataFrame(outcomes_915)
+
+print(f"\n✓ Tidy outcomes table created from 9.15 Progress")
+print(f"  Shape: {outcomes_915_df.shape}")
+print(f"  Programs: {outcomes_915_df['Program'].unique() if len(outcomes_915_df) > 0 else 'None'}")
+print(f"  Unique metrics: {outcomes_915_df['Metric'].nunique() if len(outcomes_915_df) > 0 else 0}")
+
+if len(outcomes_915_df) > 0:
+    print("\nOutcomes by Program and Metric:")
+    pivot = outcomes_915_df.pivot_table(
+        index='Metric',
+        columns='Program',
+        values='Value',
+        aggfunc='first'
+    )
+    print(pivot.to_string())
+
+# -------------------------------
+# 3) Extract 9.21 Progress (if exists)
+# -------------------------------
+print("\n" + "=" * 80)
+print("STEP 3: CHECKING FOR ADDITIONAL PROGRESS SHEETS")
+print("=" * 80)
+
+outcomes_921_df = pd.DataFrame()
+
+if '9.21 Progress' in xls.sheet_names:
+    df_921_raw = pd.read_excel(FILEPATH, sheet_name='9.21 Progress', header=None)
+
+    # Find header
+    header_row_921 = None
+    for i in range(min(15, len(df_921_raw))):
+        row_str = ' '.join([str(x) for x in df_921_raw.iloc[i].values])
+        if 'PORT' in row_str and ('PJ2H' in row_str or 'PS2H' in row_str):
+            header_row_921 = i
+            break
+
+    if header_row_921 is None:
+        header_row_921 = 0
+
+    df_921 = pd.read_excel(FILEPATH, sheet_name='9.21 Progress', header=header_row_921)
+
+    outcomes_921 = []
+    metric_col = df_921.columns[0]
+
+    for idx, row in df_921.iterrows():
+        metric_name = str(row[metric_col]).strip()
+        if metric_name in ['nan', '', 'None'] or metric_name.startswith('Unnamed'):
+            continue
+
+        for col in df_921.columns[1:]:
+            col_name = str(col).upper().strip()
+            program = None
+            if 'PORT' in col_name and 'REPORT' not in col_name:
+                program = 'PORT'
+            elif 'PJ2H' in col_name or 'PS2H' in col_name:
+                program = 'PJ2H'
+            elif 'BHOP' in col_name:
+                program = 'BHOP'
+
+            if program:
+                try:
+                    value = pd.to_numeric(row[col], errors='coerce')
+                    if not pd.isna(value):
+                        outcomes_921.append({
+                            'Program': program,
+                            'Metric': metric_name,
+                            'Value': value,
+                            'Sheet': '9.21 Progress'
+                        })
+                except:
+                    pass
+
+    outcomes_921_df = pd.DataFrame(outcomes_921)
+    print(f"✓ Found 9.21 Progress: {len(outcomes_921_df)} records")
+else:
+    print("⚠ No 9.21 Progress sheet found")
+
+# Combine all outcomes
+all_outcomes = []
+if len(outcomes_915_df) > 0:
+    outcomes_915_df['Date'] = pd.to_datetime('2025-09-15')
+    all_outcomes.append(outcomes_915_df)
+if len(outcomes_921_df) > 0:
+    outcomes_921_df['Date'] = pd.to_datetime('2025-09-21')
+    all_outcomes.append(outcomes_921_df)
+
+if len(all_outcomes) > 0:
+    outcomes_combined = pd.concat(all_outcomes, ignore_index=True)
+    outcomes_combined = outcomes_combined.sort_values(['Program', 'Metric', 'Date'])
+else:
+    outcomes_combined = pd.DataFrame()
+
+# -------------------------------
+# 4) Visualize Weekly Trends
+# -------------------------------
+print("\n" + "=" * 80)
+print("STEP 4: VISUALIZING WEEKLY BASELINE TRENDS")
+print("=" * 80)
+
+fig, axes = plt.subplots(2, 1, figsize=(16, 12))
+
+# Top: Cumulative baselines
+ax1 = axes[0]
+programs = weekly_tidy['Program'].unique()
+colors = {'PORT': '#10AC84', 'PJ2H': '#2E86DE', 'BHOP': '#EE5A6F'}
+
+for prog in programs:
+    data = weekly_tidy[weekly_tidy['Program'] == prog].copy()
+    color = colors.get(prog, '#95A5A6')
+
+    ax1.plot(data['WeekStart'], data['Clients_With_Baselines'],
+             marker='o', linewidth=3, markersize=10, label=prog,
+             color=color, alpha=0.8)
+
+ax1.set_title('Cumulative Clients With Baselines Over Time',
+              fontsize=16, fontweight='bold', pad=15)
+ax1.set_xlabel('Week Starting', fontsize=13, fontweight='bold')
+ax1.set_ylabel('Total Clients With Baselines', fontsize=13, fontweight='bold')
+ax1.legend(loc='upper left', fontsize=12, framealpha=0.95)
+ax1.grid(True, alpha=0.3)
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+# Bottom: Weekly increments
+ax2 = axes[1]
+
+for prog in programs:
+    data = weekly_tidy[weekly_tidy['Program'] == prog].copy()
+    color = colors.get(prog, '#95A5A6')
+
+    ax2.plot(data['WeekStart'], data['Weekly_Increment'],
+             marker='o', linewidth=3, markersize=10, label=prog,
+             color=color, alpha=0.8)
+
+    # Add mean line
+    mean_val = data['Weekly_Increment'].mean()
+    ax2.axhline(y=mean_val, color=color, linestyle='--', alpha=0.5,
+                linewidth=2, label=f'{prog} avg: {mean_val:.1f}/week')
+
+ax2.set_title('Weekly New Baselines (Increments)',
+              fontsize=16, fontweight='bold', pad=15)
+ax2.set_xlabel('Week Starting', fontsize=13, fontweight='bold')
+ax2.set_ylabel('New Baselines This Week', fontsize=13, fontweight='bold')
+ax2.legend(loc='upper left', fontsize=11, framealpha=0.95)
+ax2.grid(True, alpha=0.3)
+ax2.set_ylim(bottom=0)
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
 plt.tight_layout()
-plt.savefig("/Users/brianbutler/Desktop/EJSL/baselines_projection_to_november.png", dpi=300)
+plt.savefig(OUTPUT_DIR + 'weekly_baseline_trends.png', dpi=300, bbox_inches='tight')
+print("✓ Saved: weekly_baseline_trends.png")
 plt.close()
 
 # -------------------------------
-# 6) Plot OUTCOMES trends with projection to November
+# 5) Project Baselines to November
 # -------------------------------
-if not skip_outcomes and (short_latest > 0 or long_latest > 0):
-    # Create time points for outcomes (2 actual, project 6 more)
-    out_idx = np.array([0, 1])
-    future_out = np.arange(2, 8)  # Project 6 more periods
-    all_out_idx = np.concatenate([out_idx, future_out])
+print("\n" + "=" * 80)
+print("STEP 5: PROJECTING BASELINES TO NOVEMBER")
+print("=" * 80)
 
-    # Fit linear models
-    lr_short = LinearRegression().fit(out_idx.reshape(-1, 1), [short_prev, short_latest])
-    lr_long = LinearRegression().fit(out_idx.reshape(-1, 1), [long_prev, long_latest])
+fig, ax = plt.subplots(figsize=(16, 9))
 
-    # Project
-    short_proj = lr_short.predict(all_out_idx.reshape(-1, 1))
-    long_proj = lr_long.predict(all_out_idx.reshape(-1, 1))
+# Determine projection period (to end of November 2025)
+last_date = weekly_tidy['WeekStart'].max()
+target_date = pd.to_datetime('2025-11-30')
+weeks_to_project = int((target_date - last_date).days / 7)
 
-    # Calculate growth rates
-    short_growth = lr_short.coef_[0]
-    long_growth = lr_long.coef_[0]
+print(f"Last data point: {last_date.date()}")
+print(f"Projecting {weeks_to_project} weeks to {target_date.date()}")
 
-    print(f"\n=== OUTCOMES GROWTH RATES (per period) ===")
-    print(f"Short-term: +{short_growth:.2f} completions per period")
-    print(f"Long-term: +{long_growth:.2f} completions per period")
+for prog in programs:
+    data = weekly_tidy[weekly_tidy['Program'] == prog].copy()
 
-    fig, ax = plt.subplots(figsize=(12, 7))
+    if len(data) < 3:
+        continue
+
+    # Create week index
+    data = data.reset_index(drop=True)
+    data['WeekIndex'] = range(len(data))
+
+    X = data['WeekIndex'].values.reshape(-1, 1)
+    y = data['Clients_With_Baselines'].values
+
+    # Fit model
+    model = LinearRegression()
+    model.fit(X, y)
+    r2 = r2_score(y, model.predict(X))
+    slope = model.coef_[0]
+
+    # Generate future indices
+    future_idx = np.arange(len(data), len(data) + weeks_to_project)
+    all_idx = np.concatenate([data['WeekIndex'].values, future_idx])
+    all_pred = model.predict(all_idx.reshape(-1, 1))
+
+    # Create date axis for plotting
+    future_dates = [data['WeekStart'].iloc[-1] + timedelta(weeks=i + 1)
+                    for i in range(weeks_to_project)]
+    all_dates = list(data['WeekStart']) + future_dates
+
+    color = colors.get(prog, '#95A5A6')
 
     # Plot actual data
-    ax.scatter(out_idx, [short_prev, short_latest], c="purple", s=100, zorder=3, label="Short-term (actual)")
-    ax.scatter(out_idx, [long_prev, long_latest], c="orange", s=100, zorder=3, label="Long-term (actual)")
+    ax.scatter(data['WeekStart'], y, c=color, s=120, alpha=0.8,
+               label=f'{prog} (actual)', zorder=3, edgecolors='white', linewidths=2)
 
-    # Plot trend lines and projections
-    ax.plot(all_out_idx[:2], short_proj[:2], "-", c="purple", linewidth=2)
-    ax.plot(all_out_idx[1:], short_proj[1:], "--", c="purple", linewidth=2, alpha=0.7,
-            label=f"Short-term proj (+{short_growth:.1f}/period)")
+    # Plot fitted line
+    ax.plot(data['WeekStart'], model.predict(X), '-', c=color, linewidth=3, alpha=0.9)
 
-    ax.plot(all_out_idx[:2], long_proj[:2], "-", c="orange", linewidth=2)
-    ax.plot(all_out_idx[1:], long_proj[1:], "--", c="orange", linewidth=2, alpha=0.7,
-            label=f"Long-term proj (+{long_growth:.1f}/period)")
+    # Plot projection
+    projection_dates = [data['WeekStart'].iloc[-1]] + future_dates
+    projection_vals = [model.predict(X)[-1]] + list(all_pred[len(data):])
+    ax.plot(projection_dates, projection_vals, '--', c=color, linewidth=3, alpha=0.7,
+            label=f'{prog} projection: {slope:+.2f}/week (R²={r2:.3f})')
 
-    # Add vertical line
-    ax.axvline(x=1.5, color='gray', linestyle=':', alpha=0.5, label='Projection starts')
+    # Confidence interval
+    residuals = y - model.predict(X)
+    std_err = np.std(residuals)
+    ci = 1.96 * std_err
 
-    # Format x-axis
-    xticks_labels = [sheet_prev.split()[-1] if sheet_prev else "Prev",
-                     sheet_latest.split()[-1] if sheet_latest else "Latest"] + [f"+{i}" for i in range(1, 7)]
-    ax.set_xticks(all_out_idx)
-    ax.set_xticklabels(xticks_labels, rotation=45, ha='right')
+    ax.fill_between(projection_dates,
+                    np.array(projection_vals) - ci,
+                    np.array(projection_vals) + ci,
+                    color=color, alpha=0.15)
 
-    ax.set_title("Outcome Completions - Trend & Projection to November 2025", fontsize=14, fontweight='bold')
-    ax.set_xlabel("Time Period", fontsize=12)
-    ax.set_ylabel("Number of Outcomes Completed", fontsize=12)
-    ax.legend(loc='best', fontsize=10)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig("/Users/brianbutler/Desktop/EJSL/outcomes_projection_to_november.png", dpi=300)
-    plt.close()
+    # Report
+    current = y[-1]
+    projected = all_pred[-1]
+    print(f"\n{prog}:")
+    print(f"  Current:          {current:.0f} clients")
+    print(f"  Weekly growth:    {slope:+.2f} clients/week")
+    print(f"  Nov 30 projection: {projected:.0f} clients")
+    print(f"  Total growth:     {projected - current:+.0f} clients")
+    print(f"  R² score:         {r2:.3f}")
 
-    outcomes_saved = True
+# Add vertical line at projection start
+ax.axvline(x=last_date, color='black', linestyle=':', linewidth=2.5,
+           alpha=0.7, label='Projection starts', zorder=2)
 
-    # Store projections for summary
-    short_proj_end = short_proj[-1]
-    long_proj_end = long_proj[-1]
-else:
-    print("\nSkipping outcomes chart - insufficient data")
-    outcomes_saved = False
-    short_proj_end = 0
-    long_proj_end = 0
+ax.set_title('BASELINES: Projection to November 30, 2025',
+             fontsize=17, fontweight='bold', pad=15)
+ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+ax.set_ylabel('Clients With Baselines', fontsize=14, fontweight='bold')
+ax.legend(loc='upper left', fontsize=11, framealpha=0.95, edgecolor='black')
+ax.grid(True, alpha=0.3)
+ax.set_ylim(bottom=0)
+plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+plt.tight_layout()
+plt.savefig(OUTPUT_DIR + 'baselines_projection_november.png', dpi=300, bbox_inches='tight')
+print("\n✓ Saved: baselines_projection_november.png")
+plt.close()
 
 # -------------------------------
-# 7) Summary statistics table
+# 6) Project Outcomes to November
 # -------------------------------
-print("\n" + "=" * 60)
-print("SUMMARY: WEEKLY GROWTH ANALYSIS")
-print("=" * 60)
+if len(outcomes_combined) > 0:
+    print("\n" + "=" * 80)
+    print("STEP 6: PROJECTING OUTCOMES TO NOVEMBER")
+    print("=" * 80)
 
-summary_data = {
-    "Program": ["PJ2H", "PORT", "BHOP"],
-    "Current %": [weekly_df["PJ2H %"].iloc[-1], weekly_df["PORT %"].iloc[-1], weekly_df["BHOP %"].iloc[-1]],
-    "Avg Weekly Δ": [weekly_df["PJ2H Δ%"].mean(), weekly_df["PORT Δ%"].mean(), weekly_df["BHOP Δ%"].mean()],
-    "Trend (slope)": [pj2h_slope, port_slope, bhop_slope],
-    "Projected Nov %": [pj2h_proj[-1], port_proj[-1], bhop_proj[-1]]
-}
+    # Filter for key outcome metrics
+    outcome_keywords = ['Short Term Outcomes Completed', 'Long Term Outcomes Completed']
+    outcomes_filtered = outcomes_combined[
+        outcomes_combined['Metric'].str.contains('|'.join(outcome_keywords), case=False, na=False)
+    ].copy()
 
-summary_df = pd.DataFrame(summary_data)
-print(summary_df.to_string(index=False))
+    if len(outcomes_filtered) > 0:
+        fig, ax = plt.subplots(figsize=(16, 9))
 
-print("\n" + "=" * 60)
-print("OUTCOMES GROWTH ANALYSIS")
-print("=" * 60)
-if not skip_outcomes and outcomes_saved:
-    print(f"Short-term: {short_prev} → {short_latest} → projected {short_proj_end:.0f} by November")
-    print(f"Long-term:  {long_prev} → {long_latest} → projected {long_proj_end:.0f} by November")
+        metric_colors = {
+            'Short Term': {'PORT': '#10AC84', 'PJ2H': '#2E86DE', 'BHOP': '#EE5A6F'},
+            'Long Term': {'PORT': '#0A6F5C', 'PJ2H': '#1B4F91', 'BHOP': '#A63D4A'}
+        }
+
+        for prog in outcomes_filtered['Program'].unique():
+            for outcome_type in ['Short Term', 'Long Term']:
+                mask = (outcomes_filtered['Program'] == prog) & \
+                       (outcomes_filtered['Metric'].str.contains(outcome_type, case=False))
+                data = outcomes_filtered[mask].sort_values('Date')
+
+                if len(data) < 2:
+                    continue
+
+                # Create time index
+                data = data.reset_index(drop=True)
+                data['TimeIndex'] = range(len(data))
+
+                X = data['TimeIndex'].values.reshape(-1, 1)
+                y = data['Value'].values
+
+                # Fit model
+                model = LinearRegression()
+                model.fit(X, y)
+                r2 = r2_score(y, model.predict(X))
+                slope = model.coef_[0]
+
+                # Project 6 more periods
+                future_idx = np.arange(len(data), len(data) + 6)
+                all_idx = np.concatenate([data['TimeIndex'].values, future_idx])
+                all_pred = model.predict(all_idx.reshape(-1, 1))
+
+                color = metric_colors[outcome_type].get(prog, '#95A5A6')
+                marker = 'o' if outcome_type == 'Short Term' else 's'
+
+                # Plot
+                ax.scatter(data['TimeIndex'], y, c=color, s=150, alpha=0.9,
+                           label=f'{prog} {outcome_type} (actual)', marker=marker,
+                           zorder=4, edgecolors='white', linewidths=2)
+
+                ax.plot(data['TimeIndex'], model.predict(X), '-', c=color, linewidth=3, alpha=0.9)
+
+                proj_idx = np.concatenate([[data['TimeIndex'].iloc[-1]], future_idx])
+                proj_vals = np.concatenate([[model.predict(X)[-1]], all_pred[len(data):]])
+                ax.plot(proj_idx, proj_vals, '--', c=color, linewidth=3, alpha=0.7,
+                        label=f'{prog} {outcome_type} proj: {slope:+.1f}/period (R²={r2:.2f})')
+
+                # CI
+                residuals = y - model.predict(X)
+                ci = 1.96 * np.std(residuals)
+                ax.fill_between(proj_idx, proj_vals - ci, proj_vals + ci,
+                                color=color, alpha=0.15)
+
+                print(f"\n{prog} - {outcome_type}:")
+                print(f"  Current:      {y[-1]:.0f}")
+                print(f"  Growth rate:  {slope:+.2f}/period")
+                print(f"  Nov projection: {all_pred[-1]:.0f}")
+                print(f"  R²:           {r2:.3f}")
+
+        ax.axvline(x=len(data) - 0.5, color='black', linestyle=':',
+                   linewidth=2.5, alpha=0.7, label='Projection starts', zorder=2)
+
+        ax.set_title('OUTCOMES: Projection to November 2025',
+                     fontsize=17, fontweight='bold', pad=15)
+        ax.set_xlabel('Time Period', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Outcomes Completed', fontsize=14, fontweight='bold')
+        ax.legend(loc='upper left', fontsize=9, framealpha=0.95, ncol=2)
+        ax.grid(True, alpha=0.3)
+        ax.set_ylim(bottom=0)
+
+        plt.tight_layout()
+        plt.savefig(OUTPUT_DIR + 'outcomes_projection_november.png', dpi=300, bbox_inches='tight')
+        print("\n✓ Saved: outcomes_projection_november.png")
+        plt.close()
+    else:
+        print("⚠ No outcome metrics found matching criteria")
 else:
-    print("No outcomes data available for analysis")
+    print("\n⚠ No outcomes data available for projection")
 
-print("\n✓ Analysis complete! Charts saved to:")
-print("  - /Users/brianbutler/Desktop/EJSL/baselines_projection_to_november.png")
-if outcomes_saved:
-    print("  - /Users/brianbutler/Desktop/EJSL/outcomes_projection_to_november.png")
+# -------------------------------
+# 7) Final Summary
+# -------------------------------
+print("\n" + "=" * 80)
+print("FINAL SUMMARY")
+print("=" * 80)
+
+print("\n BASELINES (Tidy Weekly Table):")
+for prog in programs:
+    prog_data = weekly_tidy[weekly_tidy['Program'] == prog]
+    current = prog_data['Clients_With_Baselines'].iloc[-1]
+    avg_increment = prog_data['Weekly_Increment'].mean()
+    latest_pct = prog_data['Percent'].iloc[-1]
+    print(f"  {prog}: {current:.0f} total | {avg_increment:.1f} avg new/week | {latest_pct:.1f}% complete")
+
+if len(outcomes_combined) > 0:
+    print("\n OUTCOMES (Tidy Program-Metric-Value Table):")
+    summary = outcomes_combined.groupby(['Program', 'Metric'])['Value'].agg(['count', 'last'])
+    for idx, row in summary.iterrows():
+        prog, metric = idx
+        print(f"  {prog} - {metric}: {row['last']:.0f} (from {row['count']} snapshots)")
+
+print("\n ANALYSIS COMPLETE!")
+print("=" * 80)
+print("\n Files saved:")
+print("  • weekly_baseline_trends.png")
+print("  • baselines_projection_november.png")
+if len(outcomes_combined) > 0:
+    print("  • outcomes_projection_november.png")
