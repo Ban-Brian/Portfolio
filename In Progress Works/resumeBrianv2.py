@@ -84,7 +84,7 @@ def create_resume_pdf(output_filename):
     # --- EDUCATION ---
     story.append(Paragraph("EDUCATION", section_header))
     story.append(Paragraph(
-        "Bachelor's Degree in Mathematical Statistics, Minor: Criminology | George Mason University | Expected Graduation: May 2027",
+        "Bachelor's Degree in Mathematical Statistics | George Mason University | Expected Graduation: May 2027",
         body_style))
     story.append(Paragraph(
         "Relevant Coursework: Statistics, Discrete Mathematics, Business Analytics, Computer Science for Data (CDS 130)",
@@ -133,10 +133,6 @@ def create_resume_pdf(output_filename):
     story.append(Paragraph("PROJECTS", section_header))
     projects = [
         {
-            "title": "Exploratory Data Analysis on Pre-Trial Data | Feb 2025 - Current",
-            "desc": "Analyzed <b>20,000+</b> records using Python (Pandas, Seaborn, Matplotlib), identifying <b>5+</b> key risk factors and delivering actionable insights via dashboards to Fairfax County stakeholders."
-        },
-        {
             "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
             "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
         },
@@ -145,8 +141,8 @@ def create_resume_pdf(output_filename):
             "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25K</b> funding."
         },
         {
-            "title": "Baseline Trend Analysis & Outcome Projections Dashboard | Jan 2025 - Mar 2025",
-            "desc": "Developed Python dashboard to track weekly client % and project outcomes for <b>500+</b> records; used LinearRegression to forecast <b>10-week</b> trends, improving stakeholder planning and resource allocation."
+            "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
+            "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (RMSE ~0.056). Demonstrated advanced <b>feature engineering, ensemble learning, and predictive modeling</b> skills."
         }
     ]
 
@@ -156,33 +152,48 @@ def create_resume_pdf(output_filename):
         story.append(Spacer(1, 5))
 
     # --- TECHNICAL SKILLS & MEMBERSHIPS SIDE BY SIDE ---
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 16))  # increased spacing before table
+
+    # TECHNICAL SKILLS
     tech_skills = [
         Paragraph("TECHNICAL SKILLS", section_header),
         Paragraph(
-            "Machine Learning (TENSORS, Keras, XGBoost, Scikit-Learn) | Python Programming (NumPy, Pandas, Matplotlib, Seaborn) | SQL (Joins, CTEs, Subqueries, Window Functions) | Predictive Modeling (Classification, Regression, A/B Testing) | R (Tidyverse, ggplot2, dplyr) | Data Visualization (Tableau, Excel, Seaborn)",
+            "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
+            "Python: NumPy, Pandas, Matplotlib, Seaborn<br/>"
+            "SQL: Joins, CTEs, Window Functions<br/>"
+            "Predictive Modeling: Regression, Classification, A/B Testing<br/>"
+            "R: Tidyverse, ggplot2, dplyr<br/>"
+            "Data Visualization: Tableau, Excel, Seaborn",
             body_style
         )
     ]
 
+    # MEMBERSHIPS & ACHIEVEMENTS
     memberships = [
-        Paragraph("MEMBERSHIPS", section_header),
-        Paragraph("Member of American Statistical Association (ASA)", body_style),
-        Paragraph("Web Design Editor, GMU Literary Club", body_style),
-        Paragraph("Active Chess Club Member with <b>1700+</b> Elo", body_style),
+        Paragraph("MEMBERSHIPS & ACHIEVEMENTS", section_header),
+        Paragraph("Member, American Statistical Association ", body_style),
+        Paragraph("Achieved rank #210/5,000 in Kaggle Playground Competition", body_style),
+        Paragraph("Active Chess Club Member, Elo 1700+", body_style),
         Paragraph("Billiards Club Member", body_style),
-        Paragraph("George Mason Sports Analytics Club Member", body_style)
+        Paragraph("George Mason Sports Analytics Club Vice-President", body_style)
     ]
 
+    # Create a cleaner two-column layout with more separation
     two_col_table = Table(
         [[tech_skills, memberships]],
-        colWidths=[3.75 * inch, 2.85 * inch]
+        colWidths=[3.8 * inch, 2.8 * inch],
+        hAlign='LEFT',
+        spaceBefore=12,  # space above table
+        spaceAfter=12  # space below table
     )
     two_col_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4)
     ]))
+
     story.append(two_col_table)
 
     # --- BUILD ---
