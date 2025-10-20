@@ -185,22 +185,23 @@ print(f"✓ Final shape - X: {X.shape}, Test: {X_test.shape}")
 # ==================== OPTIMIZED MODELS ====================
 print("\n[4/6] Training 3-model ensemble...")
 
-# LightGBM - Optimized for 0.05537
+# LightGBM - Push harder
 param_lgb = {
-    'n_estimators': 4000,
-    'learning_rate': 0.007,
-    'num_leaves': 150,
-    'max_depth': 14,
-    'min_child_samples': 5,
-    'min_child_weight': 0.0005,
-    'subsample': 0.68,
+    'n_estimators': 5000,
+    'learning_rate': 0.006,
+    'num_leaves': 180,
+    'max_depth': 15,
+    'min_child_samples': 3,
+    'min_child_weight': 0.0001,
+    'subsample': 0.70,
     'subsample_freq': 1,
-    'colsample_bytree': 0.88,
-    'reg_alpha': 0.003,
-    'reg_lambda': 0.50,
-    'min_split_gain': 0.001,
-    'feature_fraction': 0.95,
-    'max_bin': 300,
+    'colsample_bytree': 0.90,
+    'reg_alpha': 0.001,
+    'reg_lambda': 0.40,
+    'min_split_gain': 0.0005,
+    'feature_fraction': 0.97,
+    'max_bin': 400,
+    'min_data_in_bin': 3,
     'objective': 'regression',
     'metric': 'rmse',
     'boosting_type': 'gbdt',
@@ -209,37 +210,39 @@ param_lgb = {
     'n_jobs': -1
 }
 
-# CatBoost - Optimized for 0.05537
+# CatBoost - Push harder
 param_cat = {
-    'depth': 10,
-    'iterations': 2500,
-    'learning_rate': 0.025,
-    'l2_leaf_reg': 3.0,
+    'depth': 11,
+    'iterations': 3000,
+    'learning_rate': 0.022,
+    'l2_leaf_reg': 2.5,
     'border_count': 254,
-    'bagging_temperature': 0.10,
-    'random_strength': 0.20,
-    'min_data_in_leaf': 15,
-    'rsm': 0.90,
+    'bagging_temperature': 0.08,
+    'random_strength': 0.15,
+    'min_data_in_leaf': 10,
+    'rsm': 0.92,
+    'boosting_type': 'Plain',
     'loss_function': 'RMSE',
     'random_seed': 42,
     'verbose': False,
     'thread_count': -1
 }
 
-# XGBoost - Optimized for 0.05537
+# XGBoost - Push harder (it has highest weight!)
 param_xgb = {
-    'max_depth': 8,
-    'learning_rate': 0.008,
-    'n_estimators': 3000,
-    'subsample': 0.72,
-    'colsample_bytree': 0.78,
-    'colsample_bylevel': 0.80,
-    'min_child_weight': 2,
-    'gamma': 0.03,
-    'reg_alpha': 0.03,
-    'reg_lambda': 0.70,
+    'max_depth': 9,
+    'learning_rate': 0.007,
+    'n_estimators': 3500,
+    'subsample': 0.75,
+    'colsample_bytree': 0.80,
+    'colsample_bylevel': 0.82,
+    'colsample_bynode': 0.85,
+    'min_child_weight': 1.5,
+    'gamma': 0.02,
+    'reg_alpha': 0.02,
+    'reg_lambda': 0.60,
     'tree_method': 'hist',
-    'max_bin': 300,
+    'max_bin': 400,
     'random_state': 42,
     'n_jobs': -1
 }
@@ -292,11 +295,11 @@ meta_train, meta_test = create_meta_features(models, X, X_test, y, n_splits=7)
 # ==================== META-MODEL WITH TUNING ====================
 print("\n[5/6] Training meta-model...")
 
-# Try different alpha values for Ridge
+# Try different alpha values for Ridge - MORE OPTIONS
 best_alpha = 0.1
 best_meta_rmse = float('inf')
 
-for alpha in [0.01, 0.05, 0.1, 0.2, 0.5]:
+for alpha in [0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5]:
     meta_model = Ridge(alpha=alpha)
     meta_model.fit(meta_train, y)
     pred = meta_model.predict(meta_train)
@@ -308,16 +311,27 @@ for alpha in [0.01, 0.05, 0.1, 0.2, 0.5]:
 
 print(f"\n✓ Best alpha: {best_alpha}, RMSE: {best_meta_rmse:.6f}")
 
-# Final meta-model
+# Final meta-model with best alpha
 meta_model = Ridge(alpha=best_alpha)
 meta_model.fit(meta_train, y)
 
-# Predictions
-oof_preds = meta_model.predict(meta_train)
-final_predictions = meta_model.predict(meta_test)
+# ADDITIONAL: Add original features to meta features for extra signal
+print("\n  Creating enhanced meta features with original data...")
+meta_train_enhanced = np.hstack([meta_train, X[['curvature', 'speed_limit', 'meta', 'speed_squared']].values])
+meta_test_enhanced = np.hstack([meta_test, X_test[['curvature', 'speed_limit', 'meta', 'speed_squared']].values])
+
+# Train final model on enhanced meta features
+meta_model_final = Ridge(alpha=best_alpha)
+meta_model_final.fit(meta_train_enhanced, y)
+
+# Predictions with enhanced meta model
+oof_preds = meta_model_final.predict(meta_train_enhanced)
+final_predictions = meta_model_final.predict(meta_test_enhanced)
 final_predictions = np.clip(final_predictions, 0, 1)
 
 final_rmse = np.sqrt(mean_squared_error(y, oof_preds))
+
+print(f"\n✓ Enhanced meta-model OOF RMSE: {final_rmse:.6f}")
 
 # ==================== SAVE ====================
 print("\n[6/6] Saving submission...")

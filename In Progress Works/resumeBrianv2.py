@@ -95,33 +95,32 @@ def create_resume_pdf(output_filename):
     # --- WORK EXPERIENCE ---
     story.append(Paragraph("WORK EXPERIENCE", section_header))
     work_experiences = [
-        {
-            "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
-            "bullets": [
-                "Optimized data workflows with Python and Excel, increasing experiment throughput by <b>20%</b>.",
-                "Improved result reliability by <b>15%</b> through A/B testing and statistical analysis in R and Python.",
-                "Automated weekly reporting with Python and Excel, creating dashboards to track lab metrics."
-            ]
-        },
-        {
-            "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
-            "bullets": [
-                "Analyzed economic data impacting ~<b>1,000</b> local businesses using Excel and statistical tools.",
-                "Identified <b>3</b> major growth sectors through trend analysis and community surveys.",
-                "Worked on a tourism development initiative expected to increase international visitors by <b>15%</b>.",
-                "Created <b>10+</b> economic dashboards and visual summaries for senior officials and public reports."
-            ]
-        },
-        {
-            "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
-            "bullets": [
-                "Processed and analyzed survey data from over <b>150</b> respondents using Python and Excel.",
-                "Evaluated pilot intervention effectiveness in SPSS, showing <b>25%</b> improvement in outcomes.",
-                "Built predictive models to identify at-risk populations with <b>70%</b> precision.",
-                "Developed <b>2</b> Tableau dashboards used in <b>2</b> grant proposals."
-            ]
-        }
-    ]
+    {
+        "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
+        "bullets": [
+            "Boosted experiment throughput <b>20%</b> by automating data workflows in Python and Excel.",
+            "Improved result reliability <b>15%</b> through A/B testing, hypothesis evaluation, and reproducible analysis in R and Python.",
+            "Automated weekly reporting pipelines and interactive dashboards, reducing manual work <b>80%</b> and enabling real-time metric tracking."
+        ]
+    },
+    {
+        "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
+        "bullets": [
+            "Analyzed economic and business data from <b>1,000+</b> local enterprises, identifying <b>3</b> key growth sectors through trend and regression analysis.",
+            "Supported a tourism development initiative projected to increase international visitors <b>15%</b> using community survey insights.",
+            "Built <b>10+</b> dashboards and visual reports in Excel and Power BI, improving accessibility of economic data for senior officials."
+        ]
+    },
+    {
+        "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
+        "bullets": [
+            "Processed and analyzed <b>150+</b> survey responses with Python, SPSS, and Excel to evaluate intervention effectiveness.",
+            "Quantified <b>25%</b> improvement in program outcomes via statistical modeling and comparative analysis.",
+            "Built predictive models (<b>70%</b> precision) to identify at-risk populations and developed <b>2</b> Tableau dashboards for use in successful grant proposals."
+        ]
+    }
+]
+
 
     for job in work_experiences:
         story.append(Paragraph(job["title"], body_style))
@@ -132,19 +131,20 @@ def create_resume_pdf(output_filename):
     # --- PROJECTS ---
     story.append(Paragraph("PROJECTS", section_header))
     projects = [
-        {
-            "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
-            "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
-        },
-        {
-            "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
-            "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25K</b> funding."
-        },
-        {
-            "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
-            "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (RMSE ~0.056). Demonstrated advanced <b>feature engineering, ensemble learning, and predictive modeling</b> skills."
-        }
-    ]
+    {
+        "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
+        "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
+    },
+    {
+        "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
+        "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25,000</b> funding."
+    },
+    {
+        "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
+        "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (<b>RMSE ~0.056</b>). Demonstrated advanced <b>feature engineering</b>, <b>ensemble learning</b>, and <b>predictive modeling</b> skills."
+    }
+]
+
 
     for project in projects:
         story.append(Paragraph(project["title"], body_style))
