@@ -436,7 +436,7 @@ if 'ShortTerm' in df.columns:
 # -------------------------------
 if 'LongTerm' in df.columns:
     print("\n" + "=" * 80)
-    print("📊 LONG-TERM OUTCOMES ANALYSIS")
+    print(" LONG-TERM OUTCOMES ANALYSIS")
     print("=" * 80)
 
     df_long = df[df['LongTerm'].notna()].copy()
@@ -511,10 +511,10 @@ if 'LongTerm' in df.columns:
 # 7) Summary Report
 # -------------------------------
 print("\n" + "=" * 80)
-print("📋 FINAL SUMMARY")
+print(" FINAL SUMMARY")
 print("=" * 80)
 
-print("\n🎯 BASELINES:")
+print("\n BASELINES:")
 for prog in programs:
     prog_data = df[df['Program'] == prog]
     if len(prog_data) > 0:
@@ -523,7 +523,7 @@ for prog in programs:
         print(f"  {prog}: {current:.0f} total | +{avg_increment:.1f} avg/period")
 
 if 'ShortTerm' in df.columns:
-    print("\n📈 SHORT-TERM OUTCOMES:")
+    print("\n SHORT-TERM OUTCOMES:")
     df_short = df[df['ShortTerm'].notna()]
     for prog in df_short['Program'].unique():
         prog_data = df_short[df_short['Program'] == prog]
@@ -532,7 +532,7 @@ if 'ShortTerm' in df.columns:
             print(f"  {prog}: {current:.0f} total")
 
 if 'LongTerm' in df.columns:
-    print("\n📈 LONG-TERM OUTCOMES:")
+    print("\n LONG-TERM OUTCOMES:")
     df_long = df[df['LongTerm'].notna()]
     for prog in df_long['Program'].unique():
         prog_data = df_long[df_long['Program'] == prog]
@@ -540,7 +540,7 @@ if 'LongTerm' in df.columns:
             current = prog_data['LongTerm'].iloc[-1]
             print(f"  {prog}: {current:.0f} total")
 
-print("\n📁 FILES SAVED:")
+print("\n FILES SAVED:")
 print("  • baselines_trends.png")
 print("  • baselines_projection_november.png")
 if 'ShortTerm' in df.columns and len(df[df['ShortTerm'].notna()]) > 0:
@@ -549,5 +549,5 @@ if 'LongTerm' in df.columns and len(df[df['LongTerm'].notna()]) > 0:
     print("  • longterm_outcomes_projection.png")
 
 print("\n" + "=" * 80)
-print("✅ ANALYSIS COMPLETE!")
+print(" ANALYSIS COMPLETE!")
 print("=" * 80)
