@@ -13,7 +13,7 @@ sns.set_style("whitegrid")
 # -------------------------------
 # Configuration
 # -------------------------------
-FILEPATH = '/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft.xlsx'
+FILEPATH = '/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft Pers.xlsx'
 OUTPUT_DIR = '/Users/brianbutler/Desktop/EJSL/'
 SHEET_NAME = 'Dashboard Progress'  # Updated sheet name
 
@@ -24,7 +24,7 @@ print("=" * 80)
 # -------------------------------
 # 1) Load Data from Dashboard Progress
 # -------------------------------
-print("\n📥 Loading data from Dashboard Progress sheet...")
+print("\n Loading data from Dashboard Progress sheet...")
 
 try:
     # First, let's see what sheets are available
@@ -33,7 +33,7 @@ try:
 
     # Try to find the right sheet
     if SHEET_NAME not in xls.sheet_names:
-        print(f"\n⚠️  '{SHEET_NAME}' not found!")
+        print(f"\n⚠  '{SHEET_NAME}' not found!")
         print("Looking for similar sheet names...")
         for sheet in xls.sheet_names:
             if 'dashboard' in sheet.lower() or 'progress' in sheet.lower():
@@ -62,7 +62,7 @@ try:
                 break
 
     if header_row is None:
-        print("\n⚠️  Could not automatically find header row")
+        print("\n⚠  Could not automatically find header row")
         print("Showing first 20 rows for manual inspection:")
         for i in range(min(20, len(df_raw))):
             print(f"  Row {i}: {df_raw.iloc[i].tolist()}")
@@ -81,7 +81,7 @@ try:
     print(f"After removing empty rows: {df.shape}")
 
     if len(df) == 0:
-        print("\n❌ ERROR: DataFrame is empty after loading!")
+        print("\n ERROR: DataFrame is empty after loading!")
         print("This might mean:")
         print("  1. The header row is incorrect")
         print("  2. All data rows are being filtered out")
@@ -90,7 +90,7 @@ try:
         raise ValueError("Empty dataframe - cannot proceed")
 
 except Exception as e:
-    print(f"❌ Error loading data: {e}")
+    print(f" Error loading data: {e}")
     import traceback
 
     traceback.print_exc()
@@ -138,7 +138,7 @@ for col in df.columns:
 
 # If columns not found, let user know what we have
 if not all([date_col, program_col, baselines_col]):
-    print("\n⚠️  Could not find all required columns!")
+    print("\n⚠  Could not find all required columns!")
     print("Available columns:")
     for i, col in enumerate(df.columns):
         print(f"  {i}: {col}")
@@ -204,14 +204,14 @@ if 'ShortTerm' in df.columns:
 if 'LongTerm' in df.columns:
     df['LongTerm_Increment'] = df.groupby('Program')['LongTerm'].diff()
 
-print("\n📊 Sample of prepared data:")
+print("\n Sample of prepared data:")
 print(df[['Date', 'Program', 'Baselines', 'Baseline_Increment']].head(10).to_string())
 
 # -------------------------------
 # 3) Visualize Baselines
 # -------------------------------
 print("\n" + "=" * 80)
-print("📊 CREATING BASELINE VISUALIZATIONS")
+print("CREATING BASELINE VISUALIZATIONS")
 print("=" * 80)
 
 colors = {'PORT': '#10AC84', 'PJ2H': '#2E86DE', 'PS2H': '#2E86DE', 'BHOP': '#EE5A6F'}
@@ -269,7 +269,7 @@ plt.close()
 # 4) Project Baselines to November
 # -------------------------------
 print("\n" + "=" * 80)
-print("📈 PROJECTING BASELINES TO NOVEMBER 30")
+print(" PROJECTING BASELINES TO NOVEMBER 30")
 print("=" * 80)
 
 fig, ax = plt.subplots(figsize=(16, 9))
@@ -285,7 +285,7 @@ for prog in programs:
     data = df[df['Program'] == prog].copy()
 
     if len(data) < 2:
-        print(f"⚠️  {prog}: Not enough data for projection")
+        print(f"⚠  {prog}: Not enough data for projection")
         continue
 
     data = data.reset_index(drop=True)
@@ -362,7 +362,7 @@ plt.close()
 # -------------------------------
 if 'ShortTerm' in df.columns:
     print("\n" + "=" * 80)
-    print("📊 SHORT-TERM OUTCOMES ANALYSIS")
+    print(" SHORT-TERM OUTCOMES ANALYSIS")
     print("=" * 80)
 
     df_short = df[df['ShortTerm'].notna()].copy()
