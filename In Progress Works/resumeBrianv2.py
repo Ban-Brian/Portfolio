@@ -144,6 +144,10 @@ def create_resume_pdf(output_filename):
         {
             "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
             "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (<b>RMSE ~0.056</b>). Demonstrated advanced <b>feature engineering</b>, <b>ensemble learning</b>, and <b>predictive modeling</b> skills along with using <b>Claude Opus4.1</b> to help optimize model."
+        },
+        {
+            "title": "Crypto Market Microstructure Analysis | 2025",
+            "desc": "Designed Python-based analysis of Coinbase, Binance, and Kraken order books. Measured <b>bid-ask spreads, order book depth, price impact</b>, and <b>volatility metrics</b>. Built regression models predicting short-term returns from order flow imbalance and visualized market liquidity patterns. Demonstrated <b>quantitative modeling</b>, <b>statistical analysis</b>, and <b>algorithmic trading insights</b>."
         }
     ]
 
