@@ -3,6 +3,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Table, TableStyle
 from reportlab.lib.units import inch
+from reportlab.platypus.flowables import HRFlowable
 
 
 def create_resume_pdf(output_filename):
@@ -25,7 +26,7 @@ def create_resume_pdf(output_filename):
         'Name',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=17,
+        fontSize=14,
         alignment=1,
         spaceAfter=6
     )
@@ -33,7 +34,7 @@ def create_resume_pdf(output_filename):
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
-        fontSize=9.5,
+        fontSize=9,
         alignment=1,
         spaceAfter=8
     )
@@ -42,7 +43,7 @@ def create_resume_pdf(output_filename):
         'SectionHeader',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=11,
+        fontSize=10,
         textColor=colors.black,
         spaceBefore=10,
         spaceAfter=4
@@ -52,7 +53,7 @@ def create_resume_pdf(output_filename):
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9.5,
+        fontSize=9,
         leading=11.5,
         spaceAfter=2
     )
@@ -61,7 +62,7 @@ def create_resume_pdf(output_filename):
         'Link',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9.5,
+        fontSize=9,
         textColor=colors.blue,
         alignment=1,
         leading=11,
@@ -83,17 +84,19 @@ def create_resume_pdf(output_filename):
 
     # --- EDUCATION ---
     story.append(Paragraph("EDUCATION", section_header))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
     story.append(Paragraph(
         "Bachelor's Degree in Mathematical Statistics | George Mason University | Expected Graduation: May 2027",
         body_style))
     story.append(Paragraph(
-        "Relevant Coursework: Statistics, Discrete Mathematics, Business Analytics, Computer Science for Data (CDS 130)",
+        "Relevant Coursework: Statistics, Discrete Mathematics, Higher Maths, Computer Science for Data (CDS 130)",
         body_style
     ))
     story.append(Spacer(1, 8))
 
     # --- WORK EXPERIENCE ---
     story.append(Paragraph("WORK EXPERIENCE", section_header))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
     work_experiences = [
     {
         "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
@@ -130,6 +133,7 @@ def create_resume_pdf(output_filename):
 
     # --- PROJECTS ---
     story.append(Paragraph("PROJECTS", section_header))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
     projects = [
     {
         "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
@@ -152,11 +156,12 @@ def create_resume_pdf(output_filename):
         story.append(Spacer(1, 5))
 
     # --- TECHNICAL SKILLS & MEMBERSHIPS SIDE BY SIDE ---
-    story.append(Spacer(1, 16))  # increased spacing before table
+    story.append(Spacer(1, 16))
 
     # TECHNICAL SKILLS
-    tech_skills = [
+    tech_skills_content = [
         Paragraph("TECHNICAL SKILLS", section_header),
+        HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6),
         Paragraph(
             "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
             "Python: NumPy, Pandas, Matplotlib, Seaborn<br/>"
@@ -169,8 +174,9 @@ def create_resume_pdf(output_filename):
     ]
 
     # MEMBERSHIPS & ACHIEVEMENTS
-    memberships = [
+    memberships_content = [
         Paragraph("MEMBERSHIPS & ACHIEVEMENTS", section_header),
+        HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6),
         Paragraph("Member, American Statistical Association ", body_style),
         Paragraph("Achieved rank #210/5,000 in Kaggle Playground Competition", body_style),
         Paragraph("Active Chess Club Member, Elo 1700+", body_style),
@@ -180,11 +186,11 @@ def create_resume_pdf(output_filename):
 
     # Create a cleaner two-column layout with more separation
     two_col_table = Table(
-        [[tech_skills, memberships]],
+        [[tech_skills_content, memberships_content]],
         colWidths=[3.8 * inch, 2.8 * inch],
         hAlign='LEFT',
-        spaceBefore=12,  # space above table
-        spaceAfter=12  # space below table
+        spaceBefore=12,
+        spaceAfter=12
     )
     two_col_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
