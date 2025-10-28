@@ -1,9 +1,8 @@
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, HRFlowable
 from reportlab.lib.units import inch
-from reportlab.platypus.flowables import HRFlowable
 
 
 def create_resume_pdf(output_filename):
@@ -98,32 +97,31 @@ def create_resume_pdf(output_filename):
     story.append(Paragraph("WORK EXPERIENCE", section_header))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
     work_experiences = [
-    {
-        "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
-        "bullets": [
-            "Boosted experiment throughput <b>20%</b> by automating data workflows in Python and Excel.",
-            "Improved result reliability <b>15%</b> through A/B testing, hypothesis evaluation, and reproducible analysis in R and Python.",
-            "Automated weekly reporting pipelines and interactive dashboards, reducing manual work <b>80%</b> and enabling real-time metric tracking."
-        ]
-    },
-    {
-        "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
-        "bullets": [
-            "Analyzed economic and business data from <b>1,000+</b> local enterprises, identifying <b>3</b> key growth sectors through trend and regression analysis.",
-            "Supported a tourism development initiative projected to increase international visitors <b>15%</b> using community survey insights.",
-            "Built <b>10+</b> dashboards and visual reports in Excel and Power BI, improving accessibility of economic data for senior officials."
-        ]
-    },
-    {
-        "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
-        "bullets": [
-            "Processed and analyzed <b>150+</b> survey responses with Python, SPSS, and Excel to evaluate intervention effectiveness.",
-            "Quantified <b>25%</b> improvement in program outcomes via statistical modeling and comparative analysis.",
-            "Built predictive models (<b>70%</b> precision) to identify at-risk populations and developed <b>2</b> Tableau dashboards for use in successful grant proposals."
-        ]
-    }
-]
-
+        {
+            "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
+            "bullets": [
+                "Boosted experiment throughput <b>20%</b> by automating data workflows in Python and Excel.",
+                "Improved result reliability <b>15%</b> through A/B testing, hypothesis evaluation, and reproducible analysis in R and Python.",
+                "Automated weekly reporting pipelines and interactive dashboards, reducing manual work <b>80%</b> and enabling real-time metric tracking."
+            ]
+        },
+        {
+            "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
+            "bullets": [
+                "Analyzed economic and business data from <b>1,000+</b> local enterprises, identifying <b>3</b> key growth sectors through trend and regression analysis.",
+                "Supported a tourism development initiative projected to increase international visitors <b>15%</b> using community survey insights.",
+                "Built <b>10+</b> dashboards and visual reports in Excel and Power BI, improving accessibility of economic data for senior officials."
+            ]
+        },
+        {
+            "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
+            "bullets": [
+                "Processed and analyzed <b>150+</b> survey responses with Python, SPSS, and Excel to evaluate intervention effectiveness.",
+                "Quantified <b>25%</b> improvement in program outcomes via statistical modeling and comparative analysis.",
+                "Built predictive models (<b>70%</b> precision) to identify at-risk populations and developed <b>2</b> Tableau dashboards for use in successful grant proposals."
+            ]
+        }
+    ]
 
     for job in work_experiences:
         story.append(Paragraph(job["title"], body_style))
@@ -135,72 +133,39 @@ def create_resume_pdf(output_filename):
     story.append(Paragraph("PROJECTS", section_header))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
     projects = [
-    {
-        "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
-        "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
-    },
-    {
-        "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
-        "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25,000</b> funding."
-    },
-    {
-        "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
-        "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (<b>RMSE ~0.056</b>). Demonstrated advanced <b>feature engineering</b>, <b>ensemble learning</b>, and <b>predictive modeling</b> skills."
-    }
-]
-
+        {
+            "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
+            "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
+        },
+        {
+            "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
+            "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25,000</b> funding."
+        },
+        {
+            "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
+            "desc": "Developed a stacked ensemble model combining <b>CatBoost</b> and <b>LightGBM</b> with a <b>Ridge regression</b> meta-model to predict accident risk. Engineered interaction and polynomial features, applied <b>K-Fold cross-validation</b>, and achieved high-accuracy predictions (<b>RMSE ~0.056</b>). Demonstrated advanced <b>feature engineering</b>, <b>ensemble learning</b>, and <b>predictive modeling</b> skills along with using <b>Claude Opus4.1</b> to help optimize model."
+        }
+    ]
 
     for project in projects:
         story.append(Paragraph(project["title"], body_style))
         story.append(Paragraph(project["desc"], body_style))
         story.append(Spacer(1, 5))
 
-    # --- TECHNICAL SKILLS & MEMBERSHIPS SIDE BY SIDE ---
-    story.append(Spacer(1, 16))
-
-    # TECHNICAL SKILLS
-    tech_skills_content = [
-        Paragraph("TECHNICAL SKILLS", section_header),
-        HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6),
-        Paragraph(
-            "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
-            "Python: NumPy, Pandas, Matplotlib, Seaborn<br/>"
-            "SQL: Joins, CTEs, Window Functions<br/>"
-            "Predictive Modeling: Regression, Classification, A/B Testing<br/>"
-            "R: Tidyverse, ggplot2, dplyr<br/>"
-            "Data Visualization: Tableau, Excel, Seaborn",
-            body_style
-        )
-    ]
-
-    # MEMBERSHIPS & ACHIEVEMENTS
-    memberships_content = [
-        Paragraph("MEMBERSHIPS & ACHIEVEMENTS", section_header),
-        HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6),
-        Paragraph("Member, American Statistical Association ", body_style),
-        Paragraph("Achieved rank #210/5,000 in Kaggle Playground Competition", body_style),
-        Paragraph("Active Chess Club Member, Elo 1700+", body_style),
-        Paragraph("Billiards Club Member", body_style),
-        Paragraph("George Mason Sports Analytics Club Vice-President", body_style)
-    ]
-
-    # Create a cleaner two-column layout with more separation
-    two_col_table = Table(
-        [[tech_skills_content, memberships_content]],
-        colWidths=[3.8 * inch, 2.8 * inch],
-        hAlign='LEFT',
-        spaceBefore=12,
-        spaceAfter=12
-    )
-    two_col_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4)
-    ]))
-
-    story.append(two_col_table)
+    # --- TECHNICAL SKILLS ---
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("TECHNICAL SKILLS", section_header))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
+    story.append(Paragraph(
+        "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
+        "Python: NumPy, Pandas, Matplotlib, Seaborn<br/>"
+        "SQL: Joins, CTEs, Window Functions<br/>"
+        "Databases: PostgreSQL, MySQL, SQLite, MongoDB<br/>"
+        "Predictive Modeling: Regression, Classification, A/B Testing<br/>"
+        "R: Tidyverse, ggplot2, dplyr<br/>"
+        "Data Visualization: Tableau, Excel, Seaborn",
+        body_style
+    ))
 
     # --- BUILD ---
     doc.build(story)
