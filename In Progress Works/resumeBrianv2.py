@@ -6,16 +6,13 @@ from reportlab.lib.units import inch
 
 
 def create_resume_pdf(output_filename):
-    """
-    Generates a visually full, one-page resume for Brian Butler that fills the page and includes clickable blue links.
-    """
     doc = SimpleDocTemplate(
         output_filename,
         pagesize=letter,
-        leftMargin=0.6 * inch,
-        rightMargin=0.6 * inch,
-        topMargin=0.5 * inch,
-        bottomMargin=0.5 * inch
+        leftMargin=0.45 * inch,
+        rightMargin=0.45 * inch,
+        topMargin=0.3 * inch,
+        bottomMargin=0.3 * inch
     )
 
     styles = getSampleStyleSheet()
@@ -25,34 +22,34 @@ def create_resume_pdf(output_filename):
         'Name',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=14,
+        fontSize=16,
         alignment=1,
-        spaceAfter=6
+        spaceAfter=5.5
     )
 
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
-        fontSize=9,
+        fontSize=9.5,
         alignment=1,
-        spaceAfter=8
+        spaceAfter=4.5
     )
 
     section_header = ParagraphStyle(
         'SectionHeader',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=10,
+        fontSize=12,
         textColor=colors.black,
-        spaceBefore=10,
-        spaceAfter=4
+        spaceBefore=7.5,
+        spaceAfter=3
     )
 
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9,
+        fontSize=9.5,
         leading=11.5,
         spaceAfter=2
     )
@@ -61,11 +58,11 @@ def create_resume_pdf(output_filename):
         'Link',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9,
+        fontSize=9.5,
         textColor=colors.blue,
         alignment=1,
         leading=11,
-        spaceBefore=6
+        spaceBefore=4.5
     )
 
     story = []
@@ -79,11 +76,11 @@ def create_resume_pdf(output_filename):
         '<a href="https://github.com/Ban-Brian" color="blue"><u>GitHub</u></a>'
     )
     story.append(Paragraph(links_html, link_style))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 7))
 
     # --- EDUCATION ---
     story.append(Paragraph("EDUCATION", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     story.append(Paragraph(
         "Bachelor's Degree in Mathematical Statistics | George Mason University | Expected Graduation: May 2027",
         body_style))
@@ -91,11 +88,11 @@ def create_resume_pdf(output_filename):
         "Relevant Coursework: Statistics, Discrete Mathematics, Higher Maths, Computer Science for Data (CDS 130)",
         body_style
     ))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 9))
 
     # --- WORK EXPERIENCE ---
     story.append(Paragraph("WORK EXPERIENCE", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     work_experiences = [
         {
             "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
@@ -127,11 +124,11 @@ def create_resume_pdf(output_filename):
         story.append(Paragraph(job["title"], body_style))
         bullets = [ListItem(Paragraph(b, body_style), leftIndent=12, bulletIndent=6) for b in job["bullets"]]
         story.append(ListFlowable(bullets, bulletType='bullet'))
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 6))
 
     # --- PROJECTS ---
     story.append(Paragraph("PROJECTS", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     projects = [
         {
             "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
@@ -154,20 +151,19 @@ def create_resume_pdf(output_filename):
     for project in projects:
         story.append(Paragraph(project["title"], body_style))
         story.append(Paragraph(project["desc"], body_style))
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 6))
 
     # --- TECHNICAL SKILLS ---
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 3))
     story.append(Paragraph("TECHNICAL SKILLS", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     story.append(Paragraph(
         "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
-        "Python: NumPy, Pandas, Matplotlib, Seaborn<br/>"
+        "Python: NumPy, Pandas, Matplotlib, Seaborn, Plotly, Scikit-learn<br/>"
         "SQL: Joins, CTEs, Window Functions<br/>"
         "Databases: PostgreSQL, MySQL, SQLite, MongoDB<br/>"
-        "Predictive Modeling: Regression, Classification, A/B Testing<br/>"
-        "R: Tidyverse, ggplot2, dplyr<br/>"
-        "Data Visualization: Tableau, Excel, Seaborn",
+        "Predictive Modeling: Regression, Classification, A/B Testing, Time Series<br/>"
+        "R: Tidyverse, ggplot2, dplyr, data.table, forecast, shiny<br/>",
         body_style
     ))
 
@@ -177,4 +173,4 @@ def create_resume_pdf(output_filename):
 
 
 if __name__ == "__main__":
-    create_resume_pdf("Brian_Butler_Resume_Full_Page_Links.pdf")
+    create_resume_pdf("Brian_Butler_Resume.pdf")
