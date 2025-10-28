@@ -15,7 +15,7 @@ sns.set_style("whitegrid")
 # -------------------------------
 FILEPATH = '/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft Pers.xlsx'
 OUTPUT_DIR = '/Users/brianbutler/Desktop/EJSL/'
-SHEET_NAME = 'Dashboard Progress'  # Updated sheet name
+SHEET_NAME = 'Dashboard Progress'
 
 print("=" * 80)
 print("EJSL DASHBOARD ANALYSIS")
@@ -27,11 +27,9 @@ print("=" * 80)
 print("\n Loading data from Dashboard Progress sheet...")
 
 try:
-    # First, let's see what sheets are available
     xls = pd.ExcelFile(FILEPATH)
     print(f"Available sheets: {xls.sheet_names}")
 
-    # Try to find the right sheet
     if SHEET_NAME not in xls.sheet_names:
         print(f"\n⚠  '{SHEET_NAME}' not found!")
         print("Looking for similar sheet names...")
@@ -41,19 +39,15 @@ try:
                 print(f"✓ Using sheet: '{SHEET_NAME}'")
                 break
 
-    # Read the sheet to see structure
     df_raw = pd.read_excel(FILEPATH, sheet_name=SHEET_NAME, header=None)
     print(f"\n✓ Raw data loaded from '{SHEET_NAME}': {df_raw.shape}")
     print("\nFirst 15 rows:")
     print(df_raw.head(15).to_string())
 
-    # Find the header row that contains "Date", "Program", etc.
     header_row = None
     for i in range(min(20, len(df_raw))):
         row_values = [str(v).lower().strip() for v in df_raw.iloc[i].values if pd.notna(v)]
-        # Look for key column indicators
         if any(keyword in ' '.join(row_values) for keyword in ['date', 'program', 'port', 'pj2h', 'baseline']):
-            # Check if this row has multiple non-null values (likely a header)
             non_null = df_raw.iloc[i].notna().sum()
             if non_null >= 3:
                 header_row = i
@@ -67,16 +61,13 @@ try:
         for i in range(min(20, len(df_raw))):
             print(f"  Row {i}: {df_raw.iloc[i].tolist()}")
 
-        # Ask user or make best guess
         header_row = 0
         print(f"\nUsing row {header_row} as header")
 
-    # Re-read with correct header
     df = pd.read_excel(FILEPATH, sheet_name=SHEET_NAME, header=header_row)
     print(f"\n✓ Data loaded with headers: {df.shape}")
     print(f"Columns: {list(df.columns)}")
 
-    # Remove completely empty rows
     df = df.dropna(how='all')
     print(f"After removing empty rows: {df.shape}")
 
@@ -111,7 +102,7 @@ print("\nFirst 5 data rows:")
 print(df.head().to_string())
 
 # Find the actual column names
-print("\n🔍 Identifying columns...")
+print("\n Identifying columns...")
 date_col = None
 program_col = None
 baselines_col = None
