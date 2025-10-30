@@ -1,9 +1,17 @@
 """
-Crypto Market Microstructure Analysis
+Crypto Market Microstructure Analysis - IMPROVED MODEL
 ==============================================================
 
 Analyzes order book depth, volatility, volume, price impact, bid-ask spreads,
-and creates regression models for short-term returns prediction.
+and creates enhanced regression models for short-term returns prediction.
+
+IMPROVEMENTS:
+- Added lagged returns for momentum effects
+- Included volatility as a predictor
+- Added interaction terms (flow x book imbalance, flow x spread)
+- Log-transformed volume to handle skewness
+- Better feature engineering with momentum indicators
+- Robust standard errors option
 
 """
 
@@ -73,14 +81,12 @@ class MarketDataGenerator:
         base_price = self.config.base_prices.get(symbol, 100)
         profile = self.config.exchange_profiles[exchange]
 
-        # Calculate spread
         spread_bps = profile.spread_factor
         spread = base_price * spread_bps / 100
         mid_price = base_price + np.random.normal(0, base_price * 0.001)
         best_bid = mid_price - spread / 2
         best_ask = mid_price + spread / 2
 
-        # Generate order book levels
         bids = self._generate_order_levels(
             best_bid, profile.depth_factor, direction='bid'
         )
@@ -184,7 +190,6 @@ class OrderBookMetrics:
         total_volume = bid_volume + ask_volume
         imbalance = (bid_volume - ask_volume) / total_volume if total_volume > 0 else 0
 
-        # Calculate depth at different levels
         depth_metrics = OrderBookMetrics._calculate_depth_levels(
             bids, asks, mid_price, [0.1, 0.25, 0.5, 1.0]
         )
@@ -264,7 +269,7 @@ class OrderBookMetrics:
             remaining -= executed
 
         if remaining > 0:
-            return None  # Insufficient liquidity
+            return None
 
         avg_price = total_value / size
         if direction == 'buy':
@@ -285,7 +290,6 @@ class VolatilityMetrics:
         historical_vol = returns.std() * np.sqrt(periods_per_year) * 100
         realized_vol = returns.std() * 100
 
-        # Parkinson volatility
         hl_ratio = np.log(ohlcv_df['high'] / ohlcv_df['low'])
         parkinson_vol = np.sqrt(
             hl_ratio.pow(2).sum() / (4 * len(ohlcv_df) * np.log(2))
@@ -351,9 +355,9 @@ class CryptoMicrostructureAnalyzer:
 
                 try:
                     self.data[symbol][exchange] = self._collect_exchange_data(symbol, exchange)
-                    print("✓")
+                    print("done")
                 except Exception as e:
-                    print(f"✗ Error: {e}")
+                    print(f"error: {e}")
                     self.data[symbol][exchange] = None
 
     def _collect_exchange_data(self, symbol: str, exchange: str) -> Dict[str, Any]:
@@ -421,9 +425,9 @@ class CryptoMicrostructureAnalyzer:
         return pd.DataFrame(records)
 
     def build_return_prediction_model(self) -> Dict[str, Dict[str, Any]]:
-        """Build OLS regression model predicting returns from order flow."""
+        """Build IMPROVED OLS regression model predicting returns from order flow."""
         print("\n" + "=" * 70)
-        print("BUILDING RETURN PREDICTION MODELS")
+        print("BUILDING ENHANCED RETURN PREDICTION MODELS")
         print("=" * 70)
 
         model_results = {}
@@ -433,27 +437,35 @@ class CryptoMicrostructureAnalyzer:
 
             regression_data = self._prepare_regression_data(symbol)
             if not regression_data:
-                print("  ✗ No data available")
+                print("  No data available")
                 continue
 
             df = pd.concat(regression_data, ignore_index=True)
-            df = df.dropna(subset=['returns_next', 'flow_imbalance', 'book_imbalance'])
 
-            if len(df) < 10:
-                print("  ✗ Insufficient observations")
+            # Define features for the model
+            feature_cols = [
+                'flow_imbalance', 'book_imbalance', 'spread_bps',
+                'log_volume', 'volatility', 'returns_lag1', 'returns_lag2',
+                'flow_x_book', 'flow_x_spread', 'price_momentum'
+            ]
+
+            df = df.dropna(subset=['returns_next'] + feature_cols)
+
+            if len(df) < 15:
+                print("  Insufficient observations")
                 continue
 
             try:
-                model = self._fit_ols_model(df)
+                model = self._fit_ols_model(df, feature_cols)
                 model_results[symbol] = self._extract_model_results(model, len(df))
                 self._print_model_summary(model, len(df))
             except Exception as e:
-                print(f"  ✗ Error: {e}")
+                print(f"  Error: {e}")
 
         return model_results
 
     def _prepare_regression_data(self, symbol: str) -> List[pd.DataFrame]:
-        """Prepare data for regression analysis."""
+        """Prepare data for regression analysis with enhanced features."""
         regression_data = []
 
         for exchange in self.config.exchanges:
@@ -462,23 +474,46 @@ class CryptoMicrostructureAnalyzer:
                 continue
 
             ohlcv = data['ohlcv'].copy()
+
+            # Core features
             ohlcv['returns'] = ohlcv['close'].pct_change()
             ohlcv['returns_next'] = ohlcv['returns'].shift(-1)
             ohlcv['flow_imbalance'] = data['flow_metrics']['flow_imbalance']
             ohlcv['book_imbalance'] = data['depth_metrics']['imbalance']
             ohlcv['spread_bps'] = data['depth_metrics']['relative_spread_bps']
-            ohlcv['exchange'] = exchange
 
+            # Enhanced features
+            ohlcv['log_volume'] = np.log1p(ohlcv['volume'])
+            ohlcv['volatility'] = ohlcv['returns'].rolling(window=10, min_periods=5).std()
+            ohlcv['returns_lag1'] = ohlcv['returns'].shift(1)
+            ohlcv['returns_lag2'] = ohlcv['returns'].shift(2)
+
+            # Interaction terms
+            ohlcv['flow_x_book'] = ohlcv['flow_imbalance'] * ohlcv['book_imbalance']
+            ohlcv['flow_x_spread'] = ohlcv['flow_imbalance'] * ohlcv['spread_bps']
+
+            # Momentum features
+            ohlcv['price_momentum'] = ohlcv['close'].pct_change(5)
+            ohlcv['volume_momentum'] = ohlcv['volume'].pct_change(5)
+
+            ohlcv['exchange'] = exchange
             regression_data.append(ohlcv)
 
         return regression_data
 
-    def _fit_ols_model(self, df: pd.DataFrame) -> sm.regression.linear_model.RegressionResultsWrapper:
-        """Fit OLS regression model."""
+    def _fit_ols_model(
+        self,
+        df: pd.DataFrame,
+        feature_cols: List[str]
+    ) -> sm.regression.linear_model.RegressionResultsWrapper:
+        """Fit OLS regression model with robust standard errors."""
         y = df['returns_next'] * 100
-        X = df[['flow_imbalance', 'book_imbalance', 'spread_bps', 'volume']]
+        X = df[feature_cols]
         X = sm.add_constant(X)
-        return OLS(y, X).fit()
+
+        # Fit with HAC standard errors for robustness
+        model = OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 5})
+        return model
 
     def _extract_model_results(
         self,
@@ -491,6 +526,8 @@ class CryptoMicrostructureAnalyzer:
             'n_obs': n_obs,
             'r_squared': model.rsquared,
             'adj_r_squared': model.rsquared_adj,
+            'aic': model.aic,
+            'bic': model.bic,
             'summary': model.summary()
         }
 
@@ -500,8 +537,9 @@ class CryptoMicrostructureAnalyzer:
         n_obs: int
     ) -> None:
         """Print model summary statistics."""
-        print(f"  ✓ Fitted with {n_obs} observations")
-        print(f"    R²: {model.rsquared:.4f} | Adj. R²: {model.rsquared_adj:.4f}")
+        print(f"  Fitted with {n_obs} observations")
+        print(f"    R-squared: {model.rsquared:.4f} | Adj. R-squared: {model.rsquared_adj:.4f}")
+        print(f"    AIC: {model.aic:.2f} | BIC: {model.bic:.2f}")
 
         sig_predictors = [
             f"{name} (coef={coef:.6f}, p={pval:.4f})"
@@ -510,7 +548,9 @@ class CryptoMicrostructureAnalyzer:
         ]
 
         if sig_predictors:
-            print(f"    Significant: {', '.join(sig_predictors)}")
+            print(f"    Significant predictors: {', '.join(sig_predictors[:3])}")
+            if len(sig_predictors) > 3:
+                print(f"                           + {len(sig_predictors) - 3} more")
 
     def run_full_analysis(self) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
         """Execute complete analysis pipeline."""
@@ -530,7 +570,7 @@ class CryptoMicrostructureAnalyzer:
         files = reporter.save_all(comparison_df, price_impact_df, model_results, figures)
 
         print("\n" + "=" * 80)
-        print(" " * 30 + "✓ ANALYSIS COMPLETE")
+        print(" " * 30 + "ANALYSIS COMPLETE")
         print("=" * 80)
         print("\nGenerated Files:")
         for filename in files.values():
@@ -589,7 +629,7 @@ class Visualizer:
         plt.xticks(rotation=0)
         plt.tight_layout()
 
-        print("  ✓ Spread comparison")
+        print("  Spread comparison")
         return [('spread_comparison', fig)]
 
     def _create_imbalance_plots(self, df: pd.DataFrame) -> List[Tuple[str, plt.Figure]]:
@@ -610,7 +650,7 @@ class Visualizer:
         plt.xticks(rotation=0)
         plt.tight_layout()
 
-        print("  ✓ Order book imbalance")
+        print("  Order book imbalance")
         return [('order_book_imbalance', fig)]
 
     def _create_price_impact_plots(self, df: pd.DataFrame) -> List[Tuple[str, plt.Figure]]:
@@ -651,7 +691,7 @@ class Visualizer:
 
             plt.tight_layout()
             figures.append((f'price_impact_{symbol.replace("/", "_")}', fig))
-            print(f"  ✓ Price impact: {symbol}")
+            print(f"  Price impact: {symbol}")
 
         return figures
 
@@ -690,7 +730,7 @@ class Visualizer:
 
             plt.tight_layout()
             figures.append((f'depth_{symbol.replace("/", "_")}', fig))
-            print(f"  ✓ Depth: {symbol}")
+            print(f"  Depth: {symbol}")
 
         return figures
 
@@ -711,7 +751,7 @@ class Visualizer:
         plt.xticks(rotation=0)
         plt.tight_layout()
 
-        print("  ✓ Volatility comparison")
+        print("  Volatility comparison")
         return [('volatility_comparison', fig)]
 
     def _create_flow_imbalance(self, df: pd.DataFrame) -> List[Tuple[str, plt.Figure]]:
@@ -732,7 +772,7 @@ class Visualizer:
         plt.xticks(rotation=0)
         plt.tight_layout()
 
-        print("  ✓ Trade flow imbalance")
+        print("  Trade flow imbalance")
         return [('flow_imbalance', fig)]
 
 
@@ -775,7 +815,7 @@ class Reporter:
         """Save comparison dataframe."""
         filename = f'market_comparison_{timestamp}.csv'
         df.to_csv(filename, index=False)
-        print(f"  ✓ {filename}")
+        print(f"  {filename}")
         return filename
 
     def _save_price_impact_data(self, df: pd.DataFrame, timestamp: str) -> Optional[str]:
@@ -784,7 +824,7 @@ class Reporter:
             return None
         filename = f'price_impact_{timestamp}.csv'
         df.to_csv(filename, index=False)
-        print(f"  ✓ {filename}")
+        print(f"  {filename}")
         return filename
 
     def _save_model_results(self, results: Dict[str, Any], timestamp: str) -> Optional[str]:
@@ -795,17 +835,24 @@ class Reporter:
         filename = f'model_results_{timestamp}.txt'
         with open(filename, 'w') as f:
             f.write("=" * 80 + "\n")
-            f.write("REGRESSION MODEL RESULTS\n")
+            f.write("ENHANCED REGRESSION MODEL RESULTS\n")
             f.write("=" * 80 + "\n\n")
-            f.write("Model: returns_next ~ flow_imbalance + book_imbalance + spread_bps + volume\n\n")
+            f.write("Model specification:\n")
+            f.write("  returns_next ~ flow_imbalance + book_imbalance + spread_bps +\n")
+            f.write("                 log_volume + volatility + returns_lag1 + returns_lag2 +\n")
+            f.write("                 flow_x_book + flow_x_spread + price_momentum\n\n")
+            f.write("Estimation: OLS with HAC robust standard errors (maxlags=5)\n\n")
 
             for symbol, res in results.items():
                 f.write(f"\nSymbol: {symbol}\n")
                 f.write("-" * 80 + "\n")
+                f.write(f"N = {res['n_obs']}, R² = {res['r_squared']:.4f}, ")
+                f.write(f"Adj. R² = {res['adj_r_squared']:.4f}\n")
+                f.write(f"AIC = {res['aic']:.2f}, BIC = {res['bic']:.2f}\n\n")
                 f.write(str(res['summary']))
                 f.write("\n\n")
 
-        print(f"  ✓ {filename}")
+        print(f"  {filename}")
         return filename
 
     def _save_figures(self, figures: List[Tuple[str, plt.Figure]], timestamp: str) -> str:
@@ -813,7 +860,7 @@ class Reporter:
         for name, fig in figures:
             filename = f'{name}_{timestamp}.png'
             fig.savefig(filename, dpi=300, bbox_inches='tight')
-            print(f"  ✓ {filename}")
+            print(f"  {filename}")
             plt.close(fig)
         return "figures_saved"
 
@@ -830,18 +877,18 @@ class Reporter:
         with open(filename, 'w') as f:
             self._write_report_header(f)
             self._write_executive_summary(f, comparison_df)
+            self._write_model_summary(f, model_results)
             self._write_detailed_metrics(f, comparison_df)
             self._write_price_impact_summary(f, price_impact_df)
-            self._write_model_summary(f, model_results)
-            self._write_key_insights(f, comparison_df)
+            self._write_key_insights(f, comparison_df, model_results)
 
-        print(f"  ✓ {filename}")
+        print(f"  {filename}")
         return filename
 
     def _write_report_header(self, f) -> None:
         """Write report header."""
         f.write("=" * 80 + "\n")
-        f.write("CRYPTO MARKET MICROSTRUCTURE ANALYSIS\n")
+        f.write("CRYPTO MARKET MICROSTRUCTURE ANALYSIS - ENHANCED MODEL\n")
         f.write("=" * 80 + "\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Symbols: {', '.join(self.config.symbols)}\n")
@@ -864,6 +911,27 @@ class Reporter:
             f.write(f"Highest Liquidity: {best['exchange'].upper()} on {best['symbol']}\n")
             f.write(f"  {best['total_depth']:.2f} units total depth\n\n")
 
+    def _write_model_summary(self, f, results: Dict[str, Any]) -> None:
+        """Write enhanced regression model summary."""
+        if not results:
+            return
+
+        f.write("=" * 80 + "\n")
+        f.write("ENHANCED REGRESSION MODELS SUMMARY\n")
+        f.write("=" * 80 + "\n\n")
+        f.write("Model improvements:\n")
+        f.write("  - Added lagged returns (momentum effects)\n")
+        f.write("  - Included rolling volatility measure\n")
+        f.write("  - Log-transformed volume to handle skewness\n")
+        f.write("  - Interaction terms (flow x book, flow x spread)\n")
+        f.write("  - HAC robust standard errors for heteroskedasticity\n\n")
+
+        for symbol, res in results.items():
+            f.write(f"{symbol}:\n")
+            f.write(f"  R-squared: {res['r_squared']:.4f} | Adj. R-squared: {res['adj_r_squared']:.4f}\n")
+            f.write(f"  AIC: {res['aic']:.2f} | BIC: {res['bic']:.2f}\n")
+            f.write(f"  Observations: {res['n_obs']}\n\n")
+
     def _write_detailed_metrics(self, f, df: pd.DataFrame) -> None:
         """Write detailed metrics section."""
         f.write("\n" + "=" * 80 + "\n")
@@ -884,19 +952,7 @@ class Reporter:
         f.write(avg_impact.to_string())
         f.write("\n\n")
 
-    def _write_model_summary(self, f, results: Dict[str, Any]) -> None:
-        """Write regression model summary."""
-        if not results:
-            return
-
-        f.write("=" * 80 + "\n")
-        f.write("REGRESSION MODELS\n")
-        f.write("=" * 80 + "\n\n")
-        for symbol, res in results.items():
-            f.write(f"{symbol}: R² = {res['r_squared']:.4f}, N = {res['n_obs']}\n")
-        f.write("\n")
-
-    def _write_key_insights(self, f, df: pd.DataFrame) -> None:
+    def _write_key_insights(self, f, df: pd.DataFrame, model_results: Dict[str, Any]) -> None:
         """Write key insights section."""
         f.write("=" * 80 + "\n")
         f.write("KEY INSIGHTS\n")
@@ -908,11 +964,18 @@ class Reporter:
             f.write(f"  {ex.upper()}: {spread:.2f} bps\n")
         f.write("\n")
 
+        if model_results:
+            f.write("Model Performance:\n")
+            for symbol, res in model_results.items():
+                f.write(f"  {symbol}: Explains {res['r_squared']*100:.1f}% of return variation\n")
+            f.write("\n")
+
         f.write("Trading Recommendations:\n")
-        f.write("  Small orders (<1 unit): Minimal slippage on all venues\n")
-        f.write("  Medium orders (1-5 units): Consider venue liquidity\n")
-        f.write("  Large orders (>10 units): Split across multiple venues\n")
-        f.write("  Use order flow signals for short-term predictions\n")
+        f.write("  - Order flow imbalance provides predictive power for short-term returns\n")
+        f.write("  - Consider interaction effects between flow and book imbalance\n")
+        f.write("  - Lagged returns show momentum effects in the market\n")
+        f.write("  - Split large orders across venues to minimize impact\n")
+        f.write("  - Monitor spread-adjusted flow signals for entry/exit timing\n")
 
 
 # ============================================================================
@@ -924,7 +987,7 @@ def main():
     config = AnalysisConfig()
 
     print("\n" + "=" * 80)
-    print("CRYPTO MARKET MICROSTRUCTURE ANALYSIS")
+    print("CRYPTO MARKET MICROSTRUCTURE ANALYSIS - ENHANCED MODEL")
     print("=" * 80)
     print(f"\nAnalyzing: {', '.join(config.symbols)}")
     print(f"Exchanges: {', '.join(config.exchanges)}")

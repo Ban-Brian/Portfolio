@@ -3,6 +3,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, HRFlowable
 from reportlab.lib.units import inch
+from reportlab.platypus import ListFlowable, ListItem
 
 
 def create_resume_pdf(output_filename):
@@ -30,7 +31,7 @@ def create_resume_pdf(output_filename):
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
-        fontSize=9.5,
+        fontSize=9,
         alignment=1,
         spaceAfter=4.5
     )
@@ -39,17 +40,18 @@ def create_resume_pdf(output_filename):
         'SectionHeader',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=12,
+        fontSize=10,
         textColor=colors.black,
-        spaceBefore=7.5,
-        spaceAfter=3
+        spaceBefore=7,
+        spaceAfter=3,
+        leading=13
     )
 
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9.5,
+        fontSize=9,
         leading=11.5,
         spaceAfter=2
     )
@@ -58,7 +60,7 @@ def create_resume_pdf(output_filename):
         'Link',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9.5,
+        fontSize=9,
         textColor=colors.blue,
         alignment=1,
         leading=11,
@@ -97,7 +99,7 @@ def create_resume_pdf(output_filename):
         {
             "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
             "bullets": [
-                "Boosted experiment throughput <b>20%</b> by automating data workflows in Python and Excel.",
+                "Increased data processing efficiency by 20% using Python and Excel automation",
                 "Improved result reliability <b>15%</b> through A/B testing, hypothesis evaluation, and reproducible analysis in R and Python.",
                 "Automated weekly reporting pipelines and interactive dashboards, reducing manual work <b>80%</b> and enabling real-time metric tracking."
             ]
@@ -154,17 +156,39 @@ def create_resume_pdf(output_filename):
         story.append(Spacer(1, 6))
 
     # --- TECHNICAL SKILLS ---
-    story.append(Spacer(1, 3))
-    story.append(Paragraph("TECHNICAL SKILLS", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
+    story.append(Spacer(1, 10))  # extra space for separation from previous section
+
+    # Force the header to render clearly
     story.append(Paragraph(
-        "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras<br/>"
-        "Python: NumPy, Pandas, Matplotlib, Seaborn, Plotly, Scikit-learn<br/>"
-        "SQL: Joins, CTEs, Window Functions<br/>"
-        "Databases: PostgreSQL, MySQL, SQLite, MongoDB<br/>"
-        "Predictive Modeling: Regression, Classification, A/B Testing, Time Series<br/>"
-        "R: Tidyverse, ggplot2, dplyr, data.table, forecast, shiny<br/>",
-        body_style
+        "<b>TECHNICAL SKILLS</b>",
+        ParagraphStyle(
+            'SectionHeader',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=11,
+            textColor=colors.HexColor("#000000"),
+            spaceBefore=6,
+            spaceAfter=4,
+            leading=13
+        )
+    ))
+
+    story.append(HRFlowable(width="100%", thickness=1.2, color=colors.darkgrey, spaceBefore=2, spaceAfter=7))
+
+    # Use bullet formatting for readability
+    tech_skills = [
+        "Machine Learning: XGBoost, LightGBM, CatBoost, TensorFlow, Keras",
+        "Python: NumPy, Pandas, Matplotlib, Seaborn, Plotly, Scikit-learn",
+        "SQL: Joins, CTEs, Window Functions",
+        "Databases: PostgreSQL, MySQL, SQLite, MongoDB",
+        "Predictive Modeling: Regression, Classification, A/B Testing, Time Series",
+        "R: Tidyverse, ggplot2, dplyr, data.table, forecast, shiny",
+    ]
+
+    story.append(ListFlowable(
+        [ListItem(Paragraph(skill, body_style)) for skill in tech_skills],
+        bulletType='bullet',
+        leftIndent=15
     ))
 
     # --- BUILD ---
