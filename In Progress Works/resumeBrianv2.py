@@ -72,6 +72,7 @@ def create_resume_pdf(output_filename):
     # --- HEADER ---
     story.append(Paragraph("Brian Butler", name_style))
     story.append(Paragraph("Fairfax, VA 22030 | butlerbrian67@gmail.com | 619-866-5916", contact_style))
+    story.append(Paragraph( text: "US Citizen", name_style))
     links_html = (
         '<a href="https://leetcode.com/u/Ban_Brian/" color="blue"><u>LeetCode</u></a> | '
         '<a href="https://www.linkedin.com/in/brian-butler-18036b33b/" color="blue"><u>LinkedIn</u></a> | '
@@ -156,9 +157,8 @@ def create_resume_pdf(output_filename):
         story.append(Spacer(1, 6))
 
     # --- TECHNICAL SKILLS ---
-    story.append(Spacer(1, 10))  # extra space for separation from previous section
+    story.append(Spacer(1, 10))
 
-    # Force the header to render clearly
     story.append(Paragraph(
         "<b>TECHNICAL SKILLS</b>",
         ParagraphStyle(
