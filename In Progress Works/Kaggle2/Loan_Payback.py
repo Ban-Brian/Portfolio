@@ -7,13 +7,14 @@ warnings.filterwarnings('ignore')
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score
+from scipy.stats import skew
 
-from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
 
 print("=" * 80)
-print("ULTRA-OPTIMIZED MODEL - LIGHTGBM & XGBOOST ONLY")
-print("Target: 0.925+ CV AUC")
+print("WINNING MODEL - HIGH-SCORING TECHNIQUES")
+print("Target: 0.923-0.925 CV AUC")
 print("=" * 80)
 
 # ============================================================================
@@ -25,14 +26,14 @@ RANDOM_STATE = 42
 # ============================================================================
 # LOAD DATA
 # ============================================================================
-print("\n[1/10] Loading data...")
+print("\n[1/9] Loading data...")
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
 print(f"Train shape: {train.shape}")
 print(f"Test shape: {test.shape}")
 
-# Load original dataset
+# Load original dataset if available
 try:
     original_data = pd.read_csv('loan_dataset_20000.csv')
     print(f"Original dataset found: {original_data.shape}")
@@ -45,7 +46,7 @@ except:
 # CONCATENATE ORIGINAL DATA
 # ============================================================================
 if HAS_ORIGINAL:
-    print("\n[2/10] Concatenating original dataset...")
+    print("\n[2/9] Concatenating original dataset...")
     original_data = original_data[train.columns]
     train = pd.concat([train, original_data], ignore_index=True)
     print(f"New train shape: {train.shape}")
@@ -53,410 +54,247 @@ if HAS_ORIGINAL:
     n_duplicates = train.duplicated().sum()
     if n_duplicates > 0:
         train = train.drop_duplicates()
-        print(f"Removed {n_duplicates} duplicates, shape: {train.shape}")
+        print(f"Removed {n_duplicates} duplicates")
 else:
-    print("\n[2/10] No original data to concatenate")
+    print("\n[2/9] No original data to concatenate")
 
-# ============================================================================
-# INITIAL SETUP
-# ============================================================================
-print("\n[3/10] Initial preprocessing...")
-
+# Save test IDs and drop from both
 test_ids = test['id'].copy()
 train = train.drop('id', axis=1)
 test = test.drop('id', axis=1)
+
+# ============================================================================
+# IDENTIFY COLUMN TYPES
+# ============================================================================
+print("\n[3/9] Identifying column types...")
 
 categorical_cols = train.select_dtypes(include=['object']).columns.tolist()
 numerical_cols = train.select_dtypes(include=['number']).columns.tolist()
 numerical_cols.remove('loan_paid_back')
 
-print(f"Categorical: {categorical_cols}")
-print(f"Numerical: {numerical_cols}")
+print(f"Categorical columns: {categorical_cols}")
+print(f"Numerical columns: {numerical_cols}")
 
 # ============================================================================
-# ULTRA-ADVANCED FEATURE ENGINEERING
+# HANDLE SKEWNESS (LOG TRANSFORMATION)
 # ============================================================================
-print("\n[4/10] Creating ultra-advanced features...")
+print("\n[4/9] Handling skewness with log transformation...")
 
+# Calculate skewness for numerical columns
+skew_values = train[numerical_cols].apply(lambda x: skew(x.dropna()))
+print("\nSkewness values:")
+print(skew_values.sort_values(ascending=False))
 
-def create_ultra_features(df):
-    """Create 150+ ultra-advanced features optimized for boosting models"""
-    df = df.copy()
+# Apply log transformation to highly skewed columns (absolute skew > 1)
+skewed_cols = skew_values[abs(skew_values) > 1].index.tolist()
+print(f"\nApplying log transformation to: {skewed_cols}")
 
-    print("  - Financial ratio features")
-    # Core financial ratios
-    if 'annual_income' in df.columns and 'loan_amount' in df.columns:
-        df['loan_to_income'] = df['loan_amount'] / (df['annual_income'] + 1)
-        df['income_to_loan'] = df['annual_income'] / (df['loan_amount'] + 1)
-        df['log_loan_to_income'] = np.log1p(df['loan_to_income'])
-        df['sqrt_loan_to_income'] = np.sqrt(df['loan_to_income'])
-        df['loan_income_ratio_squared'] = df['loan_to_income'] ** 2
+for col in skewed_cols:
+    train[col] = np.log1p(train[col])
+    test[col] = np.log1p(test[col])
 
-    if 'debt_to_income_ratio' in df.columns and 'annual_income' in df.columns:
-        df['total_debt_amount'] = df['debt_to_income_ratio'] * df['annual_income']
-        df['free_income'] = df['annual_income'] * (1 - df['debt_to_income_ratio'])
-        df['debt_to_free_income'] = df['debt_to_income_ratio'] / (1 - df['debt_to_income_ratio'] + 0.001)
-        df['log_total_debt'] = np.log1p(df['total_debt_amount'])
-
-    print("  - Interest and payment features")
-    if 'loan_amount' in df.columns and 'interest_rate' in df.columns:
-        # Monthly payment calculation (assuming 36-month term)
-        r_monthly = df['interest_rate'] / 1200
-        df['monthly_payment'] = df['loan_amount'] * (r_monthly * (1 + r_monthly) ** 36) / ((1 + r_monthly) ** 36 - 1)
-        df['total_payment'] = df['monthly_payment'] * 36
-        df['total_interest'] = df['total_payment'] - df['loan_amount']
-        df['interest_to_principal'] = df['total_interest'] / (df['loan_amount'] + 1)
-        df['log_total_interest'] = np.log1p(df['total_interest'])
-
-        # Payment burden
-        if 'annual_income' in df.columns:
-            df['monthly_payment_to_income'] = df['monthly_payment'] / (df['annual_income'] / 12 + 1)
-            df['payment_burden'] = df['monthly_payment'] / (df['free_income'] / 12 + 1)
-
-    print("  - Credit score features")
-    if 'credit_score' in df.columns:
-        # Transformations
-        df['credit_squared'] = df['credit_score'] ** 2
-        df['credit_cubed'] = df['credit_score'] ** 3
-        df['credit_log'] = np.log1p(df['credit_score'])
-        df['credit_sqrt'] = np.sqrt(df['credit_score'])
-        df['credit_inverse'] = 1 / (df['credit_score'] + 1)
-
-        # Credit risk indicators
-        df['credit_risk'] = 850 - df['credit_score']
-        df['credit_risk_squared'] = df['credit_risk'] ** 2
-        df['is_excellent_credit'] = (df['credit_score'] >= 750).astype(int)
-        df['is_good_credit'] = ((df['credit_score'] >= 670) & (df['credit_score'] < 750)).astype(int)
-        df['is_fair_credit'] = ((df['credit_score'] >= 580) & (df['credit_score'] < 670)).astype(int)
-        df['is_poor_credit'] = (df['credit_score'] < 580).astype(int)
-
-        # Interactions with income
-        if 'annual_income' in df.columns:
-            df['income_credit_product'] = df['annual_income'] * df['credit_score']
-            df['income_per_credit_point'] = df['annual_income'] / (df['credit_score'] + 1)
-            df['credit_per_1k_income'] = df['credit_score'] / (df['annual_income'] / 1000 + 1)
-            df['log_income_credit'] = np.log1p(df['income_credit_product'])
-
-        # Interactions with loan
-        if 'loan_amount' in df.columns:
-            df['loan_credit_product'] = df['loan_amount'] * df['credit_score']
-            df['loan_per_credit_point'] = df['loan_amount'] / (df['credit_score'] + 1)
-            df['credit_to_loan_ratio'] = df['credit_score'] / (df['loan_amount'] + 1)
-
-        # Interactions with debt ratio
-        if 'debt_to_income_ratio' in df.columns:
-            df['debt_credit_interaction'] = df['debt_to_income_ratio'] * df['credit_score']
-            df['debt_to_credit_ratio'] = df['debt_to_income_ratio'] / (df['credit_score'] + 1)
-            df['creditworthiness'] = df['credit_score'] / (df['debt_to_income_ratio'] + 0.01)
-
-        # Interactions with interest rate
-        if 'interest_rate' in df.columns:
-            df['rate_credit_product'] = df['interest_rate'] * df['credit_score']
-            df['rate_credit_mismatch'] = df['interest_rate'] - (850 - df['credit_score']) / 50
-            df['expected_rate'] = (850 - df['credit_score']) / 50
-            df['rate_surprise'] = df['interest_rate'] - df['expected_rate']
-
-    print("  - Interest rate features")
-    if 'interest_rate' in df.columns:
-        df['interest_squared'] = df['interest_rate'] ** 2
-        df['interest_cubed'] = df['interest_rate'] ** 3
-        df['interest_log'] = np.log1p(df['interest_rate'])
-        df['interest_sqrt'] = np.sqrt(df['interest_rate'])
-        df['is_high_rate'] = (df['interest_rate'] >= 15).astype(int)
-        df['is_medium_rate'] = ((df['interest_rate'] >= 10) & (df['interest_rate'] < 15)).astype(int)
-        df['is_low_rate'] = (df['interest_rate'] < 10).astype(int)
-
-    print("  - Debt features")
-    if 'debt_to_income_ratio' in df.columns:
-        df['debt_ratio_squared'] = df['debt_to_income_ratio'] ** 2
-        df['debt_ratio_cubed'] = df['debt_to_income_ratio'] ** 3
-        df['debt_ratio_log'] = np.log1p(df['debt_to_income_ratio'])
-        df['is_high_debt'] = (df['debt_to_income_ratio'] >= 0.35).astype(int)
-        df['is_moderate_debt'] = ((df['debt_to_income_ratio'] >= 0.2) & (df['debt_to_income_ratio'] < 0.35)).astype(int)
-        df['is_low_debt'] = (df['debt_to_income_ratio'] < 0.2).astype(int)
-
-    print("  - Income features")
-    if 'annual_income' in df.columns:
-        df['income_squared'] = df['annual_income'] ** 2
-        df['income_log'] = np.log1p(df['annual_income'])
-        df['income_sqrt'] = np.sqrt(df['annual_income'])
-        df['income_in_10k'] = df['annual_income'] / 10000
-        df['is_high_income'] = (df['annual_income'] >= 50000).astype(int)
-        df['is_medium_income'] = ((df['annual_income'] >= 25000) & (df['annual_income'] < 50000)).astype(int)
-        df['is_low_income'] = (df['annual_income'] < 25000).astype(int)
-
-    print("  - Loan amount features")
-    if 'loan_amount' in df.columns:
-        df['loan_squared'] = df['loan_amount'] ** 2
-        df['loan_log'] = np.log1p(df['loan_amount'])
-        df['loan_sqrt'] = np.sqrt(df['loan_amount'])
-        df['loan_in_1k'] = df['loan_amount'] / 1000
-        df['is_large_loan'] = (df['loan_amount'] >= 15000).astype(int)
-        df['is_medium_loan'] = ((df['loan_amount'] >= 5000) & (df['loan_amount'] < 15000)).astype(int)
-        df['is_small_loan'] = (df['loan_amount'] < 5000).astype(int)
-
-    print("  - Complex pairwise interactions")
-    # All pairwise interactions of key features
-    key_features = ['annual_income', 'loan_amount', 'credit_score', 'interest_rate', 'debt_to_income_ratio']
-    key_features = [f for f in key_features if f in df.columns]
-
-    for i in range(len(key_features)):
-        for j in range(i + 1, len(key_features)):
-            col1, col2 = key_features[i], key_features[j]
-            df[f'{col1}_{col2}_mul'] = df[col1] * df[col2]
-            df[f'{col1}_{col2}_div'] = df[col1] / (df[col2] + 1)
-            df[f'{col1}_{col2}_add'] = df[col1] + df[col2]
-            df[f'{col1}_{col2}_sub'] = np.abs(df[col1] - df[col2])
-            df[f'{col1}_{col2}_max'] = np.maximum(df[col1], df[col2])
-            df[f'{col1}_{col2}_min'] = np.minimum(df[col1], df[col2])
-
-    print("  - Statistical aggregations")
-    # Statistical features across numerical columns
-    num_cols = [col for col in numerical_cols if col in df.columns]
-    if len(num_cols) > 2:
-        df['num_mean'] = df[num_cols].mean(axis=1)
-        df['num_median'] = df[num_cols].median(axis=1)
-        df['num_std'] = df[num_cols].std(axis=1).fillna(0)
-        df['num_var'] = df[num_cols].var(axis=1).fillna(0)
-        df['num_max'] = df[num_cols].max(axis=1)
-        df['num_min'] = df[num_cols].min(axis=1)
-        df['num_range'] = df['num_max'] - df['num_min']
-        df['num_sum'] = df[num_cols].sum(axis=1)
-        df['num_skew'] = df[num_cols].skew(axis=1).fillna(0)
-        df['num_kurt'] = df[num_cols].kurtosis(axis=1).fillna(0)
-        df['num_q25'] = df[num_cols].quantile(0.25, axis=1)
-        df['num_q75'] = df[num_cols].quantile(0.75, axis=1)
-        df['num_iqr'] = df['num_q75'] - df['num_q25']
-        df['num_cv'] = df['num_std'] / (df['num_mean'] + 1)
-
-    print("  - Risk scoring features")
-    # Composite risk scores
-    if all(col in df.columns for col in ['credit_score', 'debt_to_income_ratio', 'interest_rate']):
-        df['risk_score_1'] = (850 - df['credit_score']) * df['debt_to_income_ratio'] * df['interest_rate']
-        df['risk_score_2'] = df['debt_to_income_ratio'] / (df['credit_score'] + 1) * df['interest_rate']
-        df['risk_score_3'] = (df['interest_rate'] / 10) * (df['debt_to_income_ratio'] * 100) / (df['credit_score'] + 1)
-
-    if all(col in df.columns for col in ['loan_amount', 'annual_income', 'interest_rate', 'credit_score']):
-        df['affordability_score'] = (df['annual_income'] / 12) / (df['loan_amount'] * df['interest_rate'] / 1200 + 1)
-        df['repayment_capacity'] = df['annual_income'] / (df['loan_amount'] + 1) * (df['credit_score'] / 850)
-
-    return df
-
-
-# Apply ultra-advanced feature engineering
-print("\nApplying to train...")
-train = create_ultra_features(train)
-print("Applying to test...")
-test = create_ultra_features(test)
-
-print(f"\nFeature engineering complete!")
-print(f"Train shape: {train.shape}")
-print(f"Test shape: {test.shape}")
-print(f"Total features: {train.shape[1] - 1}")
+print("Log transformation complete!")
 
 # ============================================================================
-# ADVANCED ENCODING
+# OUTLIER CLIPPING (WINSORIZATION)
 # ============================================================================
-print("\n[5/10] Advanced encoding...")
+print("\n[5/9] Clipping outliers (Winsorization at 1st and 99th percentiles)...")
 
-y_full = train['loan_paid_back'].copy()
+for col in numerical_cols:
+    lower = train[col].quantile(0.01)
+    upper = train[col].quantile(0.99)
 
-# Frequency encoding for grade_subgrade
-grade_freq_map = train['grade_subgrade'].value_counts().to_dict()
-grade_freq_map_normalized = {k: v / len(train) for k, v in grade_freq_map.items()}
+    # Clip values
+    train[col] = train[col].clip(lower, upper)
+    test[col] = test[col].clip(lower, upper)
 
-print(f"Grade subgrade unique values: {len(grade_freq_map)}")
+    print(f"  {col}: clipped to [{lower:.4f}, {upper:.4f}]")
 
-# Target encoding with smoothing
-target_encoding_maps = {}
-global_mean = train['loan_paid_back'].mean()
+print("Outlier clipping complete!")
 
-for col in categorical_cols:
-    if col != 'grade_subgrade':
-        agg = train.groupby(col)['loan_paid_back'].agg(['mean', 'count'])
-        # Smoothing with global mean (min 10 samples for reliability)
-        smoothing = 10
-        agg['smoothed_mean'] = (agg['mean'] * agg['count'] + global_mean * smoothing) / (agg['count'] + smoothing)
-        target_encoding_maps[col] = agg['smoothed_mean'].to_dict()
+# ============================================================================
+# GRADE SUBGRADE FEATURE ENGINEERING
+# ============================================================================
+print("\n[6/9] Engineering grade_subgrade features...")
 
-# Label encoders
+# Split grade_subgrade into grade (letter) and subgrade (number)
+train['grade'] = train['grade_subgrade'].str[0]
+train['subgrade'] = train['grade_subgrade'].str[1:].astype(int)
+
+test['grade'] = test['grade_subgrade'].str[0]
+test['subgrade'] = test['grade_subgrade'].str[1:].astype(int)
+
+# Create ordered numerical encoding for grade
+grade_order = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5}
+train['grade_num'] = train['grade'].map(grade_order)
+test['grade_num'] = test['grade'].map(grade_order)
+
+print(f"Created 3 new features: grade, subgrade, grade_num")
+print(f"Grade distribution: {train['grade'].value_counts().sort_index().to_dict()}")
+
+# Update categorical columns list
+categorical_cols.append('grade')
+
+# ============================================================================
+# QUANTILE BINNING FOR NUMERICAL FEATURES
+# ============================================================================
+print("\n[7/9] Creating quantile bins for numerical features...")
+
+
+def add_quantile_bins(train_df, test_df, num_cols, q_list=[5, 10, 15]):
+    """
+    Create binned versions of numerical columns at multiple quantiles.
+    This captures non-linear patterns at different granularities.
+    """
+    train_df = train_df.copy()
+    test_df = test_df.copy()
+
+    bins_created = 0
+
+    for col in num_cols:
+        for q in q_list:
+            try:
+                # Create bins using quantiles on training data
+                train_bins, bins = pd.qcut(
+                    train_df[col],
+                    q=q,
+                    labels=False,
+                    retbins=True,
+                    duplicates='drop'
+                )
+                train_df[f'{col}_bin{q}'] = train_bins
+
+                # Apply same bins to test data
+                test_df[f'{col}_bin{q}'] = pd.cut(
+                    test_df[col],
+                    bins=bins,
+                    labels=False,
+                    include_lowest=True
+                )
+                bins_created += 1
+
+            except Exception as e:
+                # If binning fails (e.g., too few unique values), create zero column
+                train_df[f'{col}_bin{q}'] = 0
+                test_df[f'{col}_bin{q}'] = 0
+
+    print(f"  Created {bins_created} binned features")
+    return train_df, test_df
+
+
+# Add binned features - including the new numerical features
+all_num_cols = numerical_cols + ['subgrade', 'grade_num']
+train, test = add_quantile_bins(train, test, all_num_cols, q_list=[5, 10, 15])
+
+print(f"Train shape after binning: {train.shape}")
+print(f"Test shape after binning: {test.shape}")
+
+# ============================================================================
+# FREQUENCY ENCODING FOR CATEGORICAL FEATURES
+# ============================================================================
+print("\n[8/9] Creating frequency encoding for categorical features...")
+
+
+def add_frequency_encoding(train_df, test_df, cat_cols):
+    """
+    Add frequency encoding for categorical columns.
+    This is often better than simple label encoding.
+    """
+    train_df = train_df.copy()
+    test_df = test_df.copy()
+
+    for col in cat_cols:
+        # Calculate frequency on training data
+        freq = train_df[col].value_counts(dropna=False)
+
+        # Map to both train and test
+        train_df[f'{col}_freq'] = train_df[col].map(freq)
+        test_df[f'{col}_freq'] = test_df[col].map(freq).fillna(freq.mean())
+
+        print(f"  {col}: {len(freq)} unique values")
+
+    print(f"  Created {len(cat_cols)} frequency features")
+    return train_df, test_df
+
+
+train, test = add_frequency_encoding(train, test, categorical_cols)
+
+# ============================================================================
+# LABEL ENCODING FOR CATEGORICAL FEATURES
+# ============================================================================
+print("\nApplying label encoding to categorical features...")
+
 label_encoders = {}
 for col in categorical_cols:
-    if col != 'grade_subgrade':
-        label_encoders[col] = LabelEncoder()
+    le = LabelEncoder()
+    train[col] = le.fit_transform(train[col].astype(str))
+    test[col] = le.transform(test[col].astype(str))
+    label_encoders[col] = le
 
-
-def encode_features(df, is_train=True):
-    """Apply advanced encoding"""
-    df = df.copy()
-
-    # Frequency encoding for grade_subgrade (both raw and normalized)
-    df['grade_freq'] = df['grade_subgrade'].map(grade_freq_map)
-    df['grade_freq_norm'] = df['grade_subgrade'].map(grade_freq_map_normalized)
-    df['grade_log_freq'] = np.log1p(df['grade_freq'])
-
-    # Target encoding and label encoding for other categoricals
-    for col in categorical_cols:
-        if col != 'grade_subgrade':
-            if is_train:
-                df[f'{col}_target'] = df[col].map(target_encoding_maps[col])
-                df[f'{col}_label'] = label_encoders[col].fit_transform(df[col].astype(str))
-            else:
-                df[f'{col}_target'] = df[col].map(target_encoding_maps[col]).fillna(global_mean)
-                df[f'{col}_label'] = label_encoders[col].transform(df[col].astype(str))
-
-    # Drop original categorical columns
-    df = df.drop(categorical_cols, axis=1)
-
-    return df
-
-
-train = encode_features(train, is_train=True)
-test = encode_features(test, is_train=False)
-
-print(f"After encoding - Train: {train.shape}, Test: {test.shape}")
+print("Encoding complete!")
 
 # ============================================================================
-# PREPARE DATA
+# PREPARE FINAL DATASET
 # ============================================================================
-print("\n[6/10] Preparing final dataset...")
+print("\nPreparing final dataset...")
 
 X = train.drop('loan_paid_back', axis=1)
 y = train['loan_paid_back'].astype(int)
 
-print(f"Final feature count: {X.shape[1]}")
+print(f"\nFinal feature count: {X.shape[1]}")
 print(f"Features shape: {X.shape}")
 print(f"Target shape: {y.shape}")
+print(f"Target distribution: {y.value_counts().to_dict()}")
 
 # ============================================================================
-# MODEL DEFINITIONS - MULTIPLE VARIANTS
+# MODEL TRAINING WITH 10-FOLD CV
 # ============================================================================
-print("\n[7/10] Defining model variants...")
+print("\n[9/9] Training models with 10-fold StratifiedKFold CV...")
+print("=" * 80)
 
-# LightGBM Variant 1: High capacity
-lgb_v1_params = {
-    'n_estimators': 3000,
-    'num_leaves': 255,
-    'max_depth': 10,
-    'learning_rate': 0.02,
-    'subsample': 0.8,
-    'colsample_bytree': 0.7,
-    'reg_alpha': 0.5,
-    'reg_lambda': 0.5,
+# Optimized LightGBM parameters (based on winning notebook)
+lgb_params = {
+    'objective': 'binary',
+    'metric': 'auc',
+    'boosting_type': 'gbdt',
+    'n_estimators': 1320,
+    'learning_rate': 0.05,
+    'num_leaves': 93,
+    'max_depth': 5,
+    'subsample': 0.743,
+    'colsample_bytree': 0.975,
+    'reg_alpha': 2.95,
+    'reg_lambda': 0.0022,
     'min_child_samples': 20,
-    'min_split_gain': 0.01,
     'random_state': RANDOM_STATE,
     'verbose': -1,
     'n_jobs': -1
 }
 
-# LightGBM Variant 2: Balanced
-lgb_v2_params = {
-    'n_estimators': 2500,
-    'num_leaves': 127,
-    'max_depth': 8,
-    'learning_rate': 0.03,
+# Complementary XGBoost parameters
+xgb_params = {
+    'objective': 'binary:logistic',
+    'eval_metric': 'auc',
+    'tree_method': 'hist',
+    'n_estimators': 1200,
+    'learning_rate': 0.05,
+    'max_depth': 6,
     'subsample': 0.75,
-    'colsample_bytree': 0.75,
-    'reg_alpha': 0.3,
-    'reg_lambda': 0.3,
-    'min_child_samples': 25,
-    'min_split_gain': 0.005,
-    'random_state': RANDOM_STATE + 1,
-    'verbose': -1,
-    'n_jobs': -1
-}
-
-# LightGBM Variant 3: Deep and regularized
-lgb_v3_params = {
-    'n_estimators': 2000,
-    'num_leaves': 200,
-    'max_depth': 12,
-    'learning_rate': 0.015,
-    'subsample': 0.7,
-    'colsample_bytree': 0.7,
-    'reg_alpha': 1.0,
-    'reg_lambda': 1.0,
-    'min_child_samples': 30,
-    'min_split_gain': 0.02,
-    'random_state': RANDOM_STATE + 2,
-    'verbose': -1,
-    'n_jobs': -1
-}
-
-# XGBoost Variant 1: High capacity
-xgb_v1_params = {
-    'n_estimators': 3000,
-    'max_depth': 10,
-    'learning_rate': 0.02,
-    'subsample': 0.8,
-    'colsample_bytree': 0.7,
-    'colsample_bylevel': 0.7,
-    'reg_alpha': 0.5,
-    'reg_lambda': 0.5,
-    'min_child_weight': 3,
-    'gamma': 0.1,
-    'random_state': RANDOM_STATE,
-    'eval_metric': 'logloss',
-    'verbosity': 0,
-    'n_jobs': -1
-}
-
-# XGBoost Variant 2: Balanced
-xgb_v2_params = {
-    'n_estimators': 2500,
-    'max_depth': 8,
-    'learning_rate': 0.03,
-    'subsample': 0.75,
-    'colsample_bytree': 0.75,
-    'colsample_bylevel': 0.75,
-    'reg_alpha': 0.3,
-    'reg_lambda': 0.3,
+    'colsample_bytree': 0.95,
+    'reg_alpha': 2.5,
+    'reg_lambda': 0.01,
     'min_child_weight': 5,
-    'gamma': 0.05,
-    'random_state': RANDOM_STATE + 1,
-    'eval_metric': 'logloss',
-    'verbosity': 0,
-    'n_jobs': -1
-}
-
-# XGBoost Variant 3: Deep and regularized
-xgb_v3_params = {
-    'n_estimators': 2000,
-    'max_depth': 12,
-    'learning_rate': 0.015,
-    'subsample': 0.7,
-    'colsample_bytree': 0.7,
-    'colsample_bylevel': 0.7,
-    'reg_alpha': 1.0,
-    'reg_lambda': 1.0,
-    'min_child_weight': 7,
-    'gamma': 0.2,
-    'random_state': RANDOM_STATE + 2,
-    'eval_metric': 'logloss',
+    'random_state': RANDOM_STATE,
     'verbosity': 0,
     'n_jobs': -1
 }
 
 models = {
-    'LightGBM_v1_high': LGBMClassifier(**lgb_v1_params),
-    'LightGBM_v2_balanced': LGBMClassifier(**lgb_v2_params),
-    'LightGBM_v3_deep': LGBMClassifier(**lgb_v3_params),
-    'XGBoost_v1_high': XGBClassifier(**xgb_v1_params),
-    'XGBoost_v2_balanced': XGBClassifier(**xgb_v2_params),
-    'XGBoost_v3_deep': XGBClassifier(**xgb_v3_params)
+    'LightGBM': LGBMClassifier(**lgb_params),
+    'XGBoost': XGBClassifier(**xgb_params)
 }
 
-print("Model variants configured:")
-for name in models.keys():
-    print(f"  - {name}")
-
-# ============================================================================
-# 10-FOLD CROSS-VALIDATION TRAINING
-# ============================================================================
-print("\n[8/10] Training with 10-fold StratifiedKFold CV...")
-print("=" * 80)
-
+# Cross-validation
 skf = StratifiedKFold(n_splits=N_SPLITS, random_state=RANDOM_STATE, shuffle=True)
 
 model_results = {}
@@ -477,17 +315,17 @@ for model_name, model in models.items():
         X_val_fold = X.iloc[val_idx]
         y_val_fold = y.iloc[val_idx]
 
-        # Train model
+        # Train
         model.fit(X_train_fold, y_train_fold)
 
         # Predict on validation
         y_val_pred = model.predict_proba(X_val_fold)[:, 1]
         oof_predictions[val_idx] = y_val_pred
 
-        # Calculate fold score
+        # Score
         fold_score = roc_auc_score(y_val_fold, y_val_pred)
         fold_scores.append(fold_score)
-        print(f"  Fold {fold:2d}: {fold_score:.6f}")
+        print(f"  Fold {fold:2d} AUC: {fold_score:.6f}")
 
         # Predict on test
         test_predictions += model.predict_proba(test)[:, 1]
@@ -495,142 +333,89 @@ for model_name, model in models.items():
     # Average test predictions
     test_predictions /= N_SPLITS
 
-    # Calculate overall CV score
+    # Overall CV score
     cv_score = roc_auc_score(y, oof_predictions)
     avg_fold_score = np.mean(fold_scores)
     std_fold_score = np.std(fold_scores)
 
-    print(f"\n  CV AUC: {cv_score:.6f} | Avg: {avg_fold_score:.6f} (+/- {std_fold_score:.6f})")
+    print(f"\n  Overall OOF AUC: {cv_score:.6f}")
+    print(f"  Average Fold:    {avg_fold_score:.6f} (+/- {std_fold_score:.6f})")
+    print(f"  Fold AUCs: {[f'{score:.4f}' for score in fold_scores]}")
 
     # Store results
     model_results[model_name] = {
         'cv_score': cv_score,
         'avg_fold_score': avg_fold_score,
-        'std_fold_score': std_fold_score
+        'std_fold_score': std_fold_score,
+        'fold_scores': fold_scores
     }
     all_predictions[model_name] = test_predictions
     oof_predictions_dict[model_name] = oof_predictions
 
-    # Save individual model prediction
+    # Save individual predictions
     submission = pd.DataFrame({
         'id': test_ids,
         'loan_paid_back': test_predictions
     })
-    submission.to_csv(f'{model_name}_prediction.csv', index=False)
-    print(f"  Saved: {model_name}_prediction.csv")
+    submission.to_csv(f'{model_name}_winning.csv', index=False)
+    print(f"  Saved: {model_name}_winning.csv")
 
 # ============================================================================
-# ADVANCED ENSEMBLING
+# ENSEMBLING
 # ============================================================================
-print("\n[9/10] Creating advanced ensembles...")
+print("\n" + "=" * 80)
+print("CREATING ENSEMBLES")
 print("=" * 80)
 
-# Performance summary
-performance_df = pd.DataFrame({
-    'Model': list(model_results.keys()),
-    'CV Score': [model_results[m]['cv_score'] for m in model_results.keys()],
-    'Std': [model_results[m]['std_fold_score'] for m in model_results.keys()]
-})
-performance_df = performance_df.sort_values('CV Score', ascending=False)
-
-print("\nModel Performance:")
-print(performance_df.to_string(index=False))
-
-# 1. Weighted ensemble (based on CV scores)
-print("\n1. Weighted Ensemble (CV-based)")
+# 1. Weighted ensemble (CV-based)
+print("\n1. Weighted Ensemble")
 scores = [model_results[m]['cv_score'] for m in models.keys()]
 weights = np.array(scores) / np.sum(scores)
 
 for model, weight in zip(models.keys(), weights):
     print(f"  {model}: {weight:.4f}")
 
-weighted_ensemble = np.zeros(len(test))
+weighted_pred = np.zeros(len(test))
 for model, weight in zip(models.keys(), weights):
-    weighted_ensemble += weight * all_predictions[model]
+    weighted_pred += weight * all_predictions[model]
 
 submission = pd.DataFrame({
     'id': test_ids,
-    'loan_paid_back': weighted_ensemble
+    'loan_paid_back': weighted_pred
 })
-submission.to_csv('weighted_ensemble_all.csv', index=False)
-print("Saved: weighted_ensemble_all.csv")
+submission.to_csv('weighted_ensemble_winning.csv', index=False)
+print("Saved: weighted_ensemble_winning.csv")
 
-# 2. Best 3 models weighted ensemble
-print("\n2. Top 3 Models Weighted Ensemble")
-top_3_models = performance_df['Model'].head(3).tolist()
-top_3_scores = [model_results[m]['cv_score'] for m in top_3_models]
-top_3_weights = np.array(top_3_scores) / np.sum(top_3_scores)
-
-for model, weight in zip(top_3_models, top_3_weights):
-    print(f"  {model}: {weight:.4f}")
-
-top3_weighted = np.zeros(len(test))
-for model, weight in zip(top_3_models, top_3_weights):
-    top3_weighted += weight * all_predictions[model]
-
-submission = pd.DataFrame({
-    'id': test_ids,
-    'loan_paid_back': top3_weighted
-})
-submission.to_csv('top3_weighted_ensemble.csv', index=False)
-print("Saved: top3_weighted_ensemble.csv")
-
-# 3. Simple average of all models
-print("\n3. Simple Average Ensemble")
+# 2. Simple average
+print("\n2. Simple Average Ensemble")
 simple_avg = np.mean([all_predictions[m] for m in models.keys()], axis=0)
 
 submission = pd.DataFrame({
     'id': test_ids,
     'loan_paid_back': simple_avg
 })
-submission.to_csv('simple_average_all.csv', index=False)
-print("Saved: simple_average_all.csv")
+submission.to_csv('simple_average_winning.csv', index=False)
+print("Saved: simple_average_winning.csv")
 
-# 4. LightGBM only ensemble
-print("\n4. LightGBM Only Ensemble")
-lgb_models = [m for m in models.keys() if 'LightGBM' in m]
-lgb_predictions = [all_predictions[m] for m in lgb_models]
-lgb_ensemble = np.mean(lgb_predictions, axis=0)
-
-submission = pd.DataFrame({
-    'id': test_ids,
-    'loan_paid_back': lgb_ensemble
-})
-submission.to_csv('lightgbm_ensemble.csv', index=False)
-print("Saved: lightgbm_ensemble.csv")
-
-# 5. XGBoost only ensemble
-print("\n5. XGBoost Only Ensemble")
-xgb_models = [m for m in models.keys() if 'XGBoost' in m]
-xgb_predictions = [all_predictions[m] for m in xgb_models]
-xgb_ensemble = np.mean(xgb_predictions, axis=0)
-
-submission = pd.DataFrame({
-    'id': test_ids,
-    'loan_paid_back': xgb_ensemble
-})
-submission.to_csv('xgboost_ensemble.csv', index=False)
-print("Saved: xgboost_ensemble.csv")
-
-# 6. Rank averaging ensemble
-print("\n6. Rank Averaging Ensemble")
+# 3. Rank averaging
+print("\n3. Rank Average Ensemble")
 from scipy.stats import rankdata
 
-rank_ensemble = np.zeros(len(test))
+rank_avg = np.zeros(len(test))
 for model in models.keys():
     ranks = rankdata(all_predictions[model]) / len(all_predictions[model])
-    rank_ensemble += ranks
-rank_ensemble /= len(models)
+    rank_avg += ranks
+rank_avg /= len(models)
 
 submission = pd.DataFrame({
     'id': test_ids,
-    'loan_paid_back': rank_ensemble
+    'loan_paid_back': rank_avg
 })
-submission.to_csv('rank_average_ensemble.csv', index=False)
-print("Saved: rank_average_ensemble.csv")
+submission.to_csv('rank_average_winning.csv', index=False)
+print("Saved: rank_average_winning.csv")
 
-# 7. Stacked ensemble using out-of-fold predictions
-print("\n7. Stacked Ensemble (Meta-learning)")
+# 4. Stacked ensemble
+print("\n4. Stacked Ensemble")
 from sklearn.linear_model import LogisticRegression
 
 oof_stack = np.column_stack([oof_predictions_dict[m] for m in models.keys()])
@@ -648,14 +433,26 @@ submission = pd.DataFrame({
     'id': test_ids,
     'loan_paid_back': stacked_pred
 })
-submission.to_csv('stacked_meta_ensemble.csv', index=False)
-print("Saved: stacked_meta_ensemble.csv")
+submission.to_csv('stacked_ensemble_winning.csv', index=False)
+print("Saved: stacked_ensemble_winning.csv")
 
 # ============================================================================
 # FINAL RESULTS
 # ============================================================================
-print("\n[10/10] FINAL RESULTS")
+print("\n" + "=" * 80)
+print("FINAL RESULTS")
 print("=" * 80)
+
+# Performance summary
+performance_df = pd.DataFrame({
+    'Model': list(model_results.keys()),
+    'CV Score': [model_results[m]['cv_score'] for m in model_results.keys()],
+    'Avg Fold': [model_results[m]['avg_fold_score'] for m in model_results.keys()],
+    'Std': [model_results[m]['std_fold_score'] for m in model_results.keys()]
+})
+
+print("\nModel Performance:")
+print(performance_df.to_string(index=False))
 
 best_model = performance_df.iloc[0]['Model']
 best_score = performance_df.iloc[0]['CV Score']
@@ -667,24 +464,31 @@ print(f"Stacked Ensemble CV: {stacked_cv:.6f}")
 print("\n" + "=" * 80)
 print("RECOMMENDED SUBMISSIONS (IN ORDER):")
 print("=" * 80)
-print("1. stacked_meta_ensemble.csv        ⭐ BEST - Meta-learning")
-print("2. top3_weighted_ensemble.csv       🥈 Top 3 weighted")
-print("3. rank_average_ensemble.csv        🥉 Rank averaging")
-print("4. weighted_ensemble_all.csv        Alternative #1")
-print(f"5. {best_model}_prediction.csv (Best single)")
-print("6. lightgbm_ensemble.csv            LGB only")
-print("7. xgboost_ensemble.csv             XGB only")
+print("1. stacked_ensemble_winning.csv      ⭐ BEST OVERALL")
+print(f"2. {best_model}_winning.csv (Best single model)")
+print("3. weighted_ensemble_winning.csv     Alternative #1")
+print("4. rank_average_winning.csv          Alternative #2")
+print("5. simple_average_winning.csv        Baseline ensemble")
 
 print("\n" + "=" * 80)
-print("SUMMARY")
+print("KEY TECHNIQUES APPLIED:")
 print("=" * 80)
-print(f"Total features: {X.shape[1]}")
-print(f"CV folds: {N_SPLITS}")
-print(f"Models trained: {len(models)}")
-print(f"Total iterations: {N_SPLITS * len(models)} = {N_SPLITS * len(models)}")
-print(f"\nExpected Performance:")
-print(f"  CV Score: 0.923-0.926")
-print(f"  LB Score: 0.921-0.924")
+print("✓ Log transformation for skewed features")
+print("✓ Outlier clipping (Winsorization)")
+print("✓ Grade subgrade splitting (3 features)")
+print("✓ Quantile binning (5, 10, 15 bins)")
+print("✓ Frequency encoding for categoricals")
+print("✓ Optimized hyperparameters")
+print("✓ 10-fold cross-validation")
+print("✓ Multiple ensemble strategies")
+
+print("\n" + "=" * 80)
+print(f"Total Features: {X.shape[1]}")
+print(f"Original Features: {len(numerical_cols) + len(categorical_cols)}")
+print(f"Engineered Features: {X.shape[1] - len(numerical_cols) - len(categorical_cols)}")
+print("\nExpected Performance:")
+print("  CV Score: 0.923-0.925")
+print("  LB Score: 0.921-0.924")
 print("=" * 80)
-print("\n TRAINING COMPLETE! ")
+print("\n🎉 TRAINING COMPLETE! 🎉")
 print("=" * 80)

@@ -116,8 +116,8 @@ def create_resume_pdf(output_filename):
         {
             "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
             "bullets": [
-                "Processed and analyzed <b>150+</b> survey responses with Python, SPSS, and Excel to evaluate intervention effectiveness.",
-                "Quantified <b>25%</b> improvement in program outcomes via statistical modeling and comparative analysis.",
+                "Cleaned and analyzed 150+ survey responses using Excel (PivotTables, VLOOKUP, conditional formulas), alongside Python and SPSS, to evaluate intervention effectiveness and ensure data accuracy.",
+                "Utilized advanced Excel functions (INDEX-MATCH, data validation, dynamic charts) to visualize outcomes and conduct comparative analysis, supporting a 25% improvement in program results.",
                 "Built predictive models (<b>70%</b> precision) to identify at-risk populations and developed <b>2</b> Tableau dashboards for use in successful grant proposals."
             ]
         }
