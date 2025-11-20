@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from datetime import timedelta
 
-# Configuration
 FILEPATH = '/Users/brianbutler/Desktop/EJSL/Dashboard EJS Draft Pers.xlsx'
 OUTPUT_DIR = '/Users/brianbutler/Desktop/EJSL/'
 SHEET_NAME = 'Dashboard Progress'
@@ -13,16 +12,13 @@ print("=" * 70)
 print("EJSL DASHBOARD COMPREHENSIVE FORECAST ANALYSIS")
 print("=" * 70)
 
-# Load Excel file
 print("\nLoading Excel file...")
 xls = pd.ExcelFile(FILEPATH)
 print(f"Available sheets: {xls.sheet_names}")
 
-# Load raw data
 df_raw = pd.read_excel(FILEPATH, sheet_name=SHEET_NAME, header=None)
 print(f"\nRaw data shape: {df_raw.shape}")
 
-# Find header row automatically
 print("\nSearching for header row...")
 header_row = None
 for i in range(min(30, len(df_raw))):
@@ -38,14 +34,12 @@ if header_row is None:
     print("Could not find header. Using row 0.")
     header_row = 0
 
-# Load data with header
 df = pd.read_excel(FILEPATH, sheet_name=SHEET_NAME, header=header_row)
 df = df.dropna(how='all')
 
 print(f"\nLoaded {len(df)} rows with {len(df.columns)} columns")
 print(f"Columns found: {list(df.columns)}")
 
-# Identify all columns
 date_cols = []
 program_cols = []
 numeric_cols = []
@@ -54,13 +48,10 @@ for col in df.columns:
     col_lower = str(col).lower()
     sample_values = df[col].dropna().head(5)
 
-    # Check if it's a date column
     if 'date' in col_lower or '/' in str(col):
         date_cols.append(col)
-    # Check if it's a program column
     elif 'program' in col_lower or any(str(v) in ['PORT', 'PJ2H', 'PS2H', 'BHOP'] for v in sample_values):
         program_cols.append(col)
-    # Check if it's numeric
     elif pd.api.types.is_numeric_dtype(df[col]) or all(pd.to_numeric(sample_values, errors='coerce').notna()):
         numeric_cols.append(col)
 
