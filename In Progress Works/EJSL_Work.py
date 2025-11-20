@@ -120,7 +120,7 @@ for data_col in data_cols:
         continue
 
     print(f"\n{'=' * 70}")
-    print(f"FORECASTING: {data_col}")
+    print(f"FORECASTING: {data_col}"
     print(f"{'=' * 70}")
 
     # Filter data with values for this column
@@ -191,7 +191,7 @@ for data_col in data_cols:
         print(f"  Expected change:      {projected - current:+.1f}")
         print(f"  Model fit (R²):       {r2:.3f}")
 
-    # Mark projection start
+    # Mark project start date
     last_date = df_analysis['Date'].max()
     ax.axvline(x=last_date, color='black', linestyle=':', linewidth=2,
                alpha=0.6, label='Projection starts')
