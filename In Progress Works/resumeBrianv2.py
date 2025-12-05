@@ -72,7 +72,6 @@ def create_resume_pdf(output_filename):
     # --- HEADER ---
     story.append(Paragraph("Brian Butler", name_style))
     story.append(Paragraph("Fairfax, VA 22030 | butlerbrian67@gmail.com | 619-866-5916", contact_style))
-    story.append(Paragraph( text: "US Citizen", name_style))
     links_html = (
         '<a href="https://leetcode.com/u/Ban_Brian/" color="blue"><u>LeetCode</u></a> | '
         '<a href="https://www.linkedin.com/in/brian-butler-18036b33b/" color="blue"><u>LinkedIn</u></a> | '
@@ -98,7 +97,7 @@ def create_resume_pdf(output_filename):
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     work_experiences = [
         {
-            "title": "Research Assistant, George Mason University | Fairfax, VA | February 2025 - Present",
+            "title": "Research Assistant, George Mason University | Fairfax, VA |                                                                  February 2025 - Present",
             "bullets": [
                 "Increased data processing efficiency by 20% using Python and Excel automation",
                 "Improved result reliability <b>15%</b> through A/B testing, hypothesis evaluation, and reproducible analysis in R and Python.",
@@ -106,7 +105,7 @@ def create_resume_pdf(output_filename):
             ]
         },
         {
-            "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS | May 2025 - Aug 2025",
+            "title": "Summer Intern, Department of Commerce, American Samoa Government | Pago Pago, AS |                                                        May 2025 - Aug 2025",
             "bullets": [
                 "Analyzed economic and business data from <b>1,000+</b> local enterprises, identifying <b>3</b> key growth sectors through trend and regression analysis.",
                 "Supported a tourism development initiative projected to increase international visitors <b>15%</b> using community survey insights.",
@@ -114,7 +113,7 @@ def create_resume_pdf(output_filename):
             ]
         },
         {
-            "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA | June 2024 - Aug 2024",
+            "title": "Research Intern, Nonprofit Alliance Against Domestic & Sexual Violence | San Diego, CA |                                                   June 2024 - Aug 2024",
             "bullets": [
                 "Cleaned and analyzed 150+ survey responses using Excel (PivotTables, VLOOKUP, conditional formulas), alongside Python and SPSS, to evaluate intervention effectiveness and ensure data accuracy.",
                 "Utilized advanced Excel functions (INDEX-MATCH, data validation, dynamic charts) to visualize outcomes and conduct comparative analysis, supporting a 25% improvement in program results.",
@@ -134,7 +133,7 @@ def create_resume_pdf(output_filename):
     story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
     projects = [
         {
-            "title": "Cost-of-Living Index Forecasting for American Samoa | May 2025 - Aug 2025",
+            "title": "Cost-of-Living Index Forecasting for American Samoa |  May 2025 - Aug 2025",
             "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
         },
         {
@@ -181,8 +180,6 @@ def create_resume_pdf(output_filename):
         "Python: NumPy, Pandas, Matplotlib, Seaborn, Plotly, Scikit-learn",
         "SQL: Joins, CTEs, Window Functions",
         "Databases: PostgreSQL, MySQL, SQLite, MongoDB",
-        "Predictive Modeling: Regression, Classification, A/B Testing, Time Series",
-        "R: Tidyverse, ggplot2, dplyr, data.table, forecast, shiny",
     ]
 
     story.append(ListFlowable(
