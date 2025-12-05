@@ -1,8 +1,3 @@
-############################################################
-# Enhanced NFL Weekly Prediction Bot (2025 Season)
-# Requires: nflreadr, nflfastR, dplyr, tidyr, xgboost, ggplot2, zoo
-############################################################
-
 library(nflreadr)
 library(nflfastR)
 library(dplyr)
@@ -359,7 +354,7 @@ if (nrow(sched_pred) == 0) {
   ############################################################
   # Save outputs
   ############################################################
-  
+
   # Save predictions to CSV
   write.csv(pred_results, 
             paste0("nfl_predictions_week_", predict_week, "_", Sys.Date(), ".csv"),
