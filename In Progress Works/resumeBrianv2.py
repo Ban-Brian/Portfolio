@@ -16,7 +16,7 @@ def create_resume_pdf(output_filename):
         bottomMargin=0.3 * inch
     )
 
-    styles = getSampleStyleSheet() 
+    styles = getSampleStyleSheet()  # Get default styles
 
     # --- TEXT STYLES ---
     name_style = ParagraphStyle(
