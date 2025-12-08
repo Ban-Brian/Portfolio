@@ -1,3 +1,18 @@
+# Suppress NSE binding warnings for dplyr/tidyverse
+utils::globalVariables(c(
+  "epa", "posteam", "defteam", "week", "pass", "rush", "success",
+  "third_down_converted", "yardline_100", "qb_hit", "sack",
+  "off_epa", "off_pass_epa", "off_rush_epa", "off_success_rate",
+  "off_explosive_rate", "off_third_down_conv", "off_red_zone_epa",
+  "def_epa", "def_pass_epa", "def_rush_epa", "def_success_rate",
+  "def_pressure_rate", "def_third_down_stop",
+  "off_epa_roll", "off_pass_epa_roll", "off_rush_epa_roll",
+  "off_success_roll", "off_explosive_roll", "off_third_down_roll",
+  "off_rz_epa_roll", "def_epa_roll", "def_pass_epa_roll",
+  "def_rush_epa_roll", "def_success_roll", "def_pressure_roll",
+  "def_third_stop_roll", "injury_impact", "confidence", "game_num",
+  "prob_home", "prob_away", "matchup"
+))
 
 library(nflreadr)
 library(nflfastR)
@@ -15,7 +30,7 @@ set.seed(42)
 
 team_features <- function(seas) {
   pbp <- load_pbp(seas)
-  
+
   # Offensive features
   team_off <- pbp %>%
     filter(!is.na(epa), !is.na(posteam)) %>%
@@ -44,7 +59,7 @@ team_features <- function(seas) {
     ) %>%
     ungroup() %>%
     rename(team = posteam)
-  
+
   # Defensive features
   team_def <- pbp %>%
     filter(!is.na(epa), !is.na(defteam)) %>%
@@ -71,7 +86,7 @@ team_features <- function(seas) {
     ) %>%
     ungroup() %>%
     rename(team = defteam)
-  
+
   full_join(team_off, team_def, by = c("team", "week", "season"))
 }
 
@@ -85,8 +100,10 @@ predict_season <- 2025
 
 train_games <- load_schedules(train_seasons) %>%
   filter(game_type == "REG", !is.na(home_score), !is.na(away_score)) %>%
-  select(season, week, game_id, home_team, away_team, home_score, away_score, 
-         spread_line, total_line) %>%
+  select(
+    season, week, game_id, home_team, away_team, home_score, away_score,
+    spread_line, total_line
+  ) %>%
   mutate(result = ifelse(home_score > away_score, 1, 0))
 
 # Build features for all training seasons
@@ -96,15 +113,20 @@ train_inj_list <- list()
 for (s in train_seasons) {
   cat("Processing season", s, "...\n")
   train_feats_list[[as.character(s)]] <- team_features(s)
-  
+
   # Try to get injury data, skip if not available
-  inj_data <- tryCatch({
-    injury_summary(s)
-  }, error = function(e) {
-    cat("  Warning: Injury data not available for", s, "\n")
-    data.frame(week = integer(), team = character(), 
-               injury_impact = numeric(), season = integer())
-  })
+  inj_data <- tryCatch(
+    {
+      injury_summary(s)
+    },
+    error = function(e) {
+      cat("  Warning: Injury data not available for", s, "\n")
+      data.frame(
+        week = integer(), team = character(),
+        injury_impact = numeric(), season = integer()
+      )
+    }
+  )
   train_inj_list[[as.character(s)]] <- inj_data
 }
 
@@ -115,17 +137,21 @@ train_inj <- bind_rows(train_inj_list)
 if (nrow(train_inj) > 0) {
   train_games <- train_games %>%
     left_join(train_feats, by = c("season", "week", "home_team" = "team")) %>%
-    rename_with(~ paste0("home_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll, 
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll)) %>%
+    rename_with(~ paste0("home_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    )) %>%
     left_join(train_feats, by = c("season", "week", "away_team" = "team")) %>%
-    rename_with(~ paste0("away_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll)) %>%
+    rename_with(~ paste0("away_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    )) %>%
     left_join(train_inj, by = c("season", "week", "home_team" = "team")) %>%
     rename(home_injuries = injury_impact) %>%
     left_join(train_inj, by = c("season", "week", "away_team" = "team")) %>%
@@ -134,17 +160,21 @@ if (nrow(train_inj) > 0) {
 } else {
   train_games <- train_games %>%
     left_join(train_feats, by = c("season", "week", "home_team" = "team")) %>%
-    rename_with(~ paste0("home_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll, 
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll)) %>%
+    rename_with(~ paste0("home_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    )) %>%
     left_join(train_feats, by = c("season", "week", "away_team" = "team")) %>%
-    rename_with(~ paste0("away_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll)) %>%
+    rename_with(~ paste0("away_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    )) %>%
     mutate(home_injuries = 0, away_injuries = 0)
 }
 
@@ -211,8 +241,9 @@ last_completed_week <- sched_curr %>%
   summarise(last_week = max(week, na.rm = TRUE)) %>%
   pull(last_week)
 
-predict_week <- ifelse(length(last_completed_week) == 0 || is.na(last_completed_week), 
-                       1, last_completed_week + 1)
+predict_week <- ifelse(length(last_completed_week) == 0 || is.na(last_completed_week),
+  1, last_completed_week + 1
+)
 
 cat("Predicting Week", predict_week, "of", predict_season, "\n\n")
 
@@ -228,30 +259,39 @@ if (nrow(sched_pred) == 0) {
   cat("No games scheduled for Week", predict_week, "\n")
 } else {
   pred_feats <- team_features(predict_season)
-  
+
   # Try to get injury data, use empty dataframe if not available
-  pred_inj <- tryCatch({
-    injury_summary(predict_season)
-  }, error = function(e) {
-    cat("Note: Injury data not available for", predict_season, "- predictions without injury info\n")
-    data.frame(week = integer(), team = character(), 
-               injury_impact = numeric(), season = integer())
-  })
-  
+  pred_inj <- tryCatch(
+    {
+      injury_summary(predict_season)
+    },
+    error = function(e) {
+      cat("Note: Injury data not available for", predict_season, "- predictions without injury info\n")
+      data.frame(
+        week = integer(), team = character(),
+        injury_impact = numeric(), season = integer()
+      )
+    }
+  )
+
   pred_games <- sched_pred %>%
     left_join(pred_feats, by = c("season", "week", "home_team" = "team")) %>%
-    rename_with(~ paste0("home_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll)) %>%
+    rename_with(~ paste0("home_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    )) %>%
     left_join(pred_feats, by = c("season", "week", "away_team" = "team")) %>%
-    rename_with(~ paste0("away_", .), c(off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
-                                        off_success_roll, off_explosive_roll, off_third_down_roll,
-                                        off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
-                                        def_rush_epa_roll, def_success_roll, def_pressure_roll,
-                                        def_third_stop_roll))
-  
+    rename_with(~ paste0("away_", .), c(
+      off_epa_roll, off_pass_epa_roll, off_rush_epa_roll,
+      off_success_roll, off_explosive_roll, off_third_down_roll,
+      off_rz_epa_roll, def_epa_roll, def_pass_epa_roll,
+      def_rush_epa_roll, def_success_roll, def_pressure_roll,
+      def_third_stop_roll
+    ))
+
   # Only join injury data if available
   if (nrow(pred_inj) > 0) {
     pred_games <- pred_games %>%
@@ -263,16 +303,16 @@ if (nrow(sched_pred) == 0) {
     pred_games <- pred_games %>%
       mutate(home_injuries = 0, away_injuries = 0)
   }
-  
+
   pred_games <- pred_games %>%
     replace_na(list(home_injuries = 0, away_injuries = 0))
-  
+
   pred_matrix <- pred_games %>%
     select(all_of(feature_cols)) %>%
     as.matrix()
-  
+
   pred_probs <- predict(model, xgb.DMatrix(pred_matrix))
-  
+
   pred_results <- pred_games %>%
     mutate(
       prob_home = pred_probs * 100,
@@ -283,90 +323,109 @@ if (nrow(sched_pred) == 0) {
     ) %>%
     select(matchup, gameday, prob_home, prob_away, pred_winner, confidence, spread_line) %>%
     arrange(desc(confidence))
-  
+
   ############################################################
   # Visualizations
   ############################################################
-  
+
   # Win probability chart
   plot_data <- pred_results %>%
     mutate(game_num = row_number()) %>%
     select(matchup, prob_home, prob_away, game_num) %>%
     pivot_longer(cols = c(prob_home, prob_away), names_to = "team_type", values_to = "probability")
-  
+
   p1 <- ggplot(plot_data, aes(x = reorder(matchup, game_num), y = probability, fill = team_type)) +
     geom_col(position = "stack", width = 0.7) +
     geom_hline(yintercept = 50, linetype = "dashed", color = "white", alpha = 0.5) +
     coord_flip() +
-    scale_fill_manual(values = c("prob_home" = "#2E7D32", "prob_away" = "#C62828"),
-                      labels = c("Home", "Away")) +
-    labs(title = paste("Week", predict_week, "Win Probabilities"),
-         subtitle = paste(predict_season, "NFL Season"),
-         x = NULL, y = "Win Probability (%)", fill = NULL) +
+    scale_fill_manual(
+      values = c("prob_home" = "#2E7D32", "prob_away" = "#C62828"),
+      labels = c("Home", "Away")
+    ) +
+    labs(
+      title = paste("Week", predict_week, "Win Probabilities"),
+      subtitle = paste(predict_season, "NFL Season"),
+      x = NULL, y = "Win Probability (%)", fill = NULL
+    ) +
     theme_minimal(base_size = 12) +
-    theme(legend.position = "top",
-          plot.title = element_text(face = "bold", size = 16),
-          panel.grid.major.y = element_blank())
-  
+    theme(
+      legend.position = "top",
+      plot.title = element_text(face = "bold", size = 16),
+      panel.grid.major.y = element_blank()
+    )
+
   print(p1)
-  
+
   # Confidence levels
   p2 <- ggplot(pred_results, aes(x = reorder(matchup, confidence), y = confidence)) +
     geom_col(aes(fill = confidence), width = 0.7) +
     geom_text(aes(label = sprintf("%.1f%%", confidence)), hjust = -0.1, size = 3.5) +
     coord_flip() +
-    scale_fill_gradient2(low = "#FFA726", mid = "#66BB6A", high = "#1E88E5",
-                         midpoint = 50, guide = "none") +
-    labs(title = "Prediction Confidence Levels",
-         subtitle = "Higher values indicate more confident predictions",
-         x = NULL, y = "Confidence (%)") +
+    scale_fill_gradient2(
+      low = "#FFA726", mid = "#66BB6A", high = "#1E88E5",
+      midpoint = 50, guide = "none"
+    ) +
+    labs(
+      title = "Prediction Confidence Levels",
+      subtitle = "Higher values indicate more confident predictions",
+      x = NULL, y = "Confidence (%)"
+    ) +
     theme_minimal(base_size = 12) +
-    theme(plot.title = element_text(face = "bold", size = 14),
-          panel.grid.major.y = element_blank()) +
+    theme(
+      plot.title = element_text(face = "bold", size = 14),
+      panel.grid.major.y = element_blank()
+    ) +
     expand_limits(y = c(0, 100))
-  
+
   print(p2)
-  
+
   ############################################################
   # Output Table
   ############################################################
-  
+
   cat("\n")
-  cat("=" , rep("=", 80), "\n", sep = "")
+  cat("=", rep("=", 80), "\n", sep = "")
   cat("  WEEK", predict_week, "PREDICTIONS\n")
-  cat("=" , rep("=", 80), "\n", sep = "")
+  cat("=", rep("=", 80), "\n", sep = "")
   cat("\n")
-  
-  for (i in 1:nrow(pred_results)) {
+
+  for (i in seq_len(nrow(pred_results))) {
     row <- pred_results[i, ]
     cat(sprintf("%-30s | %s\n", row$matchup, row$gameday))
-    cat(sprintf("  Winner: %-10s | Confidence: %.1f%%\n", 
-                row$pred_winner, row$confidence))
-    cat(sprintf("  Home: %.1f%%  Away: %.1f%%", 
-                row$prob_home, row$prob_away))
+    cat(sprintf(
+      "  Winner: %-10s | Confidence: %.1f%%\n",
+      row$pred_winner, row$confidence
+    ))
+    cat(sprintf(
+      "  Home: %.1f%%  Away: %.1f%%",
+      row$prob_home, row$prob_away
+    ))
     if (!is.na(row$spread_line)) {
       cat(sprintf("  | Vegas Line: %.1f", row$spread_line))
     }
     cat("\n\n")
   }
-  
-  cat("=" , rep("=", 80), "\n", sep = "")
-  
+
+  cat("=", rep("=", 80), "\n", sep = "")
+
   ############################################################
   # Save outputs
   ############################################################
 
   # Save predictions to CSV
-  write.csv(pred_results, 
-            paste0("nfl_predictions_week_", predict_week, "_", Sys.Date(), ".csv"),
-            row.names = FALSE)
-  
+  write.csv(pred_results,
+    paste0("nfl_predictions_week_", predict_week, "_", Sys.Date(), ".csv"),
+    row.names = FALSE
+  )
+
   # Save plots
-  ggsave(paste0("win_probabilities_week_", predict_week, ".png"), 
-         plot = p1, width = 10, height = 8, dpi = 300)
-  ggsave(paste0("confidence_levels_week_", predict_week, ".png"), 
-         plot = p2, width = 10, height = 8, dpi = 300)
-  
+  ggsave(paste0("win_probabilities_week_", predict_week, ".png"),
+    plot = p1, width = 10, height = 8, dpi = 300
+  )
+  ggsave(paste0("confidence_levels_week_", predict_week, ".png"),
+    plot = p2, width = 10, height = 8, dpi = 300
+  )
+
   cat("\nOutputs saved:\n")
   cat("- Predictions CSV\n")
   cat("- Win probabilities chart (PNG)\n")

@@ -1,19 +1,3 @@
-"""
-Crypto Market Microstructure Analysis - IMPROVED MODEL
-==============================================================
-
-Analyzes order book depth, volatility, volume, price impact, bid-ask spreads,
-and creates enhanced regression models for short-term returns prediction.
-
-IMPROVEMENTS:
-- Added lagged returns for momentum effects
-- Included volatility as a predictor
-- Added interaction terms (flow x book imbalance, flow x spread)
-- Log-transformed volume to handle skewness
-- Better feature engineering with momentum indicators
-- Robust standard errors option
-
-"""
 
 import pandas as pd
 import numpy as np
