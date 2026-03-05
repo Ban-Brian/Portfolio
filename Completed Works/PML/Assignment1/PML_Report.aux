@@ -1,0 +1,77 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{fanaee2013}
+\citation{fanaee2013}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction and Data Acquisition}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction and Data Acquisition}{section.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Exploratory Data Analysis}{2}{section.2}\protected@file@percent }
+\newlabel{sec:eda}{{2}{2}{Exploratory Data Analysis}{section.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Summary statistics of hourly rental counts $Y_t$.}}{2}{table.1}\protected@file@percent }
+\newlabel{tab:summary}{{1}{2}{Summary statistics of hourly rental counts $Y_t$}{table.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Hourly bike rentals for the first four weeks of the dataset. The strong daily periodicity and workday commute peaks are clearly visible.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:timeseries}{{1}{2}{Hourly bike rentals for the first four weeks of the dataset. The strong daily periodicity and workday commute peaks are clearly visible}{figure.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Histogram of hourly rental counts. The red dashed line marks the sample mean $\bar  {Y} = 189.5$. The heavy right skew and the concentration of mass near zero are inconsistent with a homogeneous Poisson model.}}{3}{figure.2}\protected@file@percent }
+\newlabel{fig:histogram}{{2}{3}{Histogram of hourly rental counts. The red dashed line marks the sample mean $\bar {Y} = 189.5$. The heavy right skew and the concentration of mass near zero are inconsistent with a homogeneous Poisson model}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Mean hourly rentals by hour of day (left) and day of week (right, 0 = Sunday). The bimodal workday commute pattern and single-hump weekend pattern are clearly separated by hour.}}{3}{figure.3}\protected@file@percent }
+\newlabel{fig:seasonality}{{3}{3}{Mean hourly rentals by hour of day (left) and day of week (right, 0 = Sunday). The bimodal workday commute pattern and single-hump weekend pattern are clearly separated by hour}{figure.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Poisson Likelihood and Maximum Likelihood Estimation}{3}{section.3}\protected@file@percent }
+\newlabel{sec:poisson}{{3}{3}{Poisson Likelihood and Maximum Likelihood Estimation}{section.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Gamma Prior and Conjugate Posterior}{4}{section.4}\protected@file@percent }
+\newlabel{sec:posterior}{{4}{4}{Gamma Prior and Conjugate Posterior}{section.4}{}}
+\newlabel{eq:posterior}{{7}{4}{Gamma Prior and Conjugate Posterior}{equation.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{Shrinkage interpretation.}{5}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prior sensitivity analysis.}{5}{section*.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Sensitivity of the posterior to the prior hyperparameters. All three priors yield virtually identical posteriors.}}{5}{table.2}\protected@file@percent }
+\newlabel{tab:sensitivity}{{2}{5}{Sensitivity of the posterior to the prior hyperparameters. All three priors yield virtually identical posteriors}{table.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}95\% Credible Interval}{5}{section.5}\protected@file@percent }
+\newlabel{sec:ci}{{5}{5}{95\% Credible Interval}{section.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Caveat: precision under misspecification.}{6}{section*.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Posterior density $p(\lambda \mid \mathbf  {y})$ with the 95\% credible interval (shaded region), posterior mean (red dashed), and median (orange dotted). The density is extremely concentrated due to the large sample size.}}{6}{figure.4}\protected@file@percent }
+\newlabel{fig:posterior}{{4}{6}{Posterior density $p(\lambda \mid \mathbf {y})$ with the 95\% credible interval (shaded region), posterior mean (red dashed), and median (orange dotted). The density is extremely concentrated due to the large sample size}{figure.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Posterior Predictive Distribution and Overload Alert}{6}{section.6}\protected@file@percent }
+\newlabel{sec:predictive}{{6}{6}{Posterior Predictive Distribution and Overload Alert}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Data Splitting}{6}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Overload Event}{6}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Val/test base rate gap.}{7}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Posterior Predictive Probability}{7}{subsection.6.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Top: posterior predictive overload probability $p_t$ for the first two weeks of the test set. Bottom: realized overload events (red vertical lines where $Y_t > 380$). Under the homogeneous model, all hours receive essentially the same predicted probability, providing no ability to discriminate high-demand from low-demand periods.}}{8}{figure.5}\protected@file@percent }
+\newlabel{fig:predictive}{{5}{8}{Top: posterior predictive overload probability $p_t$ for the first two weeks of the test set. Bottom: realized overload events (red vertical lines where $Y_t > 380$). Under the homogeneous model, all hours receive essentially the same predicted probability, providing no ability to discriminate high-demand from low-demand periods}{figure.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Calibration}{8}{section.7}\protected@file@percent }
+\newlabel{sec:calibration}{{7}{8}{Calibration}{section.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Brier scores on the test set (lower is better).}}{9}{table.3}\protected@file@percent }
+\newlabel{tab:brier}{{3}{9}{Brier scores on the test set (lower is better)}{table.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Why both calibrators produce identical Brier scores.}{9}{section*.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Reliability diagrams (calibration curves) for the raw, Platt-scaled, and isotonic-calibrated overload probabilities. A perfectly calibrated model follows the diagonal. The Brier score for each method is indicated in the subplot title.}}{10}{figure.6}\protected@file@percent }
+\newlabel{fig:calibration}{{6}{10}{Reliability diagrams (calibration curves) for the raw, Platt-scaled, and isotonic-calibrated overload probabilities. A perfectly calibrated model follows the diagonal. The Brier score for each method is indicated in the subplot title}{figure.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Threshold Selection}{10}{section.8}\protected@file@percent }
+\newlabel{sec:threshold}{{8}{10}{Threshold Selection}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Cost-Based Threshold}{10}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Constraint-Based Thresholds}{10}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Homogeneous Model Results}{11}{subsection.8.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Threshold selection results on the test set (homogeneous model with isotonic calibration).}}{11}{table.4}\protected@file@percent }
+\newlabel{tab:threshold_homo}{{4}{11}{Threshold selection results on the test set (homogeneous model with isotonic calibration)}{table.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Expected cost per hour as a function of the decision threshold~$\tau $ (homogeneous model). Because the predicted probabilities are nearly identical for all hours, the cost curve is essentially a step function with no informative interior minimum.}}{11}{figure.7}\protected@file@percent }
+\newlabel{fig:cost_homo}{{7}{11}{Expected cost per hour as a function of the decision threshold~$\tau $ (homogeneous model). Because the predicted probabilities are nearly identical for all hours, the cost curve is essentially a step function with no informative interior minimum}{figure.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Stratified Model: Hour $\times $ Workday}{12}{section.9}\protected@file@percent }
+\newlabel{sec:stratified}{{9}{12}{Stratified Model: Hour $\times $ Workday}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Approach}{12}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Results}{12}{subsection.9.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Brier score comparison: homogeneous vs.\ stratified model.}}{12}{table.5}\protected@file@percent }
+\newlabel{tab:brier_compare}{{5}{12}{Brier score comparison: homogeneous vs.\ stratified model}{table.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Reliability diagrams for the stratified model (raw, Platt-scaled, and isotonic-calibrated probabilities). Compared to Figure~\ref {fig:calibration}, the curve tracks the diagonal far more closely, indicating both improved discrimination and calibration.}}{13}{figure.8}\protected@file@percent }
+\newlabel{fig:cal_strat}{{8}{13}{Reliability diagrams for the stratified model (raw, Platt-scaled, and isotonic-calibrated probabilities). Compared to Figure~\ref {fig:calibration}, the curve tracks the diagonal far more closely, indicating both improved discrimination and calibration}{figure.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Threshold Selection---Stratified Model}{13}{subsection.9.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Full comparison of threshold selection results on the test set.}}{14}{table.6}\protected@file@percent }
+\newlabel{tab:compare_full}{{6}{14}{Full comparison of threshold selection results on the test set}{table.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Cost curve for the stratified model. Unlike Figure~\ref {fig:cost_homo}, the curve now exhibits a genuine trade-off region.}}{14}{figure.9}\protected@file@percent }
+\newlabel{fig:cost_strat}{{9}{14}{Cost curve for the stratified model. Unlike Figure~\ref {fig:cost_homo}, the curve now exhibits a genuine trade-off region}{figure.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Discussion}{15}{section.10}\protected@file@percent }
+\newlabel{sec:discussion}{{10}{15}{Discussion}{section.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Why the Constant-$\lambda $ Model Is Unsatisfactory}{15}{subsection.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Improvement Directions}{15}{subsection.10.2}\protected@file@percent }
+\bibstyle{plainnat}
+\bibcite{fanaee2013}{{1}{2013}{{Fanaee-T}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {11}Conclusion}{16}{section.11}\protected@file@percent }
+\gdef \@abspage@last{16}

@@ -1,0 +1,157 @@
+\documentclass[10pt, letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.7in, top=0.65in, bottom=0.65in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{multicol}
+
+\setlength{\parskip}{3pt plus 1pt minus 1pt}
+\setlength{\parindent}{0pt}
+\setlength{\textfloatsep}{4pt}
+\setlength{\floatsep}{4pt}
+\setlength{\intextsep}{4pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{1pt}
+
+\title{\vspace{-2em}\textbf{PML Assignment 2: Self-Supervised Denoising for Noise-Level Selection}\vspace{-0.5em}}
+\author{Brian Butler}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+
+%----------------------------------------------------------------------
+\section{Overview}
+%----------------------------------------------------------------------
+
+We compare two noise-level ($\sigma$) selection strategies for self-supervised denoising on the \textbf{Iris} dataset ($n{=}150$, $d{=}4$, $K{=}3$):
+(1)~$\sigma_{\text{proxy}}$ -- chosen \emph{without labels} by minimising reconstruction MSE;
+(2)~$\sigma_{\text{down}}$ -- chosen \emph{with few labels} ($m{=}5$/class) by maximising test accuracy.
+Features are standardised using \emph{training-split statistics only} to prevent leakage. Ridge regression ($\alpha{=}1$) is the denoiser; multinomial logistic regression is the classifier.
+In Part~B the pretrained denoiser $g_\sigma$ is used as a \emph{consistent feature transformer}: clean inputs are passed through $g_\sigma$ for both labeled \emph{and} test sets, avoiding any train/test mismatch.
+
+%----------------------------------------------------------------------
+\section{Results}
+%----------------------------------------------------------------------
+
+\begin{multicols}{2}
+
+\subsection{Part A -- Proxy-Task (No Labels)}
+
+Features are split 75/25 (seed 42). For each $\sigma$, noise is added, a Ridge denoiser is fitted, and MSE is evaluated on the held-out set.
+
+\begin{center}
+\small
+\textbf{Table 1:} $\sigma$ vs.\ Proxy-Val MSE\\[3pt]
+\begin{tabular}{cc}
+\toprule
+$\sigma$ & Proxy-Val MSE \\
+\midrule
+0.0 & 0.000685 \\
+0.1 & 0.008499 \\
+0.2 & 0.027897 \\
+0.3 & 0.054187 \\
+0.4 & 0.085045 \\
+0.6 & 0.155183 \\
+0.8 & 0.230314 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Rule:} smallest MSE among $\sigma > 0$.\\
+\textbf{Result:} $\boldsymbol{\sigma_{\text{proxy}} = 0.1}$.
+
+$\sigma{=}0$ is excluded (trivial identity). Among $\sigma > 0$, the lowest noise yields the best reconstruction.
+
+\columnbreak
+
+\subsection{Part B -- Downstream (Few Labels)}
+
+Data split 50/50 (stratified, seed 42). $m{=}5$ labeled per class. Clean features are passed through $g_\sigma$ for both labeled training and test sets.
+
+\begin{center}
+\small
+\textbf{Table 2:} $\sigma$ vs.\ Test Accuracy ($m{=}5$/class)\\[3pt]
+\begin{tabular}{cc}
+\toprule
+$\sigma$ & Test Accuracy \\
+\midrule
+0.0 & 0.8533 \\
+0.1 & 0.8533 \\
+0.2 & 0.8533 \\
+0.3 & 0.8533 \\
+0.4 & 0.8667 \\
+0.6 & 0.8667 \\
+0.8 & 0.8667 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Rule:} highest test accuracy; ties broken by smallest $\sigma$.\\
+\textbf{Result:} $\boldsymbol{\sigma_{\text{down}} = 0.4}$.
+
+\end{multicols}
+
+\vspace{-0.5em}
+\subsection{Multi-Seed Variance (Part B, 10 seeds)}
+
+The single-seed results above show many ties (accuracy differences $\leq 0.013$). To assess stability, Part~B is repeated over 10 independently sampled labeled sets.
+
+\begin{center}
+\small
+\textbf{Table 3:} $\sigma$ vs.\ Mean $\pm$ Std Test Accuracy (10 seeds)\\[3pt]
+\begin{tabular}{ccc}
+\toprule
+$\sigma$ & Mean Accuracy & Std \\
+\midrule
+0.0 & 0.8893 & 0.0387 \\
+0.1 & 0.8867 & 0.0418 \\
+0.2 & 0.8827 & 0.0473 \\
+0.3 & 0.8787 & 0.0411 \\
+0.4 & 0.8693 & 0.0453 \\
+0.6 & 0.8560 & 0.0347 \\
+0.8 & 0.8573 & 0.0343 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Averaging over seeds reveals that $\sigma{=}0$ achieves the highest mean accuracy (0.8893).
+The single-seed $\sigma_{\text{down}}{=}0.4$ lies within one standard deviation of the best, confirming that the slight advantage of higher $\sigma$ in the single-seed run is due to sampling variability in the small labeled budget.
+
+%----------------------------------------------------------------------
+\section{Discussion}
+%----------------------------------------------------------------------
+
+\subsection{Why Do the Two Strategies Disagree?}
+
+The proxy task optimises \emph{reconstruction fidelity}, while the downstream task optimises \emph{classification accuracy} -- fundamentally different objectives.
+$\sigma_{\text{proxy}}{=}0.1$ minimises reconstruction error among non-trivial noise levels: small noise forces the denoiser to learn data structure while keeping distortion low.
+$\sigma_{\text{down}}{=}0.4$ (single seed) arises because the denoiser, as a feature transformer, applies a mild low-pass filter that can help with certain labeled subsets. However, the multi-seed analysis shows $\sigma{=}0$ is best on average, indicating that on Iris the raw features are already informative enough that denoising adds little benefit.
+This divergence illustrates that proxy and downstream objectives can favour different $\sigma$ values.
+
+\subsection{Is There a ``Sweet Spot''?}
+
+For \textbf{reconstruction}, MSE increases monotonically with $\sigma$; the sweet spot is the smallest positive $\sigma$ (0.1).
+For \textbf{classification}, the multi-seed means decrease gradually from $\sigma{=}0$ (0.8893) to $\sigma{=}0.6$ (0.8560). The differences are small relative to the standard deviations ($\approx$0.04), meaning the ``sweet spot'' is broad and centered at $\sigma{=}0$. On higher-dimensional or noisier datasets, one would expect a clear interior peak where moderate denoising regularises representations and improves generalisation.
+
+\subsection{Proxy-Based vs.\ Downstream Tuning}
+
+\textbf{Proxy-based} ($\sigma_{\text{proxy}}$): requires \emph{no labels}; scalable and stable. However, the proxy objective may not align with downstream needs.
+
+\textbf{Downstream} ($\sigma_{\text{down}}$): directly optimises the target metric, but requires labeled data and is more sensitive to sampling variance with small budgets (as the multi-seed analysis demonstrates).
+
+\textbf{When to prefer each:} use proxy tuning when labels are unavailable; use downstream tuning when even a small labeled set exists, supplemented by multi-seed averaging to reduce variance.
+
+\subsection{Reproducibility}
+
+Three sources of randomness are fixed:
+(1)~\texttt{random\_state=42} in \texttt{train\_test\_split} ensures identical partitions;
+(2)~\texttt{RandomState(42)} for labeled-set sampling guarantees the same $m{=}5$ examples per class;
+(3)~distinct seed offsets (\texttt{SEED+1}, \texttt{+2}) provide independent noise realisations while remaining reproducible.
+Parts~A and~B use separate train/test splits (75/25 vs.\ 50/50) since they are independent experiments; within each part, splits and labeled budgets are held constant across all $\sigma$ values.
+
+\end{document}
