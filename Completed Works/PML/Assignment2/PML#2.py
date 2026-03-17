@@ -101,6 +101,7 @@ X_lab   = X_pre[lab_idx]
 y_lab   = y_pre[lab_idx]
 
 down_results = []
+
 for sigma in SIGMA_GRID:
     denoiser    = train_denoiser(X_pre, sigma)
     X_lab_repr  = denoiser.predict(X_lab)

@@ -1,18 +1,3 @@
-"""
-Real-Time Cryptocurrency Market Microstructure Analyzer
-
-Fetches live data from public APIs and performs microstructure analysis
-on any cryptocurrency. No API keys required.
-
-Usage:
-    python crypto_microstructure_analyzer.py                    # Analyze BTC
-    python crypto_microstructure_analyzer.py --coin ethereum    # Analyze ETH
-    python crypto_microstructure_analyzer.py --coin solana --days 14
-
-Requirements:
-    pip install requests pandas numpy matplotlib statsmodels
-"""
-
 import argparse
 import pandas as pd
 import numpy as np
@@ -573,7 +558,6 @@ class InvestmentScorer:
         if not market_metrics:
             return score, signals
         
-        # 24h price change
         change_24h = market_metrics.get('price_change_24h', 0)
         if change_24h > 10:
             score += 4
@@ -588,7 +572,6 @@ class InvestmentScorer:
             score -= 2
             signals['bearish'].append(f"Negative 24h: {change_24h:.1f}%")
         
-        # 7d price change
         change_7d = market_metrics.get('price_change_7d', 0)
         if change_7d and change_7d > 20:
             score += 3
@@ -597,7 +580,6 @@ class InvestmentScorer:
             score -= 3
             signals['bearish'].append(f"Sharp weekly drop: {change_7d:.1f}%")
         
-        # Market cap rank (lower = more established)
         market_cap = market_metrics.get('market_cap', 0)
         if market_cap > 10_000_000_000:  # > $10B
             score += 3
@@ -609,7 +591,6 @@ class InvestmentScorer:
         return max(0, min(20, score)), signals
     
     def _orderbook_score(self, ob_metrics: Dict) -> Tuple[float, Dict[str, List[str]]]:
-        """Score based on order book (max 15 points)."""
         score = 7.5  # Start neutral
         signals = {'bullish': [], 'bearish': [], 'neutral': []}
         
