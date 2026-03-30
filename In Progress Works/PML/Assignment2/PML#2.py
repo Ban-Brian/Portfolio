@@ -26,7 +26,6 @@ def add_noise(X, sigma, seed):
 
 
 def train_denoiser(X_clean, sigma, alpha=1.0):
-    """Fit a Ridge denoiser: noisy input → clean target."""
     X_noisy = add_noise(X_clean, sigma, seed=SEED)
     model = Ridge(alpha=alpha)
     model.fit(X_noisy, X_clean)
@@ -49,7 +48,6 @@ def sample_labeled_set(X, y, m_per_class, rng):
 
 
 def print_table(title, df):
-    """Pretty-print a results table."""
     print("=" * 60)
     print(f"  {title}")
     print("=" * 60)

@@ -25,7 +25,7 @@ def create_resume_pdf(output_filename):
         fontName='Helvetica-Bold',
         fontSize=16,
         alignment=1,
-        spaceAfter=5.5
+        spaceAfter=5
     )
 
     contact_style = ParagraphStyle(
@@ -33,7 +33,7 @@ def create_resume_pdf(output_filename):
         parent=styles['Normal'],
         fontSize=9,
         alignment=1,
-        spaceAfter=4.5
+        spaceAfter=4
     )
 
     section_header = ParagraphStyle(
@@ -42,7 +42,7 @@ def create_resume_pdf(output_filename):
         fontName='Helvetica-Bold',
         fontSize=10,
         textColor=colors.black,
-        spaceBefore=7,
+        spaceBefore=6,
         spaceAfter=3,
         leading=13
     )
@@ -52,7 +52,7 @@ def create_resume_pdf(output_filename):
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=9,
-        leading=11.5,
+        leading=11,
         spaceAfter=2
     )
 
@@ -63,26 +63,26 @@ def create_resume_pdf(output_filename):
         fontSize=9,
         textColor=colors.blue,
         alignment=1,
-        leading=11,
-        spaceBefore=4.5
+        leading=11.5,
+        spaceBefore=4
     )
 
     story = []
 
     # --- HEADER ---
     story.append(Paragraph("Brian Butler", name_style))
-    story.append(Paragraph("Fairfax, VA 22030 | butlerbrian67@gmail.com | 619-866-5916", contact_style))
+    story.append(Paragraph("U.S. Citizen | Fairfax, VA 22030 | butlerbrian67@gmail.com | 619-866-5916", contact_style))
     links_html = (
         '<a href="https://leetcode.com/u/Ban_Brian/" color="blue"><u>LeetCode</u></a> | '
         '<a href="https://www.linkedin.com/in/brian-butler-18036b33b/" color="blue"><u>LinkedIn</u></a> | '
         '<a href="https://github.com/Ban-Brian" color="blue"><u>GitHub</u></a>'
     )
     story.append(Paragraph(links_html, link_style))
-    story.append(Spacer(1, 7))
+    story.append(Spacer(1, 5))
 
     # --- EDUCATION ---
     story.append(Paragraph("EDUCATION", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=1, spaceAfter=6))
     story.append(Paragraph(
         "Bachelor's Degree in Mathematical Statistics | George Mason University | Expected Graduation: May 2027",
         body_style))
@@ -90,11 +90,11 @@ def create_resume_pdf(output_filename):
         "Relevant Coursework: Multivariable Statistics, Object Oriented Programming, Higher Maths, Computer Science for Data (CDS 130)",
         body_style
     ))
-    story.append(Spacer(1, 9))
+    story.append(Spacer(1, 5))
 
     # --- WORK EXPERIENCE ---
     story.append(Paragraph("WORK EXPERIENCE", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=1, spaceAfter=6))
     work_experiences = [
         {
             "title": "Research Assistant, George Mason University | Fairfax, VA |                                                                  February 2025 - Present",
@@ -126,19 +126,19 @@ def create_resume_pdf(output_filename):
         story.append(Paragraph(job["title"], body_style))
         bullets = [ListItem(Paragraph(b, body_style), leftIndent=12, bulletIndent=6) for b in job["bullets"]]
         story.append(ListFlowable(bullets, bulletType='bullet'))
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 5))
 
     # --- PROJECTS ---
     story.append(Paragraph("PROJECTS", section_header))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=2, spaceAfter=7))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=1, spaceAfter=6))
     projects = [
         {
             "title": "Cost-of-Living Index Forecasting for American Samoa |  May 2025 - Aug 2025",
             "desc": "Built multivariate time series model in Python to forecast cost-of-living trends for <b>50,000</b> residents, supporting government planning with predictive insights."
         },
         {
-            "title": "Predictive Modeling for Nonprofit Alliance | June 2024 - Aug 2024",
-            "desc": "Built XGBoost models on <b>10,000+</b> entries achieving <b>87%</b> accuracy to identify at-risk individuals; informed outreach and supported grant proposals that secured <b>$25,000</b> funding."
+            "title": "Independent Trading | Coinbase | 2024 - Present",
+            "desc": "Achieved a <b>500% ROI</b> over a <b>3-year</b> period through profitable cryptocurrency and stock trades on Coinbase. Applied technical analysis, trend identification, and risk management strategies using <b>RSI</b>, <b>MACD</b>, and <b>moving averages</b> to time entries and exits, maintaining consistent returns through disciplined position sizing and stop-loss protocols."
         },
         {
             "title": "Predicting Road Accident Risk Using Ensemble ML | October 2025",
@@ -153,10 +153,10 @@ def create_resume_pdf(output_filename):
     for project in projects:
         story.append(Paragraph(project["title"], body_style))
         story.append(Paragraph(project["desc"], body_style))
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 5))
 
     # --- TECHNICAL SKILLS ---
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 5))
 
     story.append(Paragraph(
         "<b>TECHNICAL SKILLS</b>",
@@ -166,13 +166,13 @@ def create_resume_pdf(output_filename):
             fontName='Helvetica-Bold',
             fontSize=11,
             textColor=colors.HexColor("#000000"),
-            spaceBefore=6,
+            spaceBefore=4,
             spaceAfter=4,
             leading=13
         )
     ))
 
-    story.append(HRFlowable(width="100%", thickness=1.2, color=colors.darkgrey, spaceBefore=2, spaceAfter=7))
+    story.append(HRFlowable(width="100%", thickness=1.2, color=colors.darkgrey, spaceBefore=1, spaceAfter=6))
 
     # Use bullet formatting for readability
     tech_skills = [
@@ -180,7 +180,8 @@ def create_resume_pdf(output_filename):
         "Python: NumPy, Pandas, Matplotlib, Seaborn, Plotly, Scikit-learn",
         "SQL: Joins, CTEs, Window Functions",
         "Databases: PostgreSQL, MySQL, SQLite, MongoDB",
-        "Tools: Git, GitHub, Docker, Jupyter Notebook, VS Code, RStudio"
+        "Tools: Git, GitHub, Docker, Jupyter Notebook, VS Code, RStudio",
+        "AI: Claude Opus4.1, ChatGPT, Gemini, Grok, Copilot"
     ]
 
     story.append(ListFlowable(
