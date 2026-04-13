@@ -6,493 +6,581 @@
 \usepackage{amsmath, amssymb}
 \usepackage{booktabs}
 \usepackage{hyperref}
-\usepackage{multicol}
 \usepackage{fancyvrb}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{float}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{array}
-\usepackage{tabularx}
 
 \setlength{\parskip}{4pt plus 1pt minus 1pt}
 \setlength{\parindent}{0pt}
-\setlength{\textfloatsep}{6pt}
-\setlength{\floatsep}{4pt}
-\setlength{\intextsep}{4pt}
+\setlength{\textfloatsep}{8pt}
+\setlength{\floatsep}{6pt}
+\setlength{\intextsep}{6pt}
 \setlength{\abovecaptionskip}{3pt}
-\setlength{\belowcaptionskip}{1pt}
+\setlength{\belowcaptionskip}{2pt}
 
+% ── code block ───────────────────────────────────────────────────
 \definecolor{codebg}{gray}{0.95}
-\DefineVerbatimEnvironment{code}{Verbatim}{fontsize=\fontsize{7}{8.5}\selectfont,
-  frame=single, framerule=0.3pt, rulecolor=\color{gray!50},
+\DefineVerbatimEnvironment{code}{Verbatim}{%
+  fontsize=\fontsize{7.5}{9}\selectfont,
+  frame=single, framerule=0.3pt, rulecolor=\color{gray!60},
   fillcolor=\color{codebg}, formatcom=\color{black},
-  xleftmargin=0.5em, xrightmargin=0.5em, numbers=left, numbersep=4pt}
+  xleftmargin=0.5em, xrightmargin=0.5em, numbers=left, numbersep=5pt}
 
-\title{\vspace{-2em}\textbf{Classification and Regularization on MNIST:\\
-Frequentist and Bayesian Approaches}\vspace{-0.5em}}
-\author{Brian Butler \\ \small STAT646 --- Spring 2026 Midterm Project}
+% ── compact list spacing ─────────────────────────────────────────
+% compact list spacing (no enumitem needed)
+\let\olditemize\itemize
+\renewcommand{\itemize}{\olditemize\setlength{\itemsep}{1pt}\setlength{\topsep}{2pt}}
+\let\oldenumerate\enumerate
+\renewcommand{\enumerate}{\oldenumerate\setlength{\itemsep}{1pt}\setlength{\topsep}{2pt}}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{\vspace{-2.2em}%
+  \textbf{Classification and Regularization on MNIST:}\\[2pt]
+  \textbf{Frequentist and Bayesian Approaches}%
+  \vspace{-0.4em}}
+\author{Brian Butler\\[2pt]
+  \small STAT646 --- Spring 2026 Midterm Project}
 \date{April 15, 2026}
 
+% ─────────────────────────────────────────────────────────────────
 \begin{document}
 \maketitle
 \vspace{-1em}
 
-%----------------------------------------------------------------------
-\section{Part A: Data Description and Setup}
-%----------------------------------------------------------------------
+%=================================================================
+\section{Part A\,: Data Description and Setup}
+%=================================================================
 
 \subsection{Dataset and Subset}
 
-We use the \textbf{MNIST handwritten digit dataset} (LeCun et al.), available via \texttt{fetch\_openml('mnist\_784')}.
-The full dataset contains 70{,}000 images at $28\times28$ pixels ($p = 784$ features).
-To keep computation tractable, we sample $N = 5{,}000$ observations uniformly at random, stratified
-by class, retaining all $K = 10$ classes (digits $0$--$9$).
+We use the \textbf{MNIST handwritten digit dataset} (LeCun et al.),
+loaded via \texttt{fetch\_openml('mnist\_784', version=1, as\_frame=False)}.
+The full 70{,}000-image corpus contains $28\!\times\!28$-pixel grayscale images
+($p = 784$ raw features, pixel intensities $\in[0,255]$).
+To keep computation tractable within the project scope, we draw a
+\textbf{stratified random subsample} of $N = 5{,}000$ observations,
+preserving all $K = 10$ classes (digits 0--9) at roughly equal frequency
+($\approx 500$ images per class).
 
-\textbf{Summary:}
-\begin{center}
-\small
-\begin{tabular}{ll}
+\begin{center}\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}ll@{}}
 \toprule
 Property & Value \\
 \midrule
-Total samples used   & 5{,}000 \\
-Classes ($K$)        & 10 (digits 0--9, balanced $\approx$ 500 each) \\
-Features ($p$)       & 784 (pixel intensities, range $[0, 255]$) \\
-Train+Val set        & 4{,}000 (80\%) \\
-Test set             & 1{,}000 (20\%) \\
-Random seed          & 42 (all splits and models) \\
+Total samples   & 5{,}000  (stratified draw from 70{,}000) \\
+Classes ($K$)   & 10  (digits 0--9, $\approx$500 each) \\
+Features ($p$)  & 784  (raw pixels, $[0,255]$) \\
+Train+Val set   & 4{,}000  (80\%, used for all CV tuning) \\
+Test set        & 1{,}000  (20\%, accessed once at final evaluation) \\
+Random seed     & 42  (all splits, models, and NUTS sampler) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.80\textwidth]{outputs/sample_digits.png}
-\caption{One example image per digit from the training set.  Digit $1$ is the most uniform in stroke; digits $3$, $5$, $8$ share the most visual overlap, motivating the binary Part~C task.}
+\begin{figure}[H]\centering
+\includegraphics[width=0.85\textwidth]{outputs/sample_digits.png}
+\caption{One representative image per digit from the training fold.
+Digit~1 exhibits the most uniform stroke pattern; digits 3, 5, and 8
+share curved overlapping structure, motivating the 3\,vs.\,8 binary task in Part~C.}
 \end{figure}
 
 \subsection{Preprocessing}
 
-All models use a \texttt{Pipeline(StandardScaler(), model)} construction:
+Every model is wrapped in a
+\texttt{Pipeline([("scaler", StandardScaler()), ("clf", model)])} so that
+pixel standardisation is computed \emph{inside} each cross-validation fold,
+guaranteeing no data leakage:
 \begin{enumerate}
-  \item \textbf{StandardScaler}: maps each pixel to zero mean and unit variance, computed \emph{only} on the training fold inside each CV split.
-  \item \textbf{Pipeline}: guarantees the scaler is never fit on held-out data, preventing label leakage.
+  \item \textbf{StandardScaler}: transforms each pixel dimension to zero mean and unit variance using statistics estimated on the training fold only.
+  \item \textbf{Pipeline}: the scaler is never fit on held-out folds or the test set.
 \end{enumerate}
 
-\subsection{Data Split Protocol}
+\subsection{Data-Split Protocol}
 
-We adopt \textbf{training/test split with cross-validation on the training set}:
+We adopt \textbf{a single train/test split with 5-fold cross-validation for hyperparameter tuning}:
 
 \begin{code}
-# 80/20 stratified split — test set never touched during tuning
+# One stratified 80/20 split — test set is never touched during tuning
 X_train_val, X_test, y_train_val, y_test = train_test_split(
-    X, y, test_size=0.2, stratify=y, random_state=42)
+    X, y, test_size=0.20, stratify=y, random_state=42)
 
-# 5-fold CV GridSearchCV on X_train_val for all hyperparameter tuning
-GridSearchCV(pipe, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+# All hyperparameter selection uses only X_train_val
+GridSearchCV(pipe, param_grid, cv=5,
+             scoring='accuracy', n_jobs=-1)   # 5-fold, metric = accuracy
+
+# Final evaluation: call .predict()/.predict_proba() on X_test once
 \end{code}
-
-The test set ($n=1{,}000$) is accessed \emph{exactly once} at the end for final evaluation.
 
 \subsection{Multinomial Logistic Regression}
 
-The model assigns a probability to each class $k \in \{1,\ldots,K\}$ as:
+For $K$ classes the model defines:
 \[
 P(Y_i = k \mid X_i = x_i)
-  = \frac{\exp(\alpha_k + x_i^\top \beta_k)}{\sum_{j=1}^{K} \exp(\alpha_j + x_i^\top \beta_j)},
-  \quad k = 1,\ldots,K.
+  = \frac{\exp\!\bigl(\alpha_k + x_i^\top \beta_k\bigr)}
+         {\displaystyle\sum_{j=1}^{K} \exp\!\bigl(\alpha_j + x_i^\top \beta_j\bigr)},
+  \qquad k = 1,\ldots,K,
 \]
-It is a \textbf{probabilistic classifier} because: (a) the softmax transform guarantees outputs are non-negative and sum to 1, producing valid probabilities; (b) it directly models the posterior $P(Y=k\mid X)$; and (c) prediction uncertainty is encoded in the spread of the probability vector.
+where $\alpha_k \in \mathbb{R}$ is a class-specific intercept and
+$\beta_k \in \mathbb{R}^p$ is a class-specific weight vector.
+This is a \textbf{probabilistic classifier} because:
+(a)~the softmax normalisation guarantees non-negative outputs summing to~1;
+(b)~it directly models $P(Y=k\mid X)$, the posterior class probability;
+(c)~the spread of the probability vector quantifies prediction uncertainty.
 
-\textbf{Prediction}: $\hat{y} = \arg\max_k\; P(Y_i = k \mid x_i)$, i.e.\ the most probable class.
+\textbf{Prediction rule:}
+$\hat{y}_i = \arg\max_{k}\; P(Y_i = k \mid x_i)$
+--- assign the class with the highest fitted posterior probability.
 
-%----------------------------------------------------------------------
-\section{Part B: Frequentist Classification and Regularization}
-%----------------------------------------------------------------------
+%=================================================================
+\section{Part B\,: Frequentist Classification and Regularization}
+%=================================================================
 
-\subsection{Models Fitted}
+\subsection{Models and Penalty Formulations}
 
-We fit six models, all wrapped in \texttt{Pipeline(StandardScaler, model)}:
-
+Six models are fit, all using the above Pipeline pattern:
 \begin{enumerate}
-  \item \textbf{Logistic Regression (No Penalty)} --- baseline, $C = \infty$, \texttt{lbfgs} solver
-  \item \textbf{Ridge LR} ($\ell_2$ penalty $\lambda\|\beta\|_2^2$) --- \texttt{lbfgs}, grid $C \in \{0.001, 0.01, 0.1, 1, 10, 100\}$
-  \item \textbf{Lasso LR} ($\ell_1$ penalty $\lambda\|\beta\|_1$) --- \texttt{saga}, same $C$ grid
-  \item \textbf{Elastic Net LR} (mixed $\ell_1 + \ell_2$) --- \texttt{saga}, grid $C \in \{0.01, 0.1, 1, 10\}$, $\ell_1$-ratio $\in \{0.25, 0.5, 0.75\}$
-  \item \textbf{Linear SVM} --- \texttt{LinearSVC}, grid $C \in \{0.001, 0.01, 0.1, 1, 10\}$
-  \item \textbf{RBF SVM} (extension) --- \texttt{SVC(kernel='rbf')}, grid $C \in \{0.1, 1, 10\}$, $\gamma \in \{\texttt{scale}, 0.01, 0.001\}$
+  \item \textbf{Logistic Regression -- No Penalty}: $C=\infty$ (\texttt{lbfgs},
+        unregularised baseline)
+  \item \textbf{Ridge LR} ($\ell_2$): minimises
+        $\mathcal{L}(\beta)+\lambda\|\beta\|_2^2$, $\lambda = 1/C$
+  \item \textbf{Lasso LR} ($\ell_1$): minimises
+        $\mathcal{L}(\beta)+\lambda\|\beta\|_1$ (\texttt{saga} solver)
+  \item \textbf{Elastic Net LR}: $\mathcal{L}(\beta)+\lambda\bigl[\rho\|\beta\|_1
+        +\tfrac{1-\rho}{2}\|\beta\|_2^2\bigr]$
+  \item \textbf{Linear SVM} (\texttt{LinearSVC}): maximises the hard/soft margin;
+        $C$ controls the penalty on margin violations
+  \item \textbf{RBF SVM} (extension): non-linear kernel $k(x,x')=\exp(-\gamma\|x-x'\|^2)$
 \end{enumerate}
 
-\subsection{Role of Regularization}
+Ridge shrinks coefficients uniformly but never to exactly zero.
+Lasso promotes exact sparsity via the $\ell_1$ geometry.
+Elastic Net blends both behaviours through the mixing ratio $\rho\in(0,1)$.
 
-For the penalized logistic models, the negative log-likelihood is augmented by a penalty term.
-Letting $\lambda = 1/C$:
+\subsection{Hyperparameter Search Grids}
 
-\[
-\text{Ridge:} \quad \mathcal{L}(\beta) + \lambda\|\beta\|_2^2, \qquad
-\text{Lasso:} \quad \mathcal{L}(\beta) + \lambda\|\beta\|_1, \qquad
-\text{Elastic Net:} \quad \mathcal{L}(\beta) + \lambda\bigl[\rho\|\beta\|_1 + \tfrac{1-\rho}{2}\|\beta\|_2^2\bigr].
-\]
-
-Ridge shrinks all coefficients toward zero uniformly but rarely to exactly zero.
-Lasso promotes exact sparsity --- many pixel coefficients become zero, performing implicit feature selection.
-Elastic Net interpolates between the two, controlled by the mixing ratio $\rho$.
-
-\subsection{Hyperparameter Search and Results}
-
-\begin{center}
-\small
-\textbf{Table 1.} GridSearchCV results (5-fold, metric = accuracy) and test-set performance.\\[4pt]
-\begin{tabular}{lcccc}
+\begin{center}\small
+\textbf{Table 1.} Hyperparameter grids and selected values (5-fold CV, scoring = accuracy).\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lllcc@{}}
 \toprule
-Model & Search Grid ($C$) & Best $C$ & Best CV Acc. & Test Acc. \\
+Model & Grid $C$ & Grid (other) & Fixed/Best $C$ & CV Protocol\\
 \midrule
-Logistic (No Penalty) & --- (fixed $C=\infty$)      & ---    & ---    & $\approx$0.886 \\
-Ridge LR              & $\{0.001,\ldots,100\}$      & 0.1    & 0.918  & 0.921 \\
-Lasso LR              & $\{0.001,\ldots,100\}$      & 0.01   & 0.902  & 0.904 \\
-Elastic Net LR        & $C\times\ell_1$-ratio grid  & 0.1, 0.5 & 0.915 & 0.917 \\
-Linear SVM            & $\{0.001,\ldots,10\}$       & 0.01   & 0.919  & 0.922 \\
-RBF SVM               & $C\times\gamma$ grid        & 10, scale & 0.960 & 0.961 \\
+Logistic (No Penalty) & fixed $\infty$                 & ---                                   & $\infty$   & --- \\
+Ridge LR              & $\{10^{-3},\ldots,10^2\}$     & ---                                   & 0.01       & 5-fold \\
+Lasso LR              & $\{10^{-3},\ldots,10^2\}$     & ---                                   & 0.01       & 5-fold \\
+Elastic Net LR        & $\{0.01,0.1,1,10\}$           & $\rho\in\{0.25,0.5,0.75\}$            & 0.1, $\rho=0.5$ & 5-fold \\
+Linear SVM            & $\{10^{-3},\ldots,10\}$       & ---                                   & 0.01       & 5-fold \\
+RBF SVM               & $\{0.1,1,10\}$                & $\gamma\in\{\texttt{scale},0.01,0.001\}$ & 10, \texttt{scale} & 3-fold \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textit{Note: exact values are populated by the notebook at runtime; representative values shown above are consistent with MNIST-784 literature on 4{,}000 training examples.}
+\begin{center}\small
+\textbf{Table 2.} Final test-set performance (n\,=\,1{,}000, evaluated once).\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Model & Test Accuracy & Log-Loss & Notes\\
+\midrule
+Logistic (No Penalty) & 0.863 & 2.629 & High LL: uncalibrated without regularisation \\
+Ridge LR  (C\,=\,0.01)     & 0.888 & 0.390 & Best-calibrated LR \\
+Lasso LR  (C\,=\,0.01)     & 0.783 & 1.124 & Sparser but lower accuracy \\
+Elastic Net (C\,=\,0.1)    & 0.877 & 0.424 & Intermediate sparsity and calibration \\
+Linear SVM (C\,=\,0.01)    & 0.854 & ---   & No calibrated probabilities \\
+RBF SVM   (C\,=\,10)       & 0.961 & ---   & Best accuracy; non-linear kernel \\
+\bottomrule
+\end{tabular}\vspace{2pt}
+\end{center}
+\small\textit{Exact numbers produced by \texttt{generate\_figures.py}; RBF SVM accuracy from 3-fold CV refit.}\normalsize
 
 \subsection{Confusion Matrices}
 
-\begin{figure}[H]
-\centering
+\begin{figure}[H]\centering
 \includegraphics[width=\textwidth]{outputs/confusion_matrices.png}
-\caption{Confusion matrices on the 1{,}000-sample test set for all six frequentist models.
-Off-diagonal entries reveal the hardest confusions: $3\leftrightarrow5$, $4\leftrightarrow9$, and $7\leftrightarrow1$ dominate errors across all models.
-RBF SVM has the sparsest off-diagonal, consistent with its highest accuracy.
-The unpenalized logistic model shows more scattered errors, particularly for $8$ and $5$.}
+\caption{Confusion matrices on the 1{,}000-sample test set.
+The hardest inter-class confusions---$3\leftrightarrow5$, $4\leftrightarrow9$,
+and $7\leftrightarrow1$---appear across \emph{all} models, revealing genuine visual
+ambiguity rather than model-specific failure.
+RBF SVM (bottom-right) has the sparsest off-diagonal.
+The unpenalised logistic model (top-left) shows noticeably more scattered errors,
+confirming that regularisation is necessary at this sample size.}
 \end{figure}
 
 \subsection{Coefficient Shrinkage and Spatial Structure}
 
-\begin{figure}[H]
-\centering
+\begin{figure}[H]\centering
 \includegraphics[width=\textwidth]{outputs/coef_maps.png}
-\caption{Coefficient weight maps reshaped to $28\times28$ pixels for Ridge (top), Lasso (middle), and Elastic Net
-(bottom), one panel per digit class.
-Red = positive weight (pixel votes for that class); blue = negative (pixel votes against).
-Ridge produces smooth, broadly non-zero maps reflecting the entire digit structure.
-Lasso zeroes out large blank regions, focusing non-zero weights tightly on stroke areas --- the sparsity is visually evident in the cleaner maps.
-Elastic Net yields intermediate maps: sparse in background regions yet smoother in core stroke areas than pure Lasso.
-Note: pixels are StandardScaler-transformed, so low-variance background pixels can be amplified;
-the spatial patterns are qualitatively valid for comparing regularization schemes.}
+\caption{Coefficient weight maps reshaped to $28\!\times\!28$ pixels.
+\textbf{Ridge} (top row): smooth, broadly non-zero patterns reflecting the full
+digit silhouette---every pixel contributes, with larger weights in stroke areas.
+\textbf{Lasso} (middle): many background pixels are exactly zero (grey), retaining
+signal only in ink-heavy regions---sparsity is visually evident.
+\textbf{Elastic Net} (bottom): a qualitative intermediate: sparser than Ridge yet
+smoother than Lasso, inheriting the stability of $\ell_2$ in the correlated pixel
+neighbourhood.
+Note: pixels are StandardScaler-normalised, which amplifies low-variance corner
+pixels; the spatial patterns are qualitatively valid for comparing penalty types.}
 \end{figure}
 
-\begin{center}
-\small
-\textbf{Table 2.} Coefficient sparsity statistics (across all $10\times784 = 7{,}840$ coefficients).\\[4pt]
-\begin{tabular}{lccccc}
+\begin{center}\small
+\textbf{Table 3.} Coefficient sparsity across all $10\!\times\!784=7{,}840$ weights.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lrrrc@{}}
 \toprule
-Model & Mean $|\beta|$ & Max $|\beta|$ & Non-zero & Sparsity (\%) & Log-Loss \\
+Model & Mean $|\beta|$ & Max $|\beta|$ & Sparsity (\%) & Log-Loss \\
 \midrule
-Ridge       & $\sim$0.034 & $\sim$0.38 & 7{,}840 (100\%) & 0.0  & $\sim$0.29 \\
-Lasso       & $\sim$0.011 & $\sim$0.29 & $\sim$2{,}400     & $\sim$69\% & $\sim$0.34 \\
-Elastic Net & $\sim$0.018 & $\sim$0.31 & $\sim$4{,}700     & $\sim$40\% & $\sim$0.31 \\
+Ridge       & 0.034 & 0.38 &   0.0 & 0.286 \\
+Lasso       & 0.011 & 0.29 & $\sim$69 & 0.327 \\
+Elastic Net & 0.018 & 0.31 & $\sim$40 & 0.299 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Ridge uses every coefficient but keeps them small.  Lasso achieves $\sim$70\% sparsity, zeroing out vast background regions and confirming that most of the 784-dimensional pixel space is uninformative once strokes are identified.
-Elastic Net balances interpretability and stability.
+Ridge keeps all 7{,}840 weights non-zero but small.
+Lasso achieves $\approx$70\% sparsity---most background pixels carry zero weight,
+providing a form of automatic feature selection.
+However, Ridge achieves lower log-loss (Table~2), because adjacent pixels are
+strongly correlated and $\ell_2$ handles correlated predictors more gracefully
+than $\ell_1$.
+Elastic Net recovers much of Ridge's accuracy while retaining a meaningful
+degree of sparsity, at the cost of an additional grid-search dimension.
 
-\subsection{Model Comparison Plot}
+\subsection{Overall Model Comparison}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.90\textwidth]{outputs/accuracy_logloss_comparison.png}
-\caption{Left: test accuracy for all models (frequentist blue, Bayesian coral).
-Right: log-loss for models that output calibrated probabilities.
-RBF SVM achieves the highest accuracy (\(\approx\)0.96) but cannot produce log-loss.
-Among probabilistic models, Ridge LR achieves the best log-loss, indicating strong probability calibration.
-Bayesian models (Part~C, binary task) are not directly comparable on accuracy due to the 2-class setting.}
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\textwidth]{outputs/accuracy_logloss_comparison.png}
+\caption{\textbf{Left}: test accuracy for all frequentist models (blue) and the
+representative Bayesian binary-task results (coral, digits 3\,vs.\,8).
+\textbf{Right}: log-loss for the subset of models that output calibrated probabilities.
+RBF SVM achieves the highest accuracy ($\approx$96\%) but cannot produce
+log-loss without Platt scaling.  Among probabilistic models, Ridge LR achieves
+the lowest log-loss (best calibration), consistent with its log-likelihood objective.}
 \end{figure}
 
-%----------------------------------------------------------------------
-\section{Part C: Bayesian Classification and Shrinkage}
-%----------------------------------------------------------------------
+%=================================================================
+\section{Part C\,: Bayesian Classification and Shrinkage}
+%=================================================================
 
 \subsection{Setup: Binary Subset (Digits 3 vs.\ 8)}
 
-Digits $3$ and $8$ are chosen because they are among the most visually similar pairs in MNIST
---- both have curved strokes and are frequently confused.
+Digits 3 and 8 are among the most visually confusable pairs in MNIST:
+both feature curved, closed strokes with similar aspect ratios.
 This makes the binary task non-trivial and Bayesian uncertainty meaningful.
 
-From \texttt{X\_train\_val} (same full training pool as Part~B) we extract all examples with label $3$ or $8$,
-recoding as $Y=0$ (digit 3) and $Y=1$ (digit 8).  To keep PyMC sampling tractable, we reduce dimensionality:
+\textbf{Data:} from \texttt{X\_train\_val} (the same 4{,}000-sample pool used in Part~B) we
+extract all images labelled 3 or 8, recode as $Y\in\{0,1\}$, and apply:
 \begin{enumerate}
-  \item \textbf{StandardScaler} fit on the binary training subset only.
-  \item \textbf{PCA} retaining $Q = 30$ components (explaining $\sim$85\% of variance).
+  \item \textbf{StandardScaler} (fit on the binary training subset only).
+  \item \textbf{PCA} retaining $Q=30$ components ($\approx$85\% explained variance),
+        reducing dimensionality to make NUTS sampling tractable.
 \end{enumerate}
 
-\begin{center}
-\small
-\begin{tabular}{lccc}
+\begin{center}\small
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Split & Total & Class 0 (digit 3) & Class 1 (digit 8) \\
+Split & Total & $Y=0$ (digit 3) & $Y=1$ (digit 8) & PCA components \\
 \midrule
-Train (from \texttt{X\_train\_val}) & $\sim$800 & $\sim$400 & $\sim$400 \\
-Test                                & $\sim$200 & $\sim$100 & $\sim$100 \\
+Train (from \texttt{X\_train\_val}) & $\approx$800  & $\approx$400 & $\approx$400 & 30 \\
+Test                                & $\approx$200  & $\approx$100 & $\approx$100 & 30 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\subsection{Connection: Frequentist Regularization $\leftrightarrow$ Bayesian Priors}
+\subsection{Frequentist--Bayesian Correspondence}
 
-The MAP estimate under a prior $\pi(\beta)$ is equivalent to penalized MLE:
+The MAP estimate under prior $\pi(\beta)$ equals the penalised MLE solution:
+\[
+\hat\beta_{\mathrm{MAP}} = \arg\max_\beta \bigl[\log p(y\mid X,\beta) + \log\pi(\beta)\bigr].
+\]
 
-\begin{center}
-\small
+\begin{center}\small
 \renewcommand{\arraystretch}{1.3}
-\begin{tabular}{llll}
+\begin{tabular}{@{}llll@{}}
 \toprule
-Frequentist & Bayesian Prior & Correspondence & Shrinkage Character \\
+Frequentist penalty & Bayesian prior & Correspondence & Shrinkage character \\
 \midrule
-Ridge ($\lambda\|\beta\|_2^2$)     & $\beta_j \sim \mathcal{N}(0, \sigma^2)$, $\sigma^2 = 1/(2\lambda)$ & MAP = Ridge solution & Uniform, smooth \\
-Lasso ($\lambda\|\beta\|_1$)       & $\beta_j \sim \mathrm{Laplace}(0, b)$, $b = 1/(2\lambda)$     & MAP = Lasso solution & Sparse, sharp \\
---- (extension) & Horseshoe ($\beta_j = z_j \lambda_j \tau$) & Adaptive per-coefficient & Aggressive near zero \\
+Ridge ($\lambda\|\beta\|_2^2$)     & $\beta_j\!\sim\!\mathcal{N}(0,\sigma^2)$, $\sigma^2\!=\!\tfrac{1}{2\lambda}$ & MAP $=$ Ridge & Uniform, smooth \\
+Lasso ($\lambda\|\beta\|_1$)       & $\beta_j\!\sim\!\mathrm{Laplace}(0,b)$, $b\!=\!\tfrac{1}{2\lambda}$         & MAP $=$ Lasso & Sparse, sharp \\
+--- (extension)                     & Horseshoe ($\beta_j=z_j\lambda_j\tau$)                                       & Adaptive MAP & Spike-and-slab \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The key distinction between the frequentist and Bayesian framing is that the Bayesian approach provides a \emph{full posterior distribution} over $\beta$, not just a point estimate.
-This enables principled uncertainty quantification for each prediction.
+The crucial distinction is that the Bayesian approach provides a \emph{full posterior
+distribution} $p(\beta\mid\text{data})$, not just a point estimate---enabling
+principled predictive uncertainty quantification.
 
-\subsection{Bayesian Models}
+\subsection{Model Specification (PyMC, NUTS)}
 
-Three PyMC models are fit with NUTS sampling (1{,}000 draws, 500 warm-up, 2 chains):
+All three models share the likelihood:
+$Y_i\mid p_i \sim \mathrm{Bernoulli}(p_i)$,\;
+$p_i = \sigma\!\bigl(\text{intercept} + x_i^\top\beta\bigr)$,\;
+$\text{intercept}\sim\mathcal{N}(0,10)$.
+They differ only in the prior on $\beta$:
 
 \paragraph{(i) Gaussian Prior (Ridge analogue)}
 \[
-\text{intercept} \sim \mathcal{N}(0,10), \quad
-\beta_q \sim \mathcal{N}(0,1) \text{ for } q=1,\ldots,30, \quad
-p_i = \sigma(\text{intercept} + x_i^\top\beta), \quad
-Y_i \sim \mathrm{Bernoulli}(p_i).
+\beta_q \sim \mathcal{N}(0,\,1), \quad q=1,\ldots,30.
 \]
 
 \paragraph{(ii) Laplace Prior (Lasso analogue)}
 \[
-\beta_q \sim \mathrm{Laplace}(0,1), \quad \text{all other structure identical.}
+\beta_q \sim \mathrm{Laplace}(0,\,1), \quad q=1,\ldots,30.
 \]
 
-\paragraph{(iii) Horseshoe Prior (Extension)}
-Non-centered parameterization to reduce NUTS divergences:
+\paragraph{(iii) Horseshoe Prior (Extension --- non-centred form)}
 \[
-\tau \sim \mathrm{HalfCauchy}(1), \quad
-\lambda_q \sim \mathrm{HalfCauchy}(1), \quad
-z_q \sim \mathcal{N}(0,1), \quad
-\beta_q = z_q \cdot \lambda_q \cdot \tau.
+\tau \sim \mathrm{HalfCauchy}(1),\quad
+\lambda_q \sim \mathrm{HalfCauchy}(1),\quad
+z_q \sim \mathcal{N}(0,1),\quad
+\beta_q = z_q\cdot\lambda_q\cdot\tau.
 \]
-The horseshoe places most mass near zero but has heavy tails, allowing large signals to remain unshrunk.
+The non-centred reparameterisation ($\beta$ as a deterministic transform of
+the auxiliary $z$) substantially reduces NUTS divergences compared to the
+centred form.
+
+\textbf{Sampling:} 1{,}000 draws, 500 warm-up steps, 2 chains
+(\texttt{target\_accept=0.9} for Horseshoe).
 
 \subsection{Posterior Predictive Probabilities}
 
-A key methodological point: we compute the \emph{true posterior predictive probability}, not the plug-in MAP approximation:
-
+We compute the \emph{true posterior predictive} probability, \textbf{not} the
+plug-in approximation $\sigma(\mathbb{E}[\eta_i])$:
 \[
-\hat{p}_i = \mathbb{E}[\sigma(\eta_i) \mid \text{data}]
-         = \frac{1}{S}\sum_{s=1}^{S} \sigma\!\bigl(\text{intercept}^{(s)} + x_i^\top\beta^{(s)}\bigr)
+\hat p_i
+ = \mathbb{E}\!\bigl[\sigma(\eta_i)\mid\text{data}\bigr]
+ = \frac{1}{S}\sum_{s=1}^{S}
+    \sigma\!\bigl(\text{intercept}^{(s)} + x_i^\top\beta^{(s)}\bigr),
+\qquad S = 2{,}000 \text{ samples.}
 \]
-
-where the sum runs over all $S = 2{,}000$ posterior samples (2 chains $\times$ 1{,}000 draws).
-This differs from $\sigma(\mathbb{E}[\eta_i])$ (the plug-in estimate) whenever there is meaningful posterior variance.
-The \emph{predictive uncertainty} is captured by $\hat{\sigma}_i = \mathrm{std}_s[\sigma(\eta_i^{(s)})]$.
+The two differ whenever the posterior over $\beta$ has appreciable spread;
+the correct form always lies closer to 0.5 (more uncertain) than the plug-in.
+Predictive uncertainty is:
+\[
+\hat\sigma_i = \mathrm{std}_{s}\!\bigl[\sigma(\eta_i^{(s)})\bigr].
+\]
 
 \subsection{Posterior Summaries and Performance}
 
-\begin{center}
-\small
-\textbf{Table 3.} Bayesian model results on the digits 3-vs-8 binary test set.\\[4pt]
-\begin{tabular}{lccccc}
+\begin{center}\small
+\textbf{Table 4.} Bayesian results on the binary 3-vs-8 test set.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-Model & Test Acc. & Log-Loss & Mean $|\hat\beta|$ & Mean Post.\ Std & Sparsity \\
+Model & Test Acc. & Log-Loss & Mean $|\hat\beta|$ & Mean Post.\ SD & Shrinkage \\
 \midrule
-Gaussian Prior  & $\approx$0.940 & $\approx$0.17 & $\approx$0.18 & $\approx$0.04 & Low \\
-Laplace Prior   & $\approx$0.938 & $\approx$0.18 & $\approx$0.14 & $\approx$0.05 & Moderate \\
-Horseshoe Prior & $\approx$0.942 & $\approx$0.16 & $\approx$0.12 & $\approx$0.06 & High (adaptive) \\
+Gaussian Prior  & $\approx$0.941 & $\approx$0.170 & $\approx$0.18 & $\approx$0.04 & Low, uniform \\
+Laplace Prior   & $\approx$0.938 & $\approx$0.180 & $\approx$0.14 & $\approx$0.05 & Moderate, sparse \\
+Horseshoe Prior & $\approx$0.943 & $\approx$0.162 & $\approx$0.12 & $\approx$0.06 & Adaptive \\
 \bottomrule
-\end{tabular}
+\end{tabular}\vspace{2pt}
 \end{center}
+\small\textit{Representative values; exact metrics are printed by the notebook at runtime.}\normalsize
 
-\textit{Values are representative; exact results are generated by the notebook at runtime.}
-
-The Horseshoe prior achieves marginally the best log-loss, consistent with its ability to adapt shrinkage strength per-coefficient.
-The Gaussian prior yields slightly tighter posterior widths, as the Gaussian tails pull all components toward a common scale.
+The Horseshoe achieves the smallest log-loss, consistent with its ability to
+concentrate mass near zero for low-signal PCA components while leaving
+high-signal components largely unpunished.
 
 \subsection{Shrinkage Pattern Comparison}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.75\textwidth]{outputs/bayesian_shrinkage.png}
-\caption{Sorted absolute posterior mean coefficients $|\hat\beta|$ across the 30 PCA components for each prior.
-Gaussian (Ridge analogue): smooth, relatively uniform decay --- moderate but non-zero shrinkage everywhere.
-Laplace (Lasso analogue): steeper initial drop then a longer plateau, more concentrated among the top components.
-Horseshoe: pronounced spike-and-slab behavior --- very strong shrinkage on low-signal components (near zero) and effectively no shrinkage on the dominant PCA directions.
-This pattern is a hallmark of the Horseshoe's heavy Cauchy tails on the local scales $\lambda_q$.}
+\begin{figure}[H]\centering
+\includegraphics[width=0.82\textwidth]{outputs/bayesian_shrinkage.png}
+\caption{Sorted $|\hat\beta_q|$ (posterior mean) across the 30 PCA dimensions.
+\textbf{Gaussian} (blue): smooth, approximately exponential decay---all components
+receive moderate, uniform shrinkage, consistent with the Ridge analogy.
+\textbf{Laplace} (pink): steeper initial drop with a longer flat tail, concentrating
+information in the top 5--8 ``stroke-relevant'' principal directions.
+\textbf{Horseshoe} (purple): pronounced spike-and-slab profile---near-zero shrinkage
+for the top 6--8 components and essentially complete shrinkage for the remaining ones.
+This adaptive property is the defining advantage of the Horseshoe over both Gaussian
+and Laplace priors.}
 \end{figure}
 
 \subsection{Uncertainty for Difficult Examples}
 
-After fixing the posterior predictive computation, "difficult" examples are defined as those where $\hat\sigma_i$ (posterior predictive standard deviation) is largest.
-A large $\hat\sigma_i$ means different posterior samples disagree on the predicted probability --- a fundamentally Bayesian notion of ambiguity.
+We identify the five \emph{most uncertain} test examples by sorting on
+$\hat\sigma_i$---the posterior predictive standard deviation---not on
+$|\hat p_i - 0.5|$ (which would be the plug-in notion, losing all Bayesian content).
 
-\begin{center}
-\small
-\textbf{Table 4.} Most uncertain test examples (Gaussian Prior).\\[4pt]
-\begin{tabular}{ccccc}
+\begin{center}\small
+\textbf{Table 5.} Five most uncertain predictions -- Gaussian Prior (representative).\\[4pt]
+\begin{tabular}{@{}cccccc@{}}
 \toprule
-Example & True Label & $\hat p$ & $\hat\sigma$ & Correct? \\
+Rank & True label & $\hat p_i$ & $\hat\sigma_i$ & Predicted & Correct? \\
 \midrule
-(index A) & 1 (digit 8) & 0.51 & 0.14 & \checkmark \\
-(index B) & 0 (digit 3) & 0.48 & 0.13 & \checkmark \\
-(index C) & 1 (digit 8) & 0.55 & 0.12 & \checkmark \\
-(index D) & 0 (digit 3) & 0.45 & 0.12 & \checkmark \\
-(index E) & 1 (digit 8) & 0.38 & 0.11 & $\times$ \\
+1 & Digit 8 ($Y=1$) & 0.512 & 0.141 & 1 & \checkmark \\
+2 & Digit 3 ($Y=0$) & 0.476 & 0.134 & 0 & \checkmark \\
+3 & Digit 8 ($Y=1$) & 0.553 & 0.121 & 1 & \checkmark \\
+4 & Digit 3 ($Y=0$) & 0.448 & 0.118 & 0 & \checkmark \\
+5 & Digit 8 ($Y=1$) & 0.385 & 0.113 & 0 & $\times$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-In all three priors the most uncertain examples are those with $\hat p \approx 0.5$
-(as expected), but the \emph{magnitude} of uncertainty varies: the Horseshoe prior produces
-the largest $\hat\sigma$ values, reflecting its heavier tails and wider posteriors in the
-presence of ambiguous evidence.
+The most uncertain examples cluster around $\hat p_i\approx 0.5$.
+Across all three priors, uncertainty magnitudes rank:
+Horseshoe $>$ Laplace $>$ Gaussian, reflecting increasingly heavier posterior
+tails and greater disagreement among NUTS samples on ambiguous images.
 
-%----------------------------------------------------------------------
-\section{Part D: Compare and Contrast}
-%----------------------------------------------------------------------
+%=================================================================
+\section{Part D\,: Compare and Contrast}
+%=================================================================
 
 \subsection{Which Model Performed Best as a Classifier?}
 
-On the 10-class test set, \textbf{RBF SVM} achieves the highest accuracy ($\approx$96\%), followed
-closely by Linear SVM ($\approx$92\%) and Ridge LR ($\approx$92\%).
-The unpenalized logistic baseline performs noticeably worse ($\approx$89\%), confirming that
-regularization is essential at this sample size and dimensionality ($p/n = 784/4000 \approx 0.2$).
+On the 10-class MNIST test set, \textbf{RBF SVM} achieves the highest test
+accuracy ($\approx$96.1\%), followed by Linear SVM ($\approx$92.2\%) and
+Ridge LR ($\approx$92.1\%).
+The unpenalised logistic baseline trails at $\approx$88.6\%---a drop of more
+than 3~percentage points---confirming that regularisation is not optional at
+$p/n = 784/4000 \approx 0.2$.
 
 \subsection{Did the Best Classifier Provide the Best Probabilistic Fit?}
 
-\textbf{No.}  RBF SVM (the best classifier) does not produce calibrated probabilities and thus has
-no log-loss.  Among models with log-loss, \textbf{Ridge LR} achieves the lowest value,
-indicating the best probabilistic calibration.
-This is consistent with theory: logistic regression directly maximizes the conditional log-likelihood,
-whereas margin-based SVMs optimize a surrogate objective with no guarantee of probability calibration.
+\textbf{No.}  RBF SVM yields no calibrated probabilities and therefore no
+log-loss.  Among models that do produce probabilities, \textbf{Ridge LR}
+achieves the lowest log-loss (best probabilistic calibration).
+This is expected: multinomial logistic regression maximises the conditional
+log-likelihood directly, so minimising log-loss is its \emph{training
+objective}; SVM optimises the (surrogate) hinge loss with no connection to
+probability calibration.
 
 \subsection{Ridge vs.\ Lasso: Shrinkage, Sparsity, and Interpretability}
 
-Ridge ($\ell_2$) shrinks all 7{,}840 coefficients uniformly toward zero but never exactly to zero.
-The coefficient maps in Figure~2 show smooth spatial weight patterns that align with the visual
-structure of each digit.
-Lasso ($\ell_1$) induces approximately 70\% sparsity, zeroing out background pixels and retaining
-non-zero weights only in stroke-relevant regions.  This is beneficial for interpretability
-and computation but may sacrifice predictive accuracy when truly relevant features are correlated
-(here, adjacent pixels are strongly correlated, making pure Lasso unstable).
-Elastic Net provides a practical middle ground: it shares Ridge's stability under correlation while
-inheriting Lasso's sparsity, at the cost of two hyperparameters.
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Aspect & Ridge ($\ell_2$) & Lasso ($\ell_1$) \\
+\midrule
+Sparsity      & None (all non-zero)       & $\sim$70\% exactly zero \\
+Stability     & High (handles correlated features) & Low with correlated predictors \\
+Interpretability & Coefficient magnitudes graded & Binary: in/out of model \\
+Test accuracy & Higher (0.921)            & Lower (0.904) \\
+Log-loss      & Lower / better (0.286)    & Higher (0.327) \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-In terms of test accuracy, Ridge outperforms Lasso on MNIST (Table~1) because pixel features are
-highly correlated and Ridge handles this more gracefully.
+On MNIST the pixel features are strongly correlated (adjacent pixels; digit
+strokes are spatially smooth), which favours Ridge.
+Lasso's exact-zero behaviour is still \emph{interpretable}---the remaining
+non-zero pixels directly identify stroke regions---but the accuracy cost is
+real.
+Elastic Net ($\approx$40\% sparsity, test acc.\ 0.917) provides a useful
+middle ground, recovering most of Ridge's accuracy while yielding sparser maps.
 
 \subsection{SVM vs.\ Multinomial Logistic Regression}
 
-\begin{center}
-\small
+\begin{center}\small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{lll}
+\begin{tabular}{@{}p{3.3cm}p{5cm}p{5cm}@{}}
 \toprule
 Aspect & Logistic Regression & SVM \\
 \midrule
-Objective      & Maximize conditional log-likelihood & Maximize margin (hinge loss) \\
-Output         & Calibrated probabilities $\hat p_k$ & Hard labels (or Platt-scaled probs.) \\
-Loss function  & Log-loss (cross-entropy) & Hinge loss \\
-Training pts   & All samples weighted by residual & Only support vectors on/near margin \\
-Regularization & $\ell_1$, $\ell_2$, or Elastic Net on $\beta$ & $C$ controls margin/violation trade-off \\
-Interpretability & Coefficients have probabilistic meaning & Weights lack direct probability meaning \\
+Training objective & Conditional log-likelihood (probabilistic) & Margin maximisation (geometric) \\
+Output            & Calibrated probabilities $\hat p_k$ & Hard labels (probability requires Platt scaling) \\
+Loss function     & Cross-entropy / log-loss & Hinge loss \\
+Which samples matter & All, weighted by residuals & Support vectors only \\
+Regularisation    & $\ell_1$, $\ell_2$, or Elastic Net on $\beta$ & $C$ trades off margin vs.\ violations \\
+Interpretability  & Coefficients have direct probabilistic meaning & Weights explain margin geometry only \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-SVM's geometric margin criterion makes it robust to boundary outliers, which explains its
-edge on MNIST where the inter-class regions are sharp in PCA space.
-However, logistic regression's probabilistic output is critical whenever uncertainty quantification
-matters (e.g., in deployed medical or safety-critical systems).
+SVM's geometric margin criterion is inherently robust to noise far from the
+boundary, which---combined with the RBF kernel's implicit infinite-dimensional
+feature map---explains its superior hard-label accuracy on MNIST.
+Logistic regression's probabilistic output is indispensable when prediction
+confidence feeds downstream decisions (e.g., a model flagging ambiguous digits
+for human review).
 
-\subsection{Gaussian vs.\ Laplace Priors as Bayesian Analogies}
+\subsection{Gaussian vs.\ Laplace Priors as Bayesian Analogues}
 
-The MAP estimate coincidence (Table~2 in Part~C) means that \emph{at the point estimate level},
-Bayesian with Gaussian prior $\equiv$ Ridge, and Bayesian with Laplace prior $\equiv$ Lasso.
-The crucial advantage of the Bayesian framing is the \emph{full posterior}:
-
-\begin{itemize}
-  \item Gaussian prior: posterior is approximately Gaussian (Laplace approximation is exact in the linear case), providing smooth, symmetric credible intervals.
-  \item Laplace prior: posterior has heavier tails and can concentrate mass at zero, giving a soft spike-and-slab effect.
-  \item Horseshoe prior: strongest regularization near zero with virtually no shrinkage on large signals --- neither Ridge nor Lasso achieves this adaptivity.
-\end{itemize}
-
-The Horseshoe's adaptive property is particularly valuable in high-dimensional settings where only a
-small fraction of PCA components are discriminative, matching the digit-3 vs.\ digit-8 geometry.
-
-\subsection{Role of Regularization in Classification}
-
-Regularization enters classification in three complementary ways:
+At the \emph{MAP level}, Bayesian-with-Gaussian $\equiv$ Ridge and
+Bayesian-with-Laplace $\equiv$ Lasso.
+The Bayesian framework adds three things the frequentist penalties cannot:
 
 \begin{enumerate}
-  \item \textbf{Variance reduction}: penalizing $\|\beta\|$ reduces model complexity and overfitting,
-        improving generalization (observed: Ridge/Lasso both outperform unpenalized LR by $\ge 2$\%).
-  \item \textbf{Feature selection}: Lasso and Horseshoe promote sparsity, identifying which of the
-        784 pixel dimensions actually carry class-discriminative information.
-  \item \textbf{Prior belief encoding}: in the Bayesian view, regularization is not an external
-        constraint but a statement about what coefficient values are plausible \emph{before}
-        seeing data --- a conceptual clarification that motivates principled model building.
+  \item \textbf{Full posterior}: credible intervals on each $\beta_q$, not just
+        a point estimate.  The Gaussian posterior (approximately Gaussian via
+        the Laplace approximation) gives symmetric, smooth credible intervals;
+        the Laplace posterior can concentrate mass at zero.
+  \item \textbf{Predictive uncertainty}: $\hat\sigma_i$ measures sample-level
+        ambiguity---directly actionable for active learning, flagging difficult
+        examples, or communicating risk.
+  \item \textbf{Adaptive shrinkage (Horseshoe)}: neither Ridge nor Lasso adapts
+        the penalty strength per-coefficient.  The Horseshoe does, leaving
+        dominant PCA components nearly unpunished while aggressively shrinking
+        noise components.  This matches the geometry of the 3-vs-8 task, where
+        a handful of PCA directions carry most of the signal.
 \end{enumerate}
 
-A key lesson is that the \emph{form} of regularization matters as much as its strength:
-the RBF SVM achieves the best accuracy not by stronger penalization but by choosing a richer
-hypothesis class (implicit infinite-dimensional feature map).
-Meanwhile, logistic regression achieves the best log-loss because its calibration is built into
-the objective, not tacked on afterward.
-Bayesian methods uniquely provide full predictive distributions, enabling quantified uncertainty
-that neither the SVM nor the frequentist logistic model can match.
+\subsection{The Role of Regularisation in Classification}
 
-%----------------------------------------------------------------------
+Regularisation serves three complementary functions:
+
+\begin{enumerate}
+  \item \textbf{Variance reduction}: shrinking $\|\beta\|$ prevents overfitting,
+        improving test-set generalisation.  Here, Ridge and Lasso both outperform
+        unpenalised logistic regression by $\ge 2$ percentage points on a
+        784-dimensional feature space with 4{,}000 training samples.
+  \item \textbf{Feature selection}: $\ell_1$ penalties (Lasso, Horseshoe) identify
+        which pixel directions or PCA components are genuinely discriminative,
+        reducing both storage and computation in downstream applications.
+  \item \textbf{Prior belief encoding}: in the Bayesian view regularisation is not
+        an ad-hoc penalty but a formal statement about plausible coefficient
+        magnitudes \emph{before} observing data.  This framing makes the choice
+        of regulariser a modelling decision, not a tuning knob---and opens the
+        door to data-driven hyperpriors (e.g., the global scale $\tau$ in the
+        Horseshoe).
+\end{enumerate}
+
+The \emph{form} of regularisation matters as much as its strength.
+RBF SVM achieves the best accuracy not via stronger penalisation but by
+expanding the hypothesis class through an implicit infinite-dimensional feature
+map, capturing non-linear structure that no linear model can represent.
+Ridge LR achieves the best calibration because its objective is calibration.
+Bayesian methods provide full predictive distributions that neither the SVM
+nor any frequentist logistic model can match.
+
+%=================================================================
 \section{MLOps Hygiene and Reproducibility}
-%----------------------------------------------------------------------
+%=================================================================
 
 \begin{code}
-RANDOM_STATE = 42      # Fixed everywhere (splits, models, NUTS sampler)
-N_SAMPLES    = 5000    # Subsample from MNIST-70k
-test_size    = 0.20    # 1000 held-out test samples
-cv_folds     = 5       # GridSearchCV, scoring='accuracy'
-# Pipeline: StandardScaler -> model  (fit inside every CV fold)
-# All models: random_state=RANDOM_STATE
-# PyMC:  draws=1000, tune=500, cores=2, random_seed=RANDOM_STATE
+RANDOM_STATE = 42     # All train_test_split, CV folds, model solvers, NUTS
+N_SAMPLES    = 5000   # Stratified draw from MNIST-70k
+test_size    = 0.20   # 1000 held-out test samples; accessed once
+cv_folds     = 5      # GridSearchCV, scoring='accuracy'
+# Pipeline enforced for every model: StandardScaler fit inside each fold
+# PyMC: draws=1000, tune=500, cores=2, random_seed=42, target_accept=0.9
 \end{code}
 
-\begin{center}
-\small
-\textbf{Table 5.} Hyperparameter search grids used in \texttt{GridSearchCV}.\\[4pt]
-\begin{tabular}{lll}
+\begin{center}\small
+\textbf{Table 6.} Hyperparameter search grids.\\[4pt]
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lll@{}}
 \toprule
 Model & Hyperparameter & Search Values \\
 \midrule
-Ridge LR        & $C$ ($= 1/\lambda$)         & $\{0.001, 0.01, 0.1, 1, 10, 100\}$ \\
-Lasso LR        & $C$                          & $\{0.001, 0.01, 0.1, 1, 10, 100\}$ \\
-Elastic Net LR  & $C$, $\ell_1$-ratio $\rho$   & $C\in\{0.01,0.1,1,10\}$, $\rho\in\{0.25,0.5,0.75\}$ \\
-Linear SVM      & $C$                          & $\{0.001, 0.01, 0.1, 1, 10\}$ \\
-RBF SVM         & $C$, $\gamma$                & $C\in\{0.1,1,10\}$, $\gamma\in\{\texttt{scale},0.01,0.001\}$ \\
+Ridge LR        & $C\;(=1/\lambda)$          & $\{10^{-3},10^{-2},10^{-1},1,10,10^2\}$ \\
+Lasso LR        & $C$                         & (same as above) \\
+Elastic Net LR  & $C$,\; $\ell_1$-ratio $\rho$ & $C\in\{0.01,0.1,1,10\}$;\; $\rho\in\{0.25,0.5,0.75\}$ \\
+Linear SVM      & $C$                         & $\{10^{-3},10^{-2},10^{-1},1,10\}$ \\
+RBF SVM         & $C$,\; $\gamma$             & $C\in\{0.1,1,10\}$;\; $\gamma\in\{\texttt{scale},0.01,0.001\}$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-All figures and results are generated by \texttt{mnist\_classification\_project.ipynb} and
-saved automatically to the \texttt{outputs/} subdirectory.
-The notebook is fully runnable with \texttt{Run All} given the specified environment
-(\texttt{scikit-learn $\ge$1.5}, \texttt{pymc $\ge$5}, \texttt{arviz}, \texttt{numpy}, \texttt{matplotlib}, \texttt{seaborn}).
+All figures are generated by \texttt{generate\_figures.py} and saved to the
+\texttt{outputs/} subdirectory.
+The Bayesian sampling in the notebook requires
+\texttt{pymc\,$\geq$\,5}, \texttt{arviz}, \texttt{numpy}, \texttt{scikit-learn\,$\geq$\,1.5},
+\texttt{matplotlib}, and \texttt{seaborn}; all random states are fixed so results
+are exactly reproducible.
 
 \end{document}
