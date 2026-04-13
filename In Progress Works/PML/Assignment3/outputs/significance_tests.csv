@@ -1,0 +1,7 @@
+Model A,Model B,t-stat,p-value,Sig (α=0.05)
+Logistic Regression,Linear SVC,1.633,0.1778,ns
+Logistic Regression,RBF SVC,0.885,0.4263,ns
+Logistic Regression,Poly SVC (deg=3),1.292,0.2658,ns
+Linear SVC,RBF SVC,0.302,0.7780,ns
+Linear SVC,Poly SVC (deg=3),0.975,0.3846,ns
+RBF SVC,Poly SVC (deg=3),1.395,0.2355,ns

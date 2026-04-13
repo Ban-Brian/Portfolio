@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.1.23)  23 MAR 2026 16:09
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.1.23)  2 APR 2026 20:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -373,36 +373,56 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
+) (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+) (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 32.
+Package graphics Info: Driver file: pdftex.def on input line 106.
+)
+\Gin@req@height=\dimen185
+\Gin@req@width=\dimen186
+) (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count314
+\float@exts=\toks24
+\float@box=\box101
+\@float@everytoks=\toks25
+\@floatcapt=\box102
+)
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 34.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count314
-\l__pdf_internal_box=\box101
-)
-No file report.aux.
+\l__color_backend_stack_int=\count315
+\l__pdf_internal_box=\box103
+) (./report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 32.
-LaTeX Font Info:    ... okay on input line 32.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 34.
+LaTeX Font Info:    ... okay on input line 34.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -437,90 +457,145 @@ LaTeX Font Info:    ... okay on input line 32.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring OFF on input line 32.
+Package hyperref Info: Link coloring OFF on input line 34.
+(./report.out) (./report.out)
 \@outlinefile=\write4
 \openout4 = `report.out'.
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 34.
-(/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/ot1lmr.fd
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
+))
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 36.
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 34.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 36.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 34.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 36.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 34.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 36.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 34.
+(Font)              <12> on input line 36.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 34.
+(Font)              <8> on input line 36.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 34.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 34.
+(Font)              <6> on input line 36.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 36.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 34.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 36.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 40.
+(Font)              <10> on input line 42.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 40.
+(Font)              <7> on input line 42.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 40.
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 41.
+(Font)              <5> on input line 42.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 43.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 69.
+(Font)              <9> on input line 73.
 
 
 [1
 
 {/Users/brianbutler/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
+<outputs/roc_curves.png, id=108, 424.4658pt x 352.6776pt>
+File: outputs/roc_curves.png Graphic file (type png)
+<use outputs/roc_curves.png>
+Package pdftex.def Info: outputs/roc_curves.png  used on input line 135.
+(pdftex.def)             Requested size: 333.52321pt x 277.13235pt.
 
-[2{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
 
-[3]
+[2{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}
+pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.147 \begin{center}
+                     <./outputs/roc_curves.png>]
+<outputs/calibration_curves.png, id=117, 424.4658pt x 352.6776pt>
+File: outputs/calibration_curves.png Graphic file (type png)
+<use outputs/calibration_curves.png>
+Package pdftex.def Info: outputs/calibration_curves.png  used on input line 171.
+(pdftex.def)             Requested size: 307.8736pt x 255.81654pt.
+<outputs/learning_curves.png, id=118, 1292.1876pt x 297.2706pt>
+File: outputs/learning_curves.png Graphic file (type png)
+<use outputs/learning_curves.png>
+Package pdftex.def Info: outputs/learning_curves.png  used on input line 182.
+(pdftex.def)             Requested size: 487.46pt x 112.14297pt.
 
-[4] (./report.aux)
+
+[3
+pdfTeX warning (ext4): destination with the same identifier (name{figure.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.185 
+       <./outputs/calibration_curves.png>]
+<outputs/lr_feature_importance.png, id=125, 498.1812pt x 280.4076pt>
+File: outputs/lr_feature_importance.png Graphic file (type png)
+<use outputs/lr_feature_importance.png>
+Package pdftex.def Info: outputs/lr_feature_importance.png  used on input line 193.
+(pdftex.def)             Requested size: 318.13031pt x 179.07088pt.
+<outputs/pca_decision_boundaries.png, id=126, 1292.6694pt x 297.2706pt>
+File: outputs/pca_decision_boundaries.png Graphic file (type png)
+<use outputs/pca_decision_boundaries.png>
+Package pdftex.def Info: outputs/pca_decision_boundaries.png  used on input line 203.
+(pdftex.def)             Requested size: 487.46pt x 112.09763pt.
+
+
+[4
+pdfTeX warning (ext4): destination with the same identifier (name{figure.3}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.210 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{figure.4}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.210 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{figure.5}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.210 
+       <./outputs/learning_curves.png> <./outputs/lr_feature_importance.png> <./outputs/pca_decision_boundaries.png>]
+
+[5] (./report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 1
 L3 programming layer <2024-12-25>
  ***********
-
-
-Package rerunfilecheck Warning: File `report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `report.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  B94B4E1C0BAB4C211093F5F081A654D4;2091.
+Package rerunfilecheck Info: File `report.out' has not changed.
+(rerunfilecheck)             Checksum: 65013B20B95ECF56CBB2B401F09F9722;3165.
  ) 
 Here is how much of TeX's memory you used:
- 10986 strings out of 475178
- 168097 string characters out of 5765351
- 588049 words of memory out of 5000000
- 33805 multiletter control sequences out of 15000+600000
+ 11498 strings out of 475178
+ 177383 string characters out of 5765351
+ 586367 words of memory out of 5000000
+ 34275 multiletter control sequences out of 15000+600000
  628766 words of font info for 88 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,14n,79p,266b,668s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb>
-Output written on report.pdf (4 pages, 293332 bytes).
+ 75i,14n,79p,350b,547s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb>
+Output written on report.pdf (5 pages, 711212 bytes).
 PDF statistics:
- 124 PDF objects out of 1000 (max. 8388607)
- 87 compressed objects within 1 object stream
- 19 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 223 PDF objects out of 1000 (max. 8388607)
+ 172 compressed objects within 2 object streams
+ 32 named destinations out of 1000 (max. 500000)
+ 194 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -7,13 +7,25 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Data Split}{1}{subsection.2.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Pipeline \& CV Configuration}{1}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Hyperparameter Grids}{1}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Results}{1}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Best CV Hyperparameters}{1}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Best CV Hyperparameters}{2}{subsection.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Held-Out Test-Set Performance}{2}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Discussion}{2}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Model Comparison}{2}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Linear vs.\ Nonlinear Boundaries}{2}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Regularization Insights}{2}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Reproducibility}{2}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Appendix: Full Source Code}{3}{section.6}\protected@file@percent }
-\gdef \@abspage@last{4}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}ROC Curves}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces ROC curves on the held-out test set. All four models achieve AUC $>0.99$, with RBF SVC leading at 0.9977.}}{2}{figure.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Extended Analysis}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Statistical Significance}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Calibration Analysis}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Reliability diagrams. A perfectly calibrated model follows the dashed diagonal. Logistic Regression and RBF SVC track the diagonal closely; the Poly SVC shows slight under-confidence in the 0.7--0.9 range.}}{3}{figure.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Learning Curves}{4}{subsection.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Learning curves for each model. Train and validation accuracy converge as training size grows, indicating low overfitting. Slight gaps persist for the Poly SVC.}}{4}{figure.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Feature Importance}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Top 10 logistic regression coefficients (standardized features). Blue = positive (associated with benign), red = negative (associated with malignant).}}{4}{figure.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Decision Boundary Visualization}{4}{subsection.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Decision boundaries projected onto the first two principal components (63.4\% variance explained). Linear models produce straight boundaries; RBF and Poly SVMs introduce curvature.}}{4}{figure.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{5}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Model Comparison}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Linear vs.\ Nonlinear Boundaries}{5}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Regularization Insights}{5}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Clinical Implications}{5}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Reproducibility}{5}{section.6}\protected@file@percent }
+\gdef \@abspage@last{5}
