@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.1.23)  13 APR 2026 19:33
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.1.23)  13 APR 2026 20:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -325,8 +325,8 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \@float@everytoks=\toks25
 \@floatcapt=\box56
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 37.
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 48.
+Package hyperref Info: Option `colorlinks' set `true' on input line 35.
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 45.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
@@ -336,24 +336,24 @@ File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 ) (./report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 48.
-LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -389,7 +389,7 @@ LaTeX Font Info:    ... okay on input line 48.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring ON on input line 48.
+Package hyperref Info: Link coloring ON on input line 45.
 (./report.out) (./report.out)
 \@outlinefile=\write4
 \openout4 = `report.out'.
@@ -400,66 +400,66 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 50.
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 50.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 50.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 50.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 50.
+(Font)              <12> on input line 47.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 50.
+(Font)              <8> on input line 47.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 50.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 50.
+(Font)              <6> on input line 47.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 50.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 47.
  (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 53.
+(hyperref)                removing `\leavevmode@ifvmode' on input line 50.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 53.
+(hyperref)                removed on input line 50.
 
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 59.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 56.
 (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 60.
+(Font)              <10> on input line 57.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 60.
+(Font)              <7> on input line 57.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 60.
+(Font)              <5> on input line 57.
 
-Overfull \hbox (12.27309pt too wide) in paragraph at lines 58--66
-\T1/lmr/m/n/10 We use the \T1/lmr/bx/n/10 MNIST hand-writ-ten digit dataset \T1/lmr/m/n/10 (Le-Cun et al.), loaded via \T1/lmtt/m/n/10 fetch_openml('mnist_784', version=1,
+Overfull \hbox (15.05084pt too wide) in paragraph at lines 55--61
+\T1/lmr/m/n/10 We use the \T1/lmr/bx/n/10 MNIST hand-writ-ten digit dataset \T1/lmr/m/n/10 (Le-Cun et al.), loaded via \T1/lmtt/m/n/10 fetch_openml('mnist_784', version=1)\T1/lmr/m/n/10 .
  []
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 69.
-<outputs/sample_digits.png, id=112, 841.7046pt x 356.532pt>
+(Font)              <9> on input line 64.
+<outputs/sample_digits.png, id=116, 841.7046pt x 356.532pt>
 File: outputs/sample_digits.png Graphic file (type png)
 <use outputs/sample_digits.png>
-Package pdftex.def Info: outputs/sample_digits.png  used on input line 84.
+Package pdftex.def Info: outputs/sample_digits.png  used on input line 79.
 (pdftex.def)             Requested size: 430.00958pt x 182.14444pt.
 
 
@@ -469,29 +469,29 @@ Package pdftex.def Info: outputs/sample_digits.png  used on input line 84.
 pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.99 \end{enumerate}
-                     <./outputs/sample_digits.png>]
+l.96 \begin{code}
+                  <./outputs/sample_digits.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 138.
+(hyperref)                removing `\leavevmode@ifvmode' on input line 125.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 138.
+(hyperref)                removed on input line 125.
 
 
 
 [2{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
-<outputs/confusion_matrices.png, id=154, 1146.684pt x 732.336pt>
+<outputs/confusion_matrices.png, id=156, 1146.684pt x 732.336pt>
 File: outputs/confusion_matrices.png Graphic file (type png)
 <use outputs/confusion_matrices.png>
-Package pdftex.def Info: outputs/confusion_matrices.png  used on input line 202.
+Package pdftex.def Info: outputs/confusion_matrices.png  used on input line 189.
 (pdftex.def)             Requested size: 505.89pt x 323.08928pt.
-<outputs/coef_maps.png, id=155, 1222.8084pt x 402.7848pt>
+<outputs/coef_maps.png, id=157, 1222.8084pt x 402.7848pt>
 File: outputs/coef_maps.png Graphic file (type png)
 <use outputs/coef_maps.png>
-Package pdftex.def Info: outputs/coef_maps.png  used on input line 215.
+Package pdftex.def Info: outputs/coef_maps.png  used on input line 201.
 (pdftex.def)             Requested size: 505.89pt x 166.6363pt.
 
 
@@ -499,54 +499,58 @@ Package pdftex.def Info: outputs/coef_maps.png  used on input line 215.
 pdfTeX warning (ext4): destination with the same identifier (name{figure.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.227 
+l.212 
        <./outputs/confusion_matrices.png>]
-<outputs/accuracy_logloss_comparison.png, id=167, 1000.2168pt x 462.528pt>
+<outputs/accuracy_logloss_comparison.png, id=164, 1000.2168pt x 462.528pt>
 File: outputs/accuracy_logloss_comparison.png Graphic file (type png)
 <use outputs/accuracy_logloss_comparison.png>
-Package pdftex.def Info: outputs/accuracy_logloss_comparison.png  used on input line 254.
+Package pdftex.def Info: outputs/accuracy_logloss_comparison.png  used on input line 216.
 (pdftex.def)             Requested size: 480.59395pt x 222.2438pt.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\leavevmode@ifvmode' on input line 227.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                \kern 1.66702pt
+(hyperref)                removed on input line 227.
+
 
 
 [4
 pdfTeX warning (ext4): destination with the same identifier (name{figure.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.262 
-       <./outputs/coef_maps.png>]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 264.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 264.
-
-
-
-[5
+l.240 \end{enumerate}
+                     
 pdfTeX warning (ext4): destination with the same identifier (name{figure.4}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.316 \subsection
-                 {Model Specification (PyMC, NUTS)} <./outputs/accuracy_logloss_comparison.png>]
-<outputs/bayesian_shrinkage.png, id=183, 640.794pt x 351.714pt>
+l.240 \end{enumerate}
+                      <./outputs/coef_maps.png> <./outputs/accuracy_logloss_comparison.png>]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 326.
+ (/Users/brianbutler/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+
+[5]
+<outputs/bayesian_shrinkage.png, id=187, 640.794pt x 351.714pt>
 File: outputs/bayesian_shrinkage.png Graphic file (type png)
 <use outputs/bayesian_shrinkage.png>
-Package pdftex.def Info: outputs/bayesian_shrinkage.png  used on input line 390.
+Package pdftex.def Info: outputs/bayesian_shrinkage.png  used on input line 386.
 (pdftex.def)             Requested size: 414.8335pt x 227.69368pt.
 
 
-[6]
+[6{/Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 429.
+(hyperref)                removing `\leavevmode@ifvmode' on input line 414.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 429.
+(hyperref)                removed on input line 414.
 
 
 
@@ -554,13 +558,8 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 pdfTeX warning (ext4): destination with the same identifier (name{figure.5}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.450 
-       <./outputs/bayesian_shrinkage.png>]
-Underfull \hbox (badness 1087) in paragraph at lines 485--486
-[]\T1/lmr/m/n/9 Hard la-bels (prob-a-bil-ity re-quires
- []
-
-
+l.447 \end{center}
+                   <./outputs/bayesian_shrinkage.png>]
 
 [8]
 
@@ -570,21 +569,21 @@ LaTeX2e <2024-11-01> patch level 1
 L3 programming layer <2024-12-25>
  ***********
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 0D75D29FA716AD478ACD889736230323;6504.
+(rerunfilecheck)             Checksum: F325DBC348D43B36BD3E54255FD935D9;6251.
  ) 
 Here is how much of TeX's memory you used:
- 11412 strings out of 475178
- 175618 string characters out of 5765351
+ 11445 strings out of 475178
+ 176557 string characters out of 5765351
  581346 words of memory out of 5000000
- 34159 multiletter control sequences out of 15000+600000
- 640289 words of font info for 95 fonts, out of 8000000 for 9000
+ 34188 multiletter control sequences out of 15000+600000
+ 639374 words of font info for 92 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,11n,79p,863b,551s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi6.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy6.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtti10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (9 pages, 919681 bytes).
+ 75i,10n,79p,696b,653s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi6.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy9.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb></Users/brianbutler/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on report.pdf (9 pages, 864160 bytes).
 PDF statistics:
- 347 PDF objects out of 1000 (max. 8388607)
- 269 compressed objects within 3 object streams
- 61 named destinations out of 1000 (max. 500000)
- 242 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 335 PDF objects out of 1000 (max. 8388607)
+ 264 compressed objects within 3 object streams
+ 62 named destinations out of 1000 (max. 500000)
+ 250 words of extra memory for PDF output out of 10000 (max. 10000000)
 

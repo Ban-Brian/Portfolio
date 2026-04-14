@@ -4,37 +4,40 @@
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Part A\,: Data Description and Setup}{1}{section.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Dataset and Subset}{1}{subsection.1.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces One representative image per digit from the training fold. Digit~1 exhibits the most uniform stroke pattern; digits 3, 5, and 8 share curved overlapping structure, motivating the 3\,vs.\,8 binary task in Part~C.}}{1}{figure.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces One image per digit from the training set. Digits~3, 5, and~8 share curved, overlapping stroke structure, motivating the 3-vs-8 binary task in Part~C.}}{1}{figure.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Preprocessing}{1}{subsection.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Data-Split Protocol}{2}{subsection.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Data Split Protocol}{2}{subsection.1.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Multinomial Logistic Regression}{2}{subsection.1.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2}Part B\,: Frequentist Classification and Regularization}{2}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Models and Penalty Formulations}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Hyperparameter Search Grids}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Results}{2}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Confusion Matrices}{3}{subsection.2.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Confusion matrices on the 1{,}000-sample test set. The hardest inter-class confusions---$3\leftrightarrow 5$, $4\leftrightarrow 9$, and $7\leftrightarrow 1$---appear across \emph  {all} models, revealing genuine visual ambiguity rather than model-specific failure. RBF SVM (bottom-right) has the sparsest off-diagonal. The unpenalised logistic model (top-left) shows noticeably more scattered errors, confirming that regularisation is necessary at this sample size.}}{3}{figure.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Confusion matrices on the test set. Common confusions---$3\!\leftrightarrow \!5$, $4\!\leftrightarrow \!9$, $7\!\leftrightarrow \!1$---appear across \emph  {all} models, reflecting genuine visual ambiguity. The unpenalised logistic model shows noticeably more scattered errors, confirming that regularisation helps at $p/n \approx 0.2$.}}{3}{figure.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Coefficient Shrinkage and Spatial Structure}{4}{subsection.2.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Coefficient weight maps reshaped to $28\!\times \!28$ pixels. \textbf  {Ridge} (top row): smooth, broadly non-zero patterns reflecting the full digit silhouette---every pixel contributes, with larger weights in stroke areas. \textbf  {Lasso} (middle): many background pixels are exactly zero (grey), retaining signal only in ink-heavy regions---sparsity is visually evident. \textbf  {Elastic Net} (bottom): a qualitative intermediate: sparser than Ridge yet smoother than Lasso, inheriting the stability of $\ell _2$ in the correlated pixel neighbourhood. Note: pixels are StandardScaler-normalised, which amplifies low-variance corner pixels; the spatial patterns are qualitatively valid for comparing penalty types.}}{4}{figure.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Overall Model Comparison}{5}{subsection.2.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Left}: test accuracy for all frequentist models (blue) and the representative Bayesian binary-task results (coral, digits 3\,vs.\,8). \textbf  {Right}: log-loss for the subset of models that output calibrated probabilities. RBF SVM achieves the highest accuracy ($\approx $96\%) but cannot produce log-loss without Platt scaling. Among probabilistic models, Ridge LR achieves the lowest log-loss (best calibration), consistent with its log-likelihood objective.}}{5}{figure.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Part C\,: Bayesian Classification and Shrinkage}{5}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Setup: Binary Subset (Digits 3 vs.\ 8)}{5}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Coefficient maps reshaped to $28\!\times \!28$. \textbf  {Ridge} (top): smooth, broadly non-zero patterns. \textbf  {Lasso} (middle): many pixels exactly zero (grey); signal concentrated on ink-heavy regions. \textbf  {Elastic Net} (bottom): sparser than Ridge, smoother than Lasso. Caveat: \texttt  {StandardScaler} sets zero-variance corner pixels to~0 (no amplification), but \emph  {low-but-nonzero-variance} pixels at stroke edges can have their small variances amplified. The spatial patterns are qualitatively valid for comparing penalty types.}}{4}{figure.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Overall Comparison}{4}{subsection.2.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Left}: test accuracy for all models. \textbf  {Right}: log-loss for models with calibrated probabilities. Ridge achieves the lowest log-loss (best calibration) among LR models. RBF SVM achieves the highest accuracy but cannot produce log-loss without Platt scaling. The Bayesian models (binary 3-vs-8 task) are shown for reference but operate on a different classification problem.}}{4}{figure.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Part C\,: Bayesian Classification and Shrinkage}{4}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Setup: Binary Subset (Digits 3 vs.\ 8)}{4}{subsection.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Frequentist--Bayesian Correspondence}{5}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Model Specification (PyMC, NUTS)}{6}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{(i) Gaussian Prior (Ridge analogue)}{6}{section*.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{(ii) Laplace Prior (Lasso analogue)}{6}{section*.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{(iii) Horseshoe Prior (Extension --- non-centred form)}{6}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Posterior Predictive Probabilities}{6}{subsection.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Posterior Summaries and Performance}{6}{subsection.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Shrinkage Pattern Comparison}{7}{subsection.3.6}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Sorted $|\hat  \beta _q|$ (posterior mean) across the 30 PCA dimensions. \textbf  {Gaussian} (blue): smooth, approximately exponential decay---all components receive moderate, uniform shrinkage, consistent with the Ridge analogy. \textbf  {Laplace} (pink): steeper initial drop with a longer flat tail, concentrating information in the top 5--8 ``stroke-relevant'' principal directions. \textbf  {Horseshoe} (purple): pronounced spike-and-slab profile---near-zero shrinkage for the top 6--8 components and essentially complete shrinkage for the remaining ones. This adaptive property is the defining advantage of the Horseshoe over both Gaussian and Laplace priors.}}{7}{figure.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Uncertainty for Difficult Examples}{7}{subsection.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ridge $\leftrightarrow $ Gaussian.}{5}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Lasso $\leftrightarrow $ Laplace.}{5}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Model Specification (PyMC, NUTS)}{5}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(i) Gaussian Prior (Ridge analogue)}{5}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(ii) Laplace Prior (Lasso analogue)}{5}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{(iii) Horseshoe Prior (non-centred parameterisation)}{5}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Convergence Diagnostics}{6}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Posterior Predictive Probabilities}{6}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Posterior Summaries and Performance}{6}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Shrinkage Comparison}{7}{subsection.3.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Sorted $|\hat  \beta _q|$ (posterior mean) across 30 PCA dimensions. \textbf  {Gaussian}: smooth exponential decay --- uniform shrinkage. \textbf  {Laplace}: steeper initial drop, concentrating weight on the top ``stroke-relevant'' PCA directions. \textbf  {Horseshoe}: pronounced spike-and-slab profile --- near-zero shrinkage on dominant components, complete shrinkage on the rest.}}{7}{figure.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Uncertainty for Difficult Examples}{7}{subsection.3.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4}Part D\,: Compare and Contrast}{7}{section.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Which Model Performed Best as a Classifier?}{7}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Did the Best Classifier Provide the Best Probabilistic Fit?}{8}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Ridge vs.\ Lasso: Shrinkage, Sparsity, and Interpretability}{8}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Did the Best Classifier Provide the Best Probabilistic Fit?}{7}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Ridge vs.\ Lasso}{8}{subsection.4.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.4}SVM vs.\ Multinomial Logistic Regression}{8}{subsection.4.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Gaussian vs.\ Laplace Priors as Bayesian Analogues}{8}{subsection.4.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}The Role of Regularisation in Classification}{9}{subsection.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Role of Regularisation in Classification}{8}{subsection.4.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5}MLOps Hygiene and Reproducibility}{9}{section.5}\protected@file@percent }
 \gdef \@abspage@last{9}
