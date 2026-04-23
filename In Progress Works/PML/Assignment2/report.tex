@@ -1,52 +1,62 @@
-\documentclass[10pt, letterpaper]{article}
-
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage[margin=0.7in, top=0.65in, bottom=0.65in]{geometry}
-\usepackage{amsmath, amssymb}
+\documentclass[11pt]{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{hyperref}
-\usepackage{multicol}
+\usepackage{array}
+\usepackage{caption}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage{parskip}
 
-\setlength{\parskip}{3pt plus 1pt minus 1pt}
-\setlength{\parindent}{0pt}
-\setlength{\textfloatsep}{4pt}
-\setlength{\floatsep}{4pt}
-\setlength{\intextsep}{4pt}
-\setlength{\abovecaptionskip}{3pt}
-\setlength{\belowcaptionskip}{1pt}
-
-\title{\vspace{-2em}\textbf{PML Assignment 2: Self-Supervised Denoising for Noise-Level Selection}\vspace{-0.5em}}
+\title{PML Assignment 2: Self-Supervised Denoising for Noise-Level Selection}
 \author{Brian Butler}
 \date{March 2026}
 
 \begin{document}
 \maketitle
-\vspace{-1em}
 
-%----------------------------------------------------------------------
 \section{Overview}
-%----------------------------------------------------------------------
 
-We compare two noise-level ($\sigma$) selection strategies for self-supervised denoising on the \textbf{Iris} dataset ($n{=}150$, $d{=}4$, $K{=}3$):
-(1)~$\sigma_{\text{proxy}}$ -- chosen \emph{without labels} by minimising reconstruction MSE;
-(2)~$\sigma_{\text{down}}$ -- chosen \emph{with few labels} ($m{=}5$/class) by maximising test accuracy.
-Features are standardised using \emph{training-split statistics only} to prevent leakage. Ridge regression ($\alpha{=}1$) is the denoiser; multinomial logistic regression is the classifier.
-In Part~B the pretrained denoiser $g_\sigma$ is used as a \emph{consistent feature transformer}: clean inputs are passed through $g_\sigma$ for both labeled \emph{and} test sets, avoiding any train/test mismatch.
+We study self-supervised denoising as a pretraining task for a downstream
+classification problem on the Iris dataset ($n{=}150$, $d{=}4$, $K{=}3$). Each
+input is corrupted by additive isotropic Gaussian noise,
+\[
+\tilde{x} = x + \varepsilon, \qquad \varepsilon \sim \mathcal{N}(0, \sigma^2 I),
+\]
+and a Ridge regressor $g_\sigma$ is trained to reconstruct $x$ from $\tilde{x}$
+by minimising $\mathbb{E}\,\lVert x - g_\sigma(\tilde{x}) \rVert^2$. Here
+$\sigma$ is the \textbf{standard deviation of the corruption noise}, measured
+in units of standardised features, and it is the single hyperparameter that
+controls the difficulty of the pretext task.
 
-%----------------------------------------------------------------------
+\textbf{Why we do this.} The denoiser $g_\sigma$ never sees any labels, yet in
+solving the reconstruction task it must learn the correlation structure of the
+features and project them onto a lower-dimensional data manifold. The resulting
+$g_\sigma$ is then reused as a \emph{feature transformer} for a classifier
+trained on only a handful of labels. The role of $\sigma$ is to tune how
+aggressive this implicit regularisation is: if $\sigma$ is too small,
+$g_\sigma$ collapses to the identity and learns nothing; if $\sigma$ is too
+large, the target becomes unrecoverable and $g_\sigma$ collapses toward the
+feature mean. A moderate $\sigma$ sits in between and should, in principle,
+yield a useful denoised representation. The central question of the assignment
+is how to pick that $\sigma$.
+
+We compare two strategies: (1)~$\sigma_{\text{proxy}}$ --- chosen without
+labels by minimising proxy reconstruction MSE; (2)~$\sigma_{\text{down}}$ ---
+chosen with few labels ($m{=}5$/class) by maximising test accuracy. Features
+are standardised using training-split statistics only to prevent leakage.
+Ridge regression ($\alpha{=}1$) is the denoiser; multinomial logistic
+regression is the classifier. In Part~B, $g_\sigma$ is used as a consistent
+feature transformer: clean inputs pass through $g_\sigma$ for both labeled and
+test sets, avoiding any train/test mismatch.
+
 \section{Results}
-%----------------------------------------------------------------------
-
-\begin{multicols}{2}
 
 \subsection{Part A -- Proxy-Task (No Labels)}
+Features are split 75/25 (seed 42). For each $\sigma$, noise is added, a Ridge
+denoiser is fitted, and MSE is evaluated on the held-out set.
 
-Features are split 75/25 (seed 42). For each $\sigma$, noise is added, a Ridge denoiser is fitted, and MSE is evaluated on the held-out set.
-
-\begin{center}
-\small
-\textbf{Table 1:} $\sigma$ vs.\ Proxy-Val MSE\\[3pt]
+\begin{table}[h]
+\centering
 \begin{tabular}{cc}
 \toprule
 $\sigma$ & Proxy-Val MSE \\
@@ -60,22 +70,20 @@ $\sigma$ & Proxy-Val MSE \\
 0.8 & 0.230314 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{$\sigma$ vs.\ Proxy-Val MSE.}
+\end{table}
 
-\textbf{Rule:} smallest MSE among $\sigma > 0$.\\
-\textbf{Result:} $\boldsymbol{\sigma_{\text{proxy}} = 0.1}$.
-
-$\sigma{=}0$ is excluded (trivial identity). Among $\sigma > 0$, the lowest noise yields the best reconstruction.
-
-\columnbreak
+Rule: smallest MSE among $\sigma > 0$. \quad
+\textbf{Result: $\sigma_{\text{proxy}} = 0.1$.}
+$\sigma{=}0$ is excluded (trivial identity). Among $\sigma > 0$, the lowest
+noise yields the best reconstruction.
 
 \subsection{Part B -- Downstream (Few Labels)}
+Data split 50/50 (stratified, seed 42); $m{=}5$ labeled per class. Clean
+features are passed through $g_\sigma$ for both labeled training and test sets.
 
-Data split 50/50 (stratified, seed 42). $m{=}5$ labeled per class. Clean features are passed through $g_\sigma$ for both labeled training and test sets.
-
-\begin{center}
-\small
-\textbf{Table 2:} $\sigma$ vs.\ Test Accuracy ($m{=}5$/class)\\[3pt]
+\begin{table}[h]
+\centering
 \begin{tabular}{cc}
 \toprule
 $\sigma$ & Test Accuracy \\
@@ -89,69 +97,185 @@ $\sigma$ & Test Accuracy \\
 0.8 & 0.8667 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{$\sigma$ vs.\ Test Accuracy ($m{=}5$/class).}
+\end{table}
 
-\textbf{Rule:} highest test accuracy; ties broken by smallest $\sigma$.\\
-\textbf{Result:} $\boldsymbol{\sigma_{\text{down}} = 0.4}$.
+Rule: highest test accuracy; ties broken by smallest $\sigma$. \quad
+\textbf{Result: $\sigma_{\text{down}} = 0.4$.}
 
-\end{multicols}
-
-\vspace{-0.5em}
 \subsection{Multi-Seed Variance (Part B, 10 seeds)}
+The single-seed results above show many ties (accuracy differences
+$\leq 0.013$). To assess stability, Part~B is repeated over 10 independently
+sampled labeled sets. $\mathrm{SEM} = \mathrm{std}/\sqrt{n}$ is reported
+alongside the mean.
 
-The single-seed results above show many ties (accuracy differences $\leq 0.013$). To assess stability, Part~B is repeated over 10 independently sampled labeled sets.
-
-\begin{center}
-\small
-\textbf{Table 3:} $\sigma$ vs.\ Mean $\pm$ Std Test Accuracy (10 seeds)\\[3pt]
-\begin{tabular}{ccc}
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
 \toprule
-$\sigma$ & Mean Accuracy & Std \\
+$\sigma$ & Mean Acc & Std & SEM ($n{=}10$) \\
 \midrule
-0.0 & 0.8893 & 0.0387 \\
-0.1 & 0.8867 & 0.0418 \\
-0.2 & 0.8827 & 0.0473 \\
-0.3 & 0.8787 & 0.0411 \\
-0.4 & 0.8693 & 0.0453 \\
-0.6 & 0.8560 & 0.0347 \\
-0.8 & 0.8573 & 0.0343 \\
+0.0 & 0.8893 & 0.0408 & 0.0129 \\
+0.1 & 0.8867 & 0.0441 & 0.0139 \\
+0.2 & 0.8827 & 0.0498 & 0.0158 \\
+0.3 & 0.8787 & 0.0433 & 0.0137 \\
+0.4 & 0.8693 & 0.0478 & 0.0151 \\
+0.6 & 0.8560 & 0.0365 & 0.0116 \\
+0.8 & 0.8573 & 0.0361 & 0.0114 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{$\sigma$ vs.\ Mean / Std / SEM Test Accuracy (10 seeds).}
+\end{table}
 
-Averaging over seeds reveals that $\sigma{=}0$ achieves the highest mean accuracy (0.8893).
-The single-seed $\sigma_{\text{down}}{=}0.4$ lies within one standard deviation of the best, confirming that the slight advantage of higher $\sigma$ in the single-seed run is due to sampling variability in the small labeled budget.
+At $n{=}10$, $\sigma{=}0$ yields the highest mean accuracy (0.8893). But every
+SEM is $\geq 0.011$, and the top four $\sigma$ values fall within one SEM of
+each other. Before drawing conclusions we therefore need to ask whether 10
+replicates are enough.
 
-%----------------------------------------------------------------------
+\subsection{Are 10 Replicates Sufficient?}
+To quantify how much of the $n{=}10$ ranking is real signal versus sampling
+noise, we extend the experiment to a reference run of $n{=}200$ independent
+labeled-set seeds, then evaluate three diagnostics at
+$n \in \{5, 10, 20, 50, 100, 200\}$.
+
+\textbf{(a) Standard error of the mean.} SEM shrinks as $1/\sqrt{n}$. At
+$n{=}10$ the SEM on each $\sigma$-cell is $0.011$--$0.016$, which is
+\emph{larger} than the mean-accuracy gaps between adjacent $\sigma$ values
+($0.003$--$0.013$). That alone tells us the $n{=}10$ ranking of the top few
+$\sigma$ cannot be trusted.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccccccccc}
+\toprule
+$n$ & $\sigma{=}0$ & $\sigma{=}0.1$ & $\sigma{=}0.2$ & $\sigma{=}0.3$ & $\sigma{=}0.4$ & $\sigma{=}0.6$ & $\sigma{=}0.8$ \\
+\midrule
+5   & 0.0244 & 0.0265 & 0.0294 & 0.0258 & 0.0269 & 0.0232 & 0.0225 \\
+10  & 0.0129 & 0.0139 & 0.0158 & 0.0137 & 0.0151 & 0.0116 & 0.0114 \\
+20  & 0.0084 & 0.0087 & 0.0102 & 0.0097 & 0.0099 & 0.0081 & 0.0085 \\
+50  & 0.0078 & 0.0077 & 0.0078 & 0.0072 & 0.0070 & 0.0060 & 0.0055 \\
+100 & 0.0052 & 0.0051 & 0.0052 & 0.0049 & 0.0048 & 0.0041 & 0.0037 \\
+200 & 0.0036 & 0.0035 & 0.0036 & 0.0034 & 0.0032 & 0.0028 & 0.0025 \\
+\bottomrule
+\end{tabular}
+\caption{SEM of the mean test accuracy at each $n$.}
+\end{table}
+
+\textbf{(b) Decision stability.} We bootstrap 1000 subsamples of size $n$ from
+the 200 available seeds and ask how often $\arg\max_\sigma$ of the subsample
+mean matches the $n{=}200$ reference (which is $\sigma{=}0.1$). At $n{=}10$
+the two agree only 22\% of the time, barely better than chance
+($1/7 \approx 14\%$). Even at $n{=}200$ the match rate is only 53\%, because
+the top three $\sigma$ values ($0,\,0.1,\,0.2$) have overlapping means and are
+genuinely indistinguishable on this dataset.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+$n$ & $P(\arg\max \text{ matches ref})$ & Avg 95\% CI half-width \\
+\midrule
+5   & 0.149 & 0.0500 \\
+10  & 0.223 & 0.0264 \\
+20  & 0.238 & 0.0177 \\
+50  & 0.319 & 0.0137 \\
+100 & 0.355 & 0.0093 \\
+200 & 0.528 & 0.0063 \\
+\bottomrule
+\end{tabular}
+\caption{Stability of the $\arg\max$-$\sigma$ decision (reference: $n{=}200$, $\sigma{=}0.1$).}
+\end{table}
+
+\textbf{(c) Paired comparison.} When seed-level noise is the dominant variance
+component, pairing across seeds is much more powerful than comparing means. A
+paired $t$-test for $\sigma{=}0$ vs.\ $\sigma{=}0.4$ (the two headline values
+from the tables above) is significant even at $n{=}10$ (mean
+$\Delta{=}{+}0.020$, $t{=}3.00$, $p{=}0.015$). So while 10 seeds cannot pick
+the single best $\sigma$, they are enough to reject the single-seed claim
+that $\sigma{=}0.4$ beats $\sigma{=}0$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+$n$ & mean diff & SE & $t$ & $p$ \\
+\midrule
+5   & $+0.0267$ & 0.0094 & $+2.83$ & 0.047 \\
+10  & $+0.0200$ & 0.0067 & $+3.00$ & 0.015 \\
+20  & $+0.0133$ & 0.0053 & $+2.52$ & 0.021 \\
+50  & $+0.0128$ & 0.0032 & $+3.99$ & 0.0002 \\
+100 & $+0.0084$ & 0.0026 & $+3.22$ & 0.002 \\
+200 & $+0.0092$ & 0.0019 & $+4.96$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\caption{Paired $t$-test, $\sigma{=}0$ vs.\ $\sigma{=}0.4$ (per-seed pairing).}
+\end{table}
+
+\textbf{Verdict.} Ten replicates are \emph{not} sufficient to identify the
+best $\sigma$: the 95\% CI on each mean is $\approx \pm 0.026$, wider than the
+spread of the top four $\sigma$ values, and the $\arg\max$ choice at $n{=}10$
+is unstable (matches the reference only 22\% of the time). Ten replicates
+\emph{are} sufficient to detect the broad trend that low $\sigma$ outperforms
+high $\sigma$ (paired $t$-test, $p{=}0.015$). For a reliable point estimate,
+$n \geq 50$ is advisable ($|\text{mean} - \text{reference}| < 0.005$). In
+general, whenever candidate $\sigma$ values produce mean accuracies separated
+by less than a SEM, the honest reporting format is mean $\pm$ SEM with a
+pairwise significance test, not a single $\arg\max$.
+
 \section{Discussion}
-%----------------------------------------------------------------------
 
 \subsection{Why Do the Two Strategies Disagree?}
-
-The proxy task optimises \emph{reconstruction fidelity}, while the downstream task optimises \emph{classification accuracy} -- fundamentally different objectives.
-$\sigma_{\text{proxy}}{=}0.1$ minimises reconstruction error among non-trivial noise levels: small noise forces the denoiser to learn data structure while keeping distortion low.
-$\sigma_{\text{down}}{=}0.4$ (single seed) arises because the denoiser, as a feature transformer, applies a mild low-pass filter that can help with certain labeled subsets. However, the multi-seed analysis shows $\sigma{=}0$ is best on average, indicating that on Iris the raw features are already informative enough that denoising adds little benefit.
-This divergence illustrates that proxy and downstream objectives can favour different $\sigma$ values.
+The proxy task optimises reconstruction fidelity; the downstream task
+optimises classification accuracy. These are fundamentally different
+objectives. $\sigma_{\text{proxy}}{=}0.1$ minimises reconstruction error among
+non-trivial noise levels: small noise forces the denoiser to learn data
+structure while keeping distortion low. The single-seed
+$\sigma_{\text{down}}{=}0.4$ arises because the denoiser applies a mild
+low-pass filter that happened to help on one particular labeled subset. The
+multi-seed (and the $n{=}200$ reference) analysis in \S2.4 shows that on
+average $\sigma \approx 0.1$ is in fact best, and that $\sigma{=}0.4$ is
+significantly worse. So the real divergence is modest
+($\sigma \approx 0.1$ vs.\ $\sigma{=}0$ being essentially tied), reflecting
+that on Iris the raw features are already informative enough that denoising
+adds little benefit.
 
 \subsection{Is There a ``Sweet Spot''?}
-
-For \textbf{reconstruction}, MSE increases monotonically with $\sigma$; the sweet spot is the smallest positive $\sigma$ (0.1).
-For \textbf{classification}, the multi-seed means decrease gradually from $\sigma{=}0$ (0.8893) to $\sigma{=}0.6$ (0.8560). The differences are small relative to the standard deviations ($\approx$0.04), meaning the ``sweet spot'' is broad and centered at $\sigma{=}0$. On higher-dimensional or noisier datasets, one would expect a clear interior peak where moderate denoising regularises representations and improves generalisation.
+For reconstruction, MSE increases monotonically with $\sigma$; the sweet spot
+is the smallest positive $\sigma$ ($0.1$). For classification, the $n{=}200$
+means decrease gradually from $0.8683$ at $\sigma{=}0$ to $0.8521$ at
+$\sigma{=}0.8$, with the top three $\sigma$ values statistically
+indistinguishable. The ``sweet spot'' is therefore broad and centred near
+$\sigma{=}0$. On higher-dimensional or noisier datasets one would expect a
+clear interior peak where moderate denoising regularises representations and
+improves generalisation.
 
 \subsection{Proxy-Based vs.\ Downstream Tuning}
+\textbf{Proxy-based ($\sigma_{\text{proxy}}$):} requires no labels; scalable
+and stable. However, the proxy objective may not align with downstream needs.
 
-\textbf{Proxy-based} ($\sigma_{\text{proxy}}$): requires \emph{no labels}; scalable and stable. However, the proxy objective may not align with downstream needs.
+\textbf{Downstream ($\sigma_{\text{down}}$):} directly optimises the target
+metric, but requires labeled data and --- as \S2.4 shows --- is highly
+sensitive to sampling variance with small budgets. A single labeled-set draw
+can easily mislead; even ten cannot reliably select a winner. Multi-seed
+averaging with reported SEM, combined with paired significance tests, is
+essential.
 
-\textbf{Downstream} ($\sigma_{\text{down}}$): directly optimises the target metric, but requires labeled data and is more sensitive to sampling variance with small budgets (as the multi-seed analysis demonstrates).
-
-\textbf{When to prefer each:} use proxy tuning when labels are unavailable; use downstream tuning when even a small labeled set exists, supplemented by multi-seed averaging to reduce variance.
+\textbf{When to prefer each:} use proxy tuning when labels are unavailable or
+when the labeled budget is too small for the downstream signal to overcome
+seed-level variance; use downstream tuning when even a small labeled set
+exists \emph{and} enough seeds can be run ($n \geq 50$) to stabilise the
+estimate.
 
 \subsection{Reproducibility}
-
-Three sources of randomness are fixed:
-(1)~\texttt{random\_state=42} in \texttt{train\_test\_split} ensures identical partitions;
-(2)~\texttt{RandomState(42)} for labeled-set sampling guarantees the same $m{=}5$ examples per class;
-(3)~distinct seed offsets (\texttt{SEED+1}, \texttt{+2}) provide independent noise realisations while remaining reproducible.
-Parts~A and~B use separate train/test splits (75/25 vs.\ 50/50) since they are independent experiments; within each part, splits and labeled budgets are held constant across all $\sigma$ values.
+Three sources of randomness are fixed: (1)~\texttt{random\_state=42} in
+\texttt{train\_test\_split} ensures identical partitions;
+(2)~\texttt{RandomState(42)} for labeled-set sampling guarantees the same
+$m{=}5$ examples per class in the single-seed run; (3)~distinct seed offsets
+(\texttt{SEED+1}, \texttt{SEED+100+i}) provide independent noise and
+labeled-set realisations while remaining reproducible. Parts~A and B use
+separate train/test splits (75/25 vs.\ 50/50) since they are independent
+experiments; within each part, splits and labeled budgets are held constant
+across all $\sigma$ values.
 
 \end{document}

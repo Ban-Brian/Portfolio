@@ -1,0 +1,43 @@
+Loading MNIST …
+  Train+Val: 4000, Test: 1000
+  Binary train: 836 (class 0: 445, class 1: 391)
+  Binary test:  209
+  PCA variance explained by 30 components: 0.6069 (60.7%)
+
+═══ Gaussian Prior (Ridge analogue) ═══
+  R-hat: [1.000, 1.000]  ESS bulk min: 902  Divergences: 0
+  Accuracy: 0.9378  Log-Loss: 0.1459
+
+═══ Laplace Prior (Lasso analogue) ═══
+  R-hat: [1.000, 1.010]  ESS bulk min: 551  Divergences: 0
+  Accuracy: 0.9330  Log-Loss: 0.1452
+
+═══ Horseshoe Prior (non-centered) ═══
+  R-hat: [1.000, 1.060]  ESS bulk min: 23  Divergences: 333
+  Accuracy: 0.9234  Log-Loss: 0.1525
+
+========================================================================
+TABLE 2 VALUES (paste into report):
+========================================================================
+Model                  Test Acc   Log-Loss
+------------------------------------------
+Gaussian Prior           0.9378     0.1459
+Laplace Prior            0.9330     0.1452
+Horseshoe Prior          0.9234     0.1525
+
+========================================================================
+TABLE 3 VALUES — Top 5 most uncertain (Gaussian Prior):
+========================================================================
+Rank  True    p_hat  sigma_hat  Pred  Correct
+------------------------------------------
+   1    Digit 8    0.479      0.386     0       NO
+   2    Digit 3    0.422      0.283     0      yes
+   3    Digit 8    0.915      0.275     1      yes
+   4    Digit 3    0.475      0.236     0      yes
+   5    Digit 3    0.584      0.214     1       NO
+
+========================================================================
+PCA variance explained: 0.6069 (60.7%)
+========================================================================
+
+Done.
