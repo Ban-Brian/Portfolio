@@ -87,7 +87,7 @@ def create_resume_pdf(output_filename):
         "Bachelor's Degree in Mathematical Statistics | George Mason University | Expected Graduation: May 2027",
         body_style))
     story.append(Paragraph(
-        "Relevant Coursework: Multivariable Statistics, Object Oriented Programming, Higher Maths, Computer Science for Data (CDS 130)",
+        "Relevant Coursework: Multivariate Statistics, Data Structures, Higher Maths, Probability Theory, Probabilistic Machine Learning",
         body_style
     ))
     story.append(Spacer(1, 5))
