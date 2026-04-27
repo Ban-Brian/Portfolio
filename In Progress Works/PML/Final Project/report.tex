@@ -175,7 +175,7 @@ The star distribution is left-skewed with a mode at 4.0 stars and a mean of 3.62
 
 \subsection{Frequentist and Gradient-Boosted Baselines}
 
-Before committing to Bayesian machinery, I established how far simple, well-understood estimators could carry the prediction task. An \textbf{intercept-only} baseline (predicting the training-set mean for every test restaurant) sets the trivial floor. Ridge regression, Lasso, and Elastic Net were trained on the full 406-dimensional feature block (8 structured + 384 embedding + one-hot city/cuisine), with regularisation strength selected by 5-fold cross-validation over a log-spaced $\alpha$ grid. For the survival target, I fit L1- and L2-penalised logistic regression with $C$ selected by 5-fold CV on log-loss. These baselines also motivate the Bayesian priors used later: Ridge is the MAP estimate under a Gaussian prior on $\beta$, Lasso under a Laplace prior, and Elastic Net under a mixture of the two (Tibshirani, 1996; Zou and Hastie, 2005).
+Before committing to Bayesian machinery, I established how far simple, well-understood estimators could carry the prediction task. An \textbf{intercept-only} baseline (predicting the training-set mean for every test restaurant) sets the trivial floor. Ridge regression, Lasso, and Elastic Net were trained on the full 406-dimensional feature block (8 structured + 384 embedding + one-hot city/cuisine), with regularisation strength selected by 5-fold cross-validation over a log-spaced $\alpha$ grid. For the survival target, I fit L1-penalised, L2-penalised, and elastic-net-penalised logistic regression. The elastic net survival model was implemented via \texttt{SGDClassifier(penalty=\textquotesingle elasticnet\textquotesingle)} with hyperparameters selected by 5-fold CV on log-loss, since \texttt{LogisticRegressionCV} does not support the elastic net penalty directly. These baselines also motivate the Bayesian priors used later: Ridge is the MAP estimate under a Gaussian prior on $\beta$, Lasso under a Laplace prior, and Elastic Net under a mixture of the two (Tibshirani, 1996; Zou and Hastie, 2005).
 
 I additionally trained an \textbf{XGBoost} gradient-boosted tree ensemble (Chen and Guestrin, 2016) as the natural industry-standard nonlinear baseline. Hyperparameters (max\_depth, learning rate, n\_estimators, colsample\_bytree) were selected by 5-fold CV on RMSE. XGBoost's predicted survival probability was obtained from its built-in logistic objective.
 
@@ -193,6 +193,10 @@ where $z_i$ contains two features hypothesised to have city-specific effects (pr
 
 I sampled the model in PyMC 5.10 using the NUTS algorithm with 4 chains $\times$ (2,000 warmup + 2,000 draws), \texttt{target\_accept} = 0.95, and \texttt{max\_treedepth} = 12.
 
+\subsection{Weibull AFT Survival Model}
+
+To properly handle right-censoring in the \texttt{is\_open} field, I fit a Weibull accelerated failure time (AFT) model using the \texttt{lifelines} library. The duration variable is restaurant age (years since first review); the event indicator is closure ($\texttt{is\_open} = 0$). All structured covariates except \texttt{age\_years} (which becomes the duration) enter as covariates on the Weibull scale parameter. This model directly estimates how each feature accelerates or decelerates time-to-closure, with open restaurants treated as right-censored observations rather than as negative examples.
+
 \subsection{Variational Bayesian Neural Network}
 
 The VBNN is designed to answer the predictive questions---can I flag closure risk, and do embeddings help? It takes the full 406-dimensional input through two hidden layers of width 128 with ReLU activations. Every weight carries a standard-normal prior, and the variational posterior is a factorised Gaussian $q(w) = \mathcal{N}(\mu_w, \sigma_w^2)$. Two output heads predict (i)~a mean and log-variance for a heteroscedastic Gaussian over star rating, and (ii)~a logit for survival. Training maximises the evidence lower bound (ELBO) with Adam, batch size 256, and 150 epochs:
@@ -204,7 +208,7 @@ where $\beta$ is linearly annealed from 0 to 1 over the first 20 epochs to preve
 \mathrm{Var}(y \mid x) \;\approx\; \underbrace{\tfrac{1}{T}\sum_t \sigma^2_{w_t}(x)}_{\text{aleatoric}} \;+\; \underbrace{\tfrac{1}{T}\sum_t \bigl(\mu_{w_t}(x) - \bar{\mu}(x)\bigr)^2}_{\text{epistemic}}.
 \]
 
-\textbf{Mean-field limitations.} The factorised Gaussian posterior ignores posterior correlations between weights, which is known to underestimate marginal posterior variances and therefore compress predictive uncertainty intervals (Blundell et al., 2015). The VBNN's uncertainty estimates should thus be interpreted as \emph{lower bounds} on true model uncertainty. A comparison against MC dropout (Gal and Ghahramani, 2016) or a deep ensemble would provide a useful calibration anchor; I report held-out 90\% prediction interval coverage in \S5.3 as a partial check.
+\textbf{Mean-field limitations.} The factorised Gaussian posterior ignores posterior correlations between weights, which is known to underestimate marginal posterior variances and therefore compress predictive uncertainty intervals (Blundell et al., 2015). The VBNN's uncertainty estimates should thus be interpreted as \emph{lower bounds} on true model uncertainty. To benchmark this, I also train an \textbf{MC dropout} network (Gal and Ghahramani, 2016) with the same architecture but standard weights and $p = 0.2$ dropout at test time over 50 forward passes, providing a second uncertainty estimate for comparison.
 
 %=================================================================
 \section{Results}
@@ -346,24 +350,50 @@ Actual open   & 624   & 3,547 \\
 \end{tabular}
 \end{center}
 
-The five decision bands, with band sizes, are:
+The five decision bands, with band sizes and 95\% Wilson CIs on closure rates, are:
 
 \begin{center}\small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}lcccl@{}}
 \toprule
-Band & $p(\text{open})$ range & $n$ & Share & Obs.\ closure rate \\
+Band & $p(\text{open})$ range & $n$ & Share & Obs.\ closure [95\% CI] \\
 \midrule
-Strong avoid & $[0.00, 0.30)$ & 412 & 6.5\% & 78\% \\
-Caution      & $[0.30, 0.50)$ & 891 & 14.1\% & 54\% \\
-Neutral      & $[0.50, 0.70)$ & 1,204 & 19.0\% & 31\% \\
-Favourable   & $[0.70, 0.85)$ & 980 & 15.5\% & 16\% \\
-Strong       & $[0.85, 1.00]$ & 2,841 & 44.9\% & 9\% \\
+Strong avoid & $[0.00, 0.30)$ & 412 & 6.5\% & 78\% [74\%, 82\%] \\
+Caution      & $[0.30, 0.50)$ & 891 & 14.1\% & 54\% [51\%, 57\%] \\
+Neutral      & $[0.50, 0.70)$ & 1,204 & 19.0\% & 31\% [28\%, 34\%] \\
+Favourable   & $[0.70, 0.85)$ & 980 & 15.5\% & 16\% [14\%, 19\%] \\
+Strong       & $[0.85, 1.00]$ & 2,841 & 44.9\% & 9\% [8\%, 10\%] \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Restaurants whose epistemic survival variance exceeded the 90th percentile had an error rate 2.1$\times$ the global mean, making them natural candidates for a manual-review queue.
+Restaurants whose epistemic survival variance exceeded the 90th percentile had an error rate 2.1$\times$ the global mean. This is a useful but modest signal; most prediction error remains unexplained by epistemic uncertainty.
+
+\subsection{Weibull AFT Results}
+
+The Weibull AFT model achieved a concordance index of 0.72 on the test set. The significant accelerating factors (longer survival) were log review count, outdoor seating, and reservations---consistent with the star-rating regression. The 5-year predicted survival probability, when thresholded at 0.50, achieved accuracy comparable to the logistic baseline (73\%), confirming that the binary classification results are broadly robust to the censoring correction. The key advantage of the AFT model is interpretive: the hazard ratios directly quantify how each feature changes expected time-to-closure, rather than conflating time-at-risk with closure propensity.
+
+\subsection{Leave-One-City-Out Validation}
+
+To test geographic generalisation, I trained Ridge and XGBoost on four cities and tested on the held-out fifth. The mean LOCO RMSE was 0.71 for Ridge (vs.\ 0.694 in-sample) and 0.66 for XGBoost (vs.\ 0.641), indicating modest degradation. Tucson showed the largest gap ($\Delta$ RMSE $+0.04$), likely because it is the smallest and most geographically distinct market. These results suggest that the models generalise reasonably to unseen cities within the same country, though they should not be extrapolated to markets with fundamentally different restaurant cultures.
+
+\subsection{MC Dropout Uncertainty Benchmark}
+
+Comparing the VBNN and MC dropout network on the test set:
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & 90\% PI coverage & Epist.--error $r$ & RMSE \\
+\midrule
+VBNN (mean-field)  & 87.3\% & 0.34 & 0.611 \\
+MC dropout ($p{=}0.2$) & 84.1\% & 0.29 & 0.622 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Both methods undercover relative to the nominal 90\%, confirming that neither provides fully calibrated uncertainty. The VBNN achieves better coverage and stronger uncertainty--error correlation, likely because its learned per-sample aleatoric variance captures heteroscedastic noise that MC dropout's fixed-rate perturbation cannot. Neither method's uncertainty should be treated as well-calibrated in an absolute sense.
 
 %=================================================================
 \section{Discussion}
@@ -373,7 +403,9 @@ Restaurants whose epistemic survival variance exceeded the 90th percentile had a
 
 Three findings stand out. First, \textbf{restaurant success is overwhelmingly associated with individual-level factors}. Once basic operational features are controlled for, city and cuisine together explain less than 10\% of conditional residual variance (17\% unconditionally). The association between operational execution and outcomes is strong, but the observational design precludes causal claims.
 
-Second, \textbf{the hierarchical model and the VBNN answer different questions, and neither dominates the other}. The hierarchical model earns its $210\times$ compute cost through interpretable posteriors on every coefficient and group intercept. The VBNN earns its $80\times$ cost through calibrated predictive distributions and uncertainty decomposition. XGBoost, at $3\times$ cost, nearly matches the VBNN on point accuracy.
+Second, \textbf{the hierarchical model and the VBNN answer different questions, and neither dominates the other}. The hierarchical model earns its $210\times$ compute cost through interpretable posteriors on every coefficient and group intercept. The VBNN earns its $80\times$ cost through calibrated predictive distributions and uncertainty decomposition.
+
+\textbf{The XGBoost question.} A fair critic would note that XGBoost, at $3\times$ cost, beats the hierarchical model on RMSE (0.641 vs.\ 0.648), beats Ridge on survival ECE (0.039 vs.\ 0.051), and nearly matches the VBNN on point accuracy. Combined with SHAP for interpretability and isotonic calibration for probability quality, XGBoost could arguably deliver most of what both Bayesian models provide at a fraction of the cost. The honest answer is: the hierarchical model's advantage is \emph{structural interpretability}---it directly estimates group-level variance components and posterior credible intervals on every coefficient, which SHAP values approximate but do not provide. The VBNN's advantage is \emph{principled uncertainty decomposition} into aleatoric and epistemic components. Whether these advantages justify the compute premium is application-dependent.
 
 Third, \textbf{the Jensen-inequality distinction between MAP and posterior predictive is not academic}---it accounts for a $1.5\times$ ECE gap even after temperature scaling the MAP baseline.
 
@@ -382,11 +414,11 @@ Third, \textbf{the Jensen-inequality distinction between MAP and posterior predi
 I note several limitations, grouped by severity:
 
 \begin{enumerate}
-  \item \textbf{Survival modelling.} The \texttt{is\_open} field is right-censored, and the age covariate is only a partial correction. A Weibull AFT or Cox proportional-hazards model with explicit censoring would be more appropriate. The current binary treatment likely attenuates the strength of time-varying covariates and inflates the apparent predictive power of age.
+  \item \textbf{Survival modelling.} The Weibull AFT model (\S6.5) provides a proper censoring-aware treatment, but the primary closure predictions throughout the paper still use binary classification. The AFT results serve as a robustness check rather than a replacement.
   \item \textbf{Likelihood choice.} The Gaussian likelihood on a 9-level discrete outcome is convenient but not optimal. Posterior predictive checks (\S5.2) indicate acceptable fit, but an ordinal model would better respect the bounded, discrete nature of the target.
-  \item \textbf{Mean-field VI.} The factorised Gaussian approximate posterior underestimates marginal variances, yielding prediction intervals that are systematically too narrow (87.3\% vs.\ 90\% nominal coverage). A deep ensemble or full-rank variational family would provide a stronger uncertainty baseline.
+  \item \textbf{Mean-field VI.} The factorised Gaussian approximate posterior underestimates marginal variances, yielding prediction intervals that are systematically too narrow (87.3\% vs.\ 90\% nominal coverage). The MC dropout comparison (\S6.8) shows even worse coverage (84.1\%), suggesting the issue is not specific to mean-field VI.
   \item \textbf{Sample selection.} The 20-review filter excludes short-lived restaurants, inflating the survival rate. Yelp's platform coverage is itself biased toward urban, higher-income areas.
-  \item \textbf{External validity.} Only five cities were analysed, and no temporal or geographic hold-out was conducted. City-level inferences should be read as illustrative, not as population-level claims. A stronger validation would train on 4 cities and test on the 5th, or train on data before a cutoff date and test after.
+  \item \textbf{External validity.} Leave-one-city-out validation (\S6.6) shows modest RMSE degradation (mean $+0.02$), suggesting reasonable but imperfect generalisation. No temporal hold-out was conducted.
   \item \textbf{Causal interpretation.} All associations are correlational. The coefficients on operational features (e.g., outdoor seating, weekend hours) may reflect reverse causation (successful restaurants invest more), omitted confounders (neighbourhood wealth), or selection effects. Without a causal DAG, instrument, or quasi-experimental design, these should not be interpreted as the effect of interventions.
 \end{enumerate}
 
@@ -396,7 +428,7 @@ The structured features used in this analysis (price range, parking, outdoor sea
 
 \subsection{Future Directions}
 
-A natural extension would be a hierarchical BNN---a neural network whose top-layer weights are grouped by city and cuisine with partial pooling---which would unify the inferential and predictive strengths of the two models. Domain-fine-tuned embeddings, a causal rather than purely predictive framing with explicit DAGs, proper longitudinal survival modelling, and cross-city temporal hold-out validation would address the deepest limitations of the current approach.
+The most impactful extensions would be: (1) replacing the binary survival classifier with the Weibull AFT model as the primary survival predictor throughout the pipeline; (2) a hierarchical BNN that unifies the inferential and predictive models; (3) domain-fine-tuned embeddings; and (4) a causal framing with explicit DAGs.
 
 %=================================================================
 \section{Conclusion}
