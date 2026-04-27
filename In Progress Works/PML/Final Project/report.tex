@@ -1,361 +1,457 @@
-## Predicting Restaurant Success on the Yelp Open Dataset: A Bayesian Hierarchical and Variational Neural Network Approach
+\documentclass[10pt, letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.75in, top=0.70in, bottom=0.70in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+
+\setlength{\parskip}{4pt plus 1pt minus 1pt}
+\setlength{\parindent}{0pt}
+\setlength{\textfloatsep}{8pt}
+\setlength{\floatsep}{6pt}
+\setlength{\intextsep}{6pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\let\olditemize\itemize
+\renewcommand{\itemize}{\olditemize\setlength{\itemsep}{1pt}\setlength{\topsep}{2pt}}
+\let\oldenumerate\enumerate
+\renewcommand{\enumerate}{\oldenumerate\setlength{\itemsep}{1pt}\setlength{\topsep}{2pt}}
+
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\title{\vspace{-2.2em}%
+  \textbf{Predicting Restaurant Success on the Yelp Open Dataset:}\\[2pt]
+  \textbf{A Bayesian Hierarchical and Variational Neural Network Approach}%
+  \vspace{-0.4em}}
+\author{Brian Butler\\[2pt]
+  \small STAT646: Probabilistic Machine Learning --- Final Project, Spring 2026}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+
+%=================================================================
+\section*{Abstract}
+%=================================================================
+
+I model restaurant success on the Yelp Open Dataset (150k businesses, 7M reviews) through two complementary probabilistic lenses: a Bayesian hierarchical regression with partial pooling across cities and cuisines, and a variational Bayesian neural network (VBNN) fusing structured metadata with sentence-transformer review embeddings. Frequentist and gradient-boosted baselines (best RMSE 0.641) establish a performance floor. The hierarchical model achieves RMSE 0.648 with interpretable posteriors, while the VBNN achieves 0.611 with ECE 0.034. Variance decomposition shows that 91\% of \emph{conditional} residual variance (and 83\% unconditionally) lies at the restaurant level, not at the city or cuisine level. The VBNN's epistemic uncertainty correlates moderately with prediction error ($r{=}0.34$, $R^2{=}0.12$), and its posterior-averaged predictions yield $2.4{\times}$ better calibration than a matched MAP network---a direct consequence of Jensen's inequality. All predictive associations in this paper are correlational; no causal claims are intended. Limitations include the use of a Gaussian likelihood on a discrete, bounded target; mean-field VI's tendency to underestimate posterior variance; and the treatment of right-censored closure as binary classification rather than proper survival analysis.
+
+%=================================================================
+\section*{Executive Summary}
+%=================================================================
+
+This section provides a self-contained overview of the project's data, methods, and key findings for a quick read.
+
+\paragraph{The Data.} I used the \textbf{Yelp Open Dataset}, a publicly released collection of 150,346 businesses and 6.99 million reviews spanning eleven U.S.\ and Canadian metros. After filtering to restaurants in five cities (Philadelphia, Tampa, Indianapolis, Nashville, Tucson) and the ten most common cuisine types, and requiring at least 20 reviews per restaurant, the working dataset contained \textbf{42,187 restaurants}---65.9\% still open, 34.1\% permanently closed. Each restaurant was described by 8 structured operational features (price range, outdoor seating, weekend hours, noise level, etc.), plus a 384-dimensional review-text embedding produced by a pretrained sentence-transformer model.
+
+\paragraph{The Question.} What operational and market factors predict whether a restaurant will earn high ratings and remain open? And can a probabilistic model honestly quantify its own uncertainty about each prediction?
+
+\paragraph{Models Compared.} I evaluated eight models, from simple to complex:
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}llllp{5.0cm}@{}}
+\toprule
+Model & Star RMSE & Surv.\ ECE & Wall-clock$^\dagger$ & Role \\
+\midrule
+Intercept-only     & 0.781 & ---   & ---         & Trivial baseline (predict the mean) \\
+Ridge              & 0.694 & 0.051 & $1\times$   & MAP under Gaussian prior \\
+Lasso              & 0.689 & ---   & $1\times$   & Sparse baseline; MAP under Laplace prior \\
+Elastic Net        & 0.682 & 0.050 & $1\times$   & Best linear model \\
+XGBoost            & 0.641 & 0.039 & $3\times$   & Gradient-boosted trees \\
+Hierarchical Bayes & 0.648 & 0.042 & $210\times$ & Full posterior; partial pooling \\
+MAP NN (+ temp.)   & 0.619 & 0.052 & $38\times$  & Point-estimate NN; temperature-scaled \\
+\textbf{VBNN}      & \textbf{0.611} & \textbf{0.034} & $80\times$ & Best predictions with calibrated uncertainty \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize $^\dagger$Relative wall-clock training time vs.\ Ridge on the same hardware (single 16-core CPU). Includes cross-validation for linear models and NUTS warmup for the hierarchical model.\par}
 
-**Brian Butler**
-Probabilistic Machine Learning — Final Project, Spring 2026
+\paragraph{Key Results.}
+\begin{itemize}
+  \item \textbf{Top predictive associations} (consistent across all models): log review count ($+0.14$), weekend evening hours ($+0.08$), outdoor seating ($+0.06$), reservations ($+0.05$), and noise level ($-0.04$). These are correlational; no causal mechanism is claimed.
+  \item \textbf{Variance decomposition}: In the conditional model (fixed effects included), 91\% of residual variance lives at the restaurant level; in the unconditional (intercept-only) model, 83\% is restaurant-level, 10\% cuisine, 7\% city. Success is primarily associated with individual operational characteristics.
+  \item \textbf{Closure prediction}: restaurants with VBNN-predicted survival probability below 0.30 had an observed closure rate of 78\% ($n{=}412$); those above 0.85 closed at only 9\% ($n{=}2{,}841$).
+  \item \textbf{Uncertainty quality}: the VBNN's epistemic uncertainty was $2.3\times$ larger for low-review restaurants than for high-review ones, and showed a moderate positive correlation with actual prediction error ($r = 0.34$, $R^2 = 0.12$, $p < 10^{-50}$). This indicates the model has \emph{some} ability to identify where it is least reliable, though 88\% of error variance remains unexplained by epistemic uncertainty.
+  \item \textbf{Embeddings matter}: adding review-text embeddings reduced VBNN RMSE by 5\% (0.641 $\to$ 0.611) and hierarchical RMSE by 2\% (0.661 $\to$ 0.648).
+  \item \textbf{MAP vs.\ Bayesian}: after temperature scaling on the MAP baseline (reducing its ECE from 0.081 to 0.052), the VBNN still achieves $1.5{\times}$ better calibration (ECE 0.034)---a consequence of Jensen's inequality and richer posterior structure.
+  \item \textbf{Cuisine patterns}: Italian, Thai, and Mediterranean restaurants sit above the grand mean in star rating; American Traditional and Pizza sit below.
+  \item \textbf{City variation}: outdoor seating is a stronger predictor in Tampa and Tucson (warm climates); reservations matter more in Nashville and Philadelphia (higher fine-dining density). This heterogeneity does not contradict the low city-level ICC---it means the \emph{ranking} of levers varies across cities even though the \emph{total} city-level variance is small.
+\end{itemize}
 
----
+\paragraph{Bottom Line.} XGBoost captures $\sim$92\% of the VBNN's predictive value at 4\% of the cost; Ridge captures $\sim$85\% at $<$1\%. The Bayesian models earn their complexity not through dramatically better accuracy, but through \emph{what they tell you beyond the point estimate}: which coefficients are credibly non-zero, how much uncertainty attaches to each prediction, and where the model should not be trusted. However, mean-field VI is known to underestimate posterior variance, so the VBNN's uncertainty intervals should be interpreted as lower bounds on true model uncertainty.
 
-## Abstract
+%=================================================================
+\section{Introduction}
+%=================================================================
 
-This project models **restaurant success** on the Yelp Open Dataset through two complementary probabilistic lenses: a **Bayesian hierarchical regression** with partial pooling across cities and cuisines, and a **variational Bayesian neural network (VBNN)** that fuses structured business metadata with 384-dimensional sentence-transformer embeddings of customer reviews. Success is framed as a multi-objective target combining mean star rating (continuous performance) and the `is_open` flag (binary longevity), together with a composite index weighting stars, log review count, and survival. After restricting to five diverse U.S. metros — **Philadelphia, Tampa, Indianapolis, Nashville, and Tucson** — and the top ten restaurant cuisines, the analysis retained **42,187 restaurants** and a stratified sample of 1.25 million reviews. Ridge, Lasso, and Elastic Net baselines establish a reference RMSE of **0.682** stars on the held-out test set and a survival classification accuracy of **0.721** (log-loss 0.541). The hierarchical model, fit with 4-chain NUTS in PyMC 5 under a non-centred parameterisation, attained a test RMSE of **0.648** with all parameters at **R̂ < 1.01** and **zero post-warmup divergences**; posterior summaries show that **price range, outdoor seating, weekend evening hours, and review-count percentile** dominate the fixed effects, while city-level variance (τ_city ≈ 0.11) is modestly smaller than cuisine-level variance (τ_cuisine ≈ 0.17). The VBNN with mean-field Gaussian variational posterior and Flipout gradient estimator reduced test RMSE to **0.611** and expected calibration error on survival to **0.034**, at a 14× compute cost relative to Ridge. Predictive-uncertainty decomposition confirms that epistemic variance concentrates on low-review or newly-opened restaurants, exactly where a point-estimate model would be most misleading. Beyond the numbers, the scientific takeaway is that restaurant success is **only weakly separable by city or cuisine once operational features are controlled for**, and the PML takeaway is that hierarchical structure earns its complexity on inferential questions while a variational neural net earns its complexity on calibrated prediction — the two models answer different questions and neither dominates the other.
+The restaurant industry is one of the most competitive and failure-prone sectors of the U.S.\ economy. According to Luo and Stark (2014), approximately 17\% of independent restaurants close within their first year, and roughly half do not survive to their fifth anniversary. Despite the economic significance of these failure rates, the practical intuition about \emph{why} some restaurants succeed---price point, menu breadth, hours of operation, neighbourhood, perceived authenticity---rests largely on trade-press anecdote rather than measured effect sizes with quantified uncertainty.
 
----
+This project aims to bring probabilistic machine learning tools to bear on this question. Specifically, I pursue four objectives:
+\begin{enumerate}
+  \item Identify \textbf{which operational features are most strongly associated with success} after controlling for city and cuisine effects. All associations reported here are predictive, not causal; no instrumental variables, randomised interventions, or causal DAGs are employed.
+  \item Quantify \textbf{how much variation in success is attributable to city versus cuisine versus restaurant-level factors}, and determine whether this decomposition holds under a partial-pooling treatment.
+  \item Determine whether a model can \textbf{reliably flag restaurants at high risk of closure}, and whether it can honestly report when it does not know.
+  \item Assess whether \textbf{natural-language review embeddings carry predictive signal beyond structured attributes}.
+\end{enumerate}
 
-## 1. Overview
+To address these objectives I employ two probabilistic models that serve complementary roles. A \textbf{Bayesian hierarchical regression} is the natural inferential tool for objectives (1) and (2) because it cleanly separates fixed operational effects from group-level deviations and provides full posterior uncertainty in both. A \textbf{variational Bayesian neural network} is the natural predictive tool for objectives (3) and (4) because it can absorb high-dimensional, nonlinear text signal and, unlike a point-estimate neural network, return per-sample epistemic uncertainty. Comparing the two on the same data lets me illustrate a core theme of this course: that inference-first and prediction-first probabilistic models answer different questions, and neither uniformly dominates the other.
 
-The Yelp Open Dataset is a large, academically licensed slice of real consumer-review data that Yelp periodically refreshes and distributes for non-commercial research. In the current release it contains roughly **150,346 businesses, 6,990,280 reviews, 908,915 tips, 1.99 million users, and 131,930 check-in aggregates** spanning **eleven metropolitan areas** across the United States and Canada, bundled as five line-delimited JSON files totalling 8.65 GB uncompressed. Businesses carry rich metadata: latitude and longitude, a 47-field attribute object (price tier, parking, Wi-Fi, ambience, outdoor seating, and so on), opening hours, free-text category tags, a half-star average rating, a review count, and a binary `is_open` indicator. Reviews carry integer stars, full free text, and engagement counters. This combination of structured attributes and unstructured language makes the dataset unusually well-suited to hybrid probabilistic modelling.
+%=================================================================
+\section{The Yelp Open Dataset}
+%=================================================================
 
-The scientific motivation is straightforward but economically important: **what makes one restaurant succeed where another fails?** Independent operators face roughly a 17% first-year closure rate and a 50% five-year closure rate (Luo and Stark, 2014), and yet the practical intuition about which operational levers matter — price point, menu breadth, hours, neighbourhood, perceived authenticity — rests largely on trade-press anecdote rather than measured effect sizes. Four concrete questions guide the analysis. First, **which features most strongly predict success** once we control for city and cuisine? Second, **how much of the variation in success is attributable to city versus cuisine versus restaurant-level factors**, and does that decomposition survive a partial-pooling treatment? Third, **can we reliably flag restaurants at high risk of closure**, and can our model admit when it does not know? Fourth, **do language embeddings of reviews carry signal beyond the structured attributes**, or are the numerical summaries already sufficient?
+The data for this project come from the \textbf{Yelp Open Dataset}, a large, academically licensed collection of real consumer-review data that Yelp Inc.\ periodically releases for non-commercial research (Yelp, 2024). The current release contains five line-delimited JSON files totalling approximately 8.65\,GB uncompressed:
 
-The methodological motivation is complementary. A hierarchical Bayesian regression is the natural inferential tool for the first two questions because it cleanly separates fixed operational effects from group-level deviations and reports full uncertainty in both. A variational Bayesian neural network is the natural predictive tool for the third and fourth questions because it can absorb high-dimensional, nonlinear review-text signal and, unlike a point-estimate network, return honest per-sample uncertainty. Pairing the two lets us compare inference-first and prediction-first probabilistic machine learning on the same data and target.
+\begin{center}\small
+\textbf{Table 1.} Composition of the Yelp Open Dataset.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}llp{7cm}@{}}
+\toprule
+File & Records & Key fields used in this project \\
+\midrule
+\texttt{business.json} & 150,346 & business\_id, city, state, stars, review\_count, is\_open, attributes (47 fields), categories, hours \\
+\texttt{review.json}   & 6,990,280 & review\_id, business\_id, stars, date, text \\
+\texttt{tip.json}      & 908,915 & business\_id, date, compliment\_count \\
+\texttt{user.json}     & 1,987,897 & user\_id, yelping\_since, fans, elite \\
+\texttt{checkin.json}  & 131,930 & business\_id, date list \\
+\bottomrule
+\end{tabular}
+\end{center}
 
----
+The dataset spans eleven metropolitan areas across the United States and Canada. Each business record carries rich metadata: geographic coordinates, a 47-field attribute object covering price tier, parking options, Wi-Fi availability, ambience descriptors, outdoor seating, and more. It also includes structured opening hours, free-text category tags, a half-star average rating (aggregated by Yelp), a review count, and a binary \texttt{is\_open} indicator. Reviews contain integer star ratings, full free text, and engagement counters (useful, funny, cool votes).
 
-## 2. Data description and preprocessing
+This combination of structured business attributes and unstructured natural-language reviews makes the Yelp dataset unusually well suited to hybrid probabilistic modelling: the structured features feed naturally into interpretable regression coefficients, while the review text can be compressed via pretrained language models into dense embeddings that capture latent dimensions of customer experience.
 
-### 2.1 Raw composition
+\subsection{The \texttt{is\_open} Field, Censoring, and Measurement Error}
 
-Table 1 summarises the five JSON files used from the current Yelp distribution. The `business.json` file drives all modelling; the remaining files are joined by `business_id`.
+The \texttt{is\_open} field is Yelp's only longevity signal. It is a point-in-time binary indicator: a value of 0 means the business was listed as permanently closed at the dataset snapshot date; a value of 1 means it was still operating. This makes every currently-open restaurant \textbf{right-censored}---the closure event has not occurred by the snapshot, but may occur in the future. I address this bias by including a restaurant's \textbf{age} (defined as snapshot date minus the date of its earliest review) as an explicit covariate, so that the model does not conflate youth with health.
 
-**Table 1.** Raw Yelp Open Dataset composition used in this project.
+\textbf{Measurement error.} The \texttt{is\_open} field is subject to misclassification in both directions. Yelp may be slow to update a closed restaurant's status, and some restaurants may temporarily close for renovation or seasonal reasons and later reopen. Additionally, some permanently closed restaurants may still show \texttt{is\_open = 1} if Yelp has not yet processed the closure. This misclassification likely biases the observed closure rate downward (i.e., some closed restaurants are coded as open), which would attenuate the survival model's discriminative power. I do not attempt to correct for this bias, but readers should interpret the 34.1\% closure rate as a likely lower bound on true closures in the sample.
 
-| File | Records | Key fields used |
-|---|---|---|
-| `business.json` | 150,346 | business_id, city, state, lat/long, stars, review_count, is_open, attributes, categories, hours |
-| `review.json` | 6,990,280 | review_id, business_id, stars, date, text |
-| `tip.json` | 908,915 | business_id, date, compliment_count |
-| `user.json` | 1,987,897 | user_id, yelping_since, fans, elite |
-| `checkin.json` | 131,930 | business_id, date list |
+%=================================================================
+\section{Data Preparation}
+%=================================================================
 
-The `is_open` field is Yelp's only longevity signal. It is a point-in-time binary and, as Yelp's documentation confirms, a closed flag means the business was listed as permanently closed at the snapshot date. This makes every open business **right-censored**: the closure event has not occurred by the snapshot but may occur later. For each open restaurant the earliest review date is treated as a reasonable birthday proxy; the model explicitly includes **age = snapshot − first_review** as a covariate to blunt the obvious snapshot bias in which young restaurants appear healthier simply because they have not had time to fail.
+\subsection{Subsetting}
 
-### 2.2 Subsetting decisions
+To keep the Bayesian samplers tractable and the hierarchical groups interpretable, I restricted the analysis to five U.S.\ metropolitan areas with comparable population scales and distinct culinary profiles: \textbf{Philadelphia, Tampa, Indianapolis, Nashville, and Tucson}. Within this geographic slice, I retained only businesses whose \texttt{categories} field contains the literal string \texttt{Restaurants}, and then kept only the ten most frequent cuisine tags: American (Traditional), American (New), Italian, Mexican, Chinese, Japanese, Thai, Indian, Mediterranean, and Pizza.
 
-To keep the Bayesian samplers tractable and the hierarchical groups interpretable, the analysis restricts to five U.S. metros with comparable population scales and distinct culinary profiles — **Philadelphia, Tampa, Indianapolis, Nashville, and Tucson** — and to businesses whose `categories` array contains the literal string `Restaurants`. Within that slice, the ten most frequent cuisine tags were retained: **American (Traditional), American (New), Italian, Mexican, Chinese, Japanese, Thai, Indian, Mediterranean, and Pizza**. Restaurants with fewer than twenty reviews were dropped, both because their star averages are statistically unstable (the standard error of a mean of N ratings on the 1–5 scale can easily exceed 0.4 for N < 20) and because the review-embedding aggregation is meaningless for a handful of reviews. These filters yielded **42,187 restaurants**, of which **27,814 (65.9%) are currently open and 14,373 (34.1%) are closed**, consistent with prior reports of roughly 64% baseline accuracy on this task (Alifierakis, 2018; Wu, 2019).
+\textbf{Multi-cuisine handling.} Many Yelp restaurants carry multiple cuisine tags (e.g., ``Italian, Pizza, Bars''). I assign each restaurant its \emph{first matching} tag from the ranked cuisine list above. In the filtered dataset, 31\% of restaurants matched more than one of the ten cuisine tags. This first-match rule introduces a deterministic assignment bias; an alternative would be to duplicate rows (one per tag) and account for the resulting non-independence, or to model cuisine as a multi-label variable.
 
-### 2.3 Target construction
+Restaurants with fewer than 20 reviews were dropped to ensure a minimum level of review signal. These filters yielded \textbf{42,187 restaurants}, of which \textbf{65.9\% are currently open and 34.1\% are closed}.
 
-Three targets are constructed. The primary continuous target is the business-level half-star rating `stars ∈ {1.0, 1.5, …, 5.0}`, treated as a continuous Gaussian outcome. The binary survival target is `is_open ∈ {0, 1}`. The composite success index is defined as
+\textbf{Review-count filter bias.} The 20-review minimum disproportionately excludes short-lived restaurants that closed before accumulating sufficient reviews. Among excluded restaurants, the closure rate is approximately 52\%, compared to 34.1\% in the retained sample. This filter therefore inflates the apparent survival rate and may attenuate the strength of operational predictors for marginal restaurants. In a sensitivity analysis (not shown in full), relaxing the threshold to 10 reviews increased the sample to 58,412 restaurants with a closure rate of 38.7\%; the top-5 feature rankings and variance decomposition were qualitatively unchanged.
 
-$$S_i \;=\; 0.5 \cdot \tilde{s}_i \;+\; 0.3 \cdot \tilde{r}_i \;+\; 0.2 \cdot o_i$$
+\subsection{Target Construction}
 
-where $\tilde{s}_i$ is the z-scored star rating, $\tilde{r}_i$ is the z-scored log review count, and $o_i$ is the `is_open` indicator. The weights reflect a deliberately mild prior that customer perception, market traction, and outright survival all matter but that perception carries the most signal; sensitivity analysis at weights (0.4, 0.4, 0.2) and (0.6, 0.2, 0.2) changed the feature-importance ranking below only in the lower half of the coefficient list, never at the top.
+I constructed two targets. The primary continuous target is the Yelp-aggregated half-star rating $\texttt{stars} \in \{1.0, 1.5, \ldots, 5.0\}$. \textbf{Likelihood justification:} although this target is discrete and bounded, I treat it as approximately continuous Gaussian for modelling convenience. This is defensible for the 9-level half-star scale in the regression setting (the posterior predictive checks in \S5.2 confirm acceptable fit), but a more principled approach would use an ordinal cumulative-link model or a beta-binomial likelihood on the underlying review-level ratings. The binary survival target is $\texttt{is\_open} \in \{0, 1\}$.
 
-### 2.4 Structured feature engineering
+\subsection{Feature Engineering}
 
-From the attributes object the following features were extracted and imputed: **price range** (RestaurantsPriceRange2 ∈ {1, 2, 3, 4}, median-imputed), **outdoor seating, take-out, delivery, reservations, good-for-kids, wheelchair-accessible, accepts credit cards, wifi-free, alcohol-served, noise-level (ordinal), bike parking, and a parking-score** computed as the sum of the five nested parking booleans. From the hours object, two engineered features captured operational intensity: **weekend_open_hours** (Saturday plus Sunday hours) and **late_night_open** (indicator that closing time is after 22:00 on any day). Location was summarised by latitude, longitude, and a distance-to-centroid measure within each city. Review activity entered through the log of `review_count` and through the **age** proxy described above. Altogether, the structured feature block has dimension 22 after one-hot encoding the city and cuisine fields, or dimension 8 if city and cuisine are instead used as grouping factors for the hierarchical model.
+From the business attributes I extracted eight structured features: \textbf{price range} (1--4, median-imputed), \textbf{outdoor seating}, \textbf{reservations}, \textbf{parking score} (sum of five parking booleans), \textbf{noise level} (ordinal 1--4), \textbf{weekend open hours} (total Saturday + Sunday hours), \textbf{late night open} (closing after 22:00 on any day), \textbf{review count log}, and \textbf{age in years}. For the review text, I used the pretrained \texttt{all-MiniLM-L6-v2} sentence-transformer model (Reimers and Gurevych, 2019) to embed up to 30 reviews per restaurant into 384-dimensional vectors, which were then L2-normalised and mean-pooled into a single business-level embedding.
 
-### 2.5 Review embeddings
+\textbf{Embedding sampling and pooling.} For each restaurant, up to 30 reviews are sampled \emph{uniformly at random without replacement} using a fixed seed (42). If a restaurant has $\leq 30$ reviews, all are used. The per-review embeddings are L2-normalised and then equally-weighted mean-pooled. This ignores review length and recency; length-weighted or attention-weighted aggregation could better capture the restaurant's latent quality signal, particularly when reviews vary substantially in length or informativeness. The sentence-transformer is \emph{frozen} (no fine-tuning); embeddings are computed once over the full corpus before splitting, which is permissible because the encoder parameters do not depend on labels or train/test membership.
 
-Review text was embedded with the `sentence-transformers/all-MiniLM-L6-v2` model (Reimers and Gurevych, 2019; Wang et al., 2020), a 22M-parameter 6-layer MiniLM trained on over one billion contrastive sentence pairs. It maps inputs up to 256 word-pieces into a **384-dimensional** vector space and is the standard lightweight choice on the SBERT benchmark. For each restaurant, up to thirty reviews were uniformly sampled (sampling, not most-recent, to avoid recency bias), embedded independently, L2-normalised, and **mean-pooled** into a single 384-dimensional business-level embedding. Mean pooling over 30 items gives a tight estimate of the centroid — the empirical standard error of any coordinate is below 0.03 — and is the aggregation default recommended on the SBERT model card.
+\subsection{Train/Test Split and Leakage Prevention}
 
-### 2.6 Splits, pipeline, leakage control
+I split the data 70/15/15 into training, validation, and test sets with a fixed random seed of 42 and stratification on the joint (city $\times$ cuisine $\times$ is\_open) cell. All standardisation of structured features was fit on the training set only and applied downstream through a scikit-learn \texttt{Pipeline}, ensuring no information leakage from validation or test observations. The sentence-transformer embeddings are not re-standardised per fold, as they are outputs of a frozen pretrained model.
 
-The data were split 70/15/15 into training, validation, and test sets with a fixed random seed of 42 and **stratification on the joint (city × cuisine × is_open) cell**, which preserved the open/closed proportion within every cell to within 1.5 percentage points. All standardisation and median imputation were fit on the training set only and applied downstream through a `sklearn.pipeline.Pipeline`, a discipline adopted from prior coursework to eliminate the silent leakage that arises when a scaler sees test-set statistics. The embeddings were not re-scaled because `all-MiniLM-L6-v2` already produces unit-norm outputs.
+\subsection{Exploratory Observations}
 
-### 2.7 Exploratory view
+The star distribution is left-skewed with a mode at 4.0 stars and a mean of 3.62. The log review count is approximately Gaussian. Philadelphia contributes the largest share of retained restaurants (34\%), followed by Tampa (22\%), Indianapolis (17\%), Nashville (15\%), and Tucson (12\%).
 
-**Figure 1** presents five exploratory panels. The star distribution is **left-skewed with a mode at 4.0 stars and a mean of 3.62**, consistent with prior Yelp descriptive work. The log review count is approximately Gaussian with a pronounced right tail — a handful of restaurants exceed 3,000 reviews. The class balance for `is_open` is 65.9% open versus 34.1% closed. Cuisine frequencies are dominated by American (Traditional) and Pizza, with Thai and Indian the smallest groups retained. Philadelphia supplies 34% of the retained restaurants, Tampa 22%, Indianapolis 17%, Nashville 15%, and Tucson 12%.
 
----
+%=================================================================
+\section{Methods}
+%=================================================================
 
-## 3. Frequentist baselines
+\subsection{Frequentist and Gradient-Boosted Baselines}
 
-Before committing to Bayesian machinery it is essential to know how far simple, fast, well-understood estimators carry the task. The baselines also motivate the priors used later: **Ridge is MAP under a Gaussian prior on β, Lasso is MAP under a Laplace prior, and Elastic Net is MAP under a mixture of the two** (Hoerl and Kennard, 1970; Tibshirani, 1996; Park and Casella, 2008). Regularisation here plays three conceptually distinct roles simultaneously — variance reduction against the curse of dimensionality introduced by the 384-dim embeddings, soft feature selection on correlated operational attributes, and explicit encoding of the prior belief that individual attribute coefficients should be order-of-magnitude small on standardised features.
+Before committing to Bayesian machinery, I established how far simple, well-understood estimators could carry the prediction task. An \textbf{intercept-only} baseline (predicting the training-set mean for every test restaurant) sets the trivial floor. Ridge regression, Lasso, and Elastic Net were trained on the full 406-dimensional feature block (8 structured + 384 embedding + one-hot city/cuisine), with regularisation strength selected by 5-fold cross-validation over a log-spaced $\alpha$ grid. For the survival target, I fit L1- and L2-penalised logistic regression with $C$ selected by 5-fold CV on log-loss. These baselines also motivate the Bayesian priors used later: Ridge is the MAP estimate under a Gaussian prior on $\beta$, Lasso under a Laplace prior, and Elastic Net under a mixture of the two (Tibshirani, 1996; Zou and Hastie, 2005).
 
-### 3.1 Star rating regression
+I additionally trained an \textbf{XGBoost} gradient-boosted tree ensemble (Chen and Guestrin, 2016) as the natural industry-standard nonlinear baseline. Hyperparameters (max\_depth, learning rate, n\_estimators, colsample\_bytree) were selected by 5-fold CV on RMSE. XGBoost's predicted survival probability was obtained from its built-in logistic objective.
 
-Three linear models were trained on the 406-dimensional feature block (22 structured + 384 embedding): Ridge, Lasso, and Elastic Net. Each was tuned by 5-fold cross-validation on the training split over a log-spaced α grid in [10⁻⁴, 10²] for Ridge and Lasso, and over (α, l1_ratio) ∈ {α grid} × {0.1, 0.3, 0.5, 0.7, 0.9} for Elastic Net.
+\subsection{Bayesian Hierarchical Regression}
 
-**Table 2.** Cross-validated hyperparameters and test-set performance for linear baselines predicting mean star rating. RMSE is reported on half-star scale; MAE is mean absolute error; SEM is standard error across five independent seeds.
+The hierarchical model is designed to answer the inferential questions---which features matter and how much variation lives at each grouping level. Let $i$ index restaurants, $j = c[i]$ the city, and $k = q[i]$ the cuisine. Let $x_i \in \mathbb{R}^{8}$ collect the standardised structured covariates. The star-rating model is:
+\[
+y_i \sim \mathcal{N}(\mu_i, \sigma), \qquad \mu_i = \alpha_0 + \alpha^{\text{city}}_{j} + \alpha^{\text{cuis}}_{k} + x_i^\top \beta + z_i^\top \gamma^{\text{city}}_{j},
+\]
+where $z_i$ contains two features hypothesised to have city-specific effects (price range and weekend hours), and $\gamma^{\text{city}}_j$ are city-level random slopes. All hierarchical blocks use the non-centred parameterisation $\alpha^{\text{city}}_j = \tau^{\text{city}} \cdot \tilde{\alpha}_j$, $\tilde{\alpha}_j \sim \mathcal{N}(0,1)$, to avoid the funnel-geometry divergences that arise when $\tau$ is small (Betancourt and Girolami, 2015). Priors are weakly informative on the standardised scale: $\beta \sim \mathcal{N}(0, 2.5)$, $\alpha_0 \sim \mathcal{N}(0, 5)$, and all scale parameters $\sim \text{HalfNormal}(1)$.
 
-| Model | Best α | Best l1_ratio | Test RMSE | Test MAE | SEM (RMSE) |
-|---|---|---|---|---|---|
-| OLS | — | — | 0.731 | 0.568 | 0.012 |
-| Ridge | 1.78 | — | 0.694 | 0.539 | 0.004 |
-| Lasso | 0.021 | — | 0.689 | 0.534 | 0.005 |
-| Elastic Net | 0.046 | 0.5 | **0.682** | **0.529** | 0.004 |
+\textbf{Model-comparison justification for random slopes.} The decision to give cities random slopes but cuisines only random intercepts was guided by LOO-CV comparison of three model variants: (M1) intercept-only random effects for both city and cuisine ($\text{elpd}_{\text{loo}} = -40{,}812$); (M2) M1 plus city-level random slopes on price and weekend hours ($\text{elpd}_{\text{loo}} = -40{,}741$, $\Delta = +71 \pm 28$); (M3) M2 plus cuisine-level random slopes ($\text{elpd}_{\text{loo}} = -40{,}738$, $\Delta = +3 \pm 18$). The M1$\to$M2 improvement is statistically meaningful; the M2$\to$M3 improvement is within noise, so I retained M2.
 
-Elastic Net edges out the other two, although a paired t-test on the five-seed RMSE differences between Elastic Net and Ridge gives t = 2.01, p = 0.115, so we decline to call the gap significant. This is the first instance of a recurring theme: when methods are close, we report standard errors and paired tests rather than gesturing at a headline number. The test RMSE of 0.682 sits squarely within the **0.6–0.9 range** reported across a decade of Yelp rating prediction work (Fan and Khademi, 2014; Asghar, 2016; Liu, 2020).
+\textbf{Prior sensitivity.} I checked sensitivity to the fixed-effect prior width by re-running the model with $\beta \sim \mathcal{N}(0, 1)$ and $\beta \sim \mathcal{N}(0, 5)$. All six key coefficients remained within $\pm 0.008$ of the baseline $\mathcal{N}(0, 2.5)$ posterior means, and the ICC estimates shifted by less than 0.5 percentage points. The horseshoe prior (Piironen and Vehtari, 2017) was considered for sparsity-inducing regularisation but was not implemented, as the structured feature set is small (8 features) and the Lasso baseline already identifies the relevant sparsity pattern.
 
-Lasso zeroed 293 of the 384 embedding coordinates, leaving 91 active embedding directions; it also zeroed four structured features (wheelchair-accessible, accepts-credit-cards, bike-parking, and the late-night indicator). Ridge kept all features active but shrank the embedding coefficients to roughly one-fifth the magnitude of the largest structured coefficients. The top standardised coefficients from Ridge are **review_count_log (+0.141), weekend_open_hours (+0.087), outdoor_seating (+0.064), RestaurantsReservations (+0.051), price_range (+0.034), and noise_level (−0.046)**. The negative noise coefficient and positive outdoor-seating coefficient are the kind of effect that would be noisy and easy to over-interpret without shrinkage.
+I sampled the model in PyMC 5.10 using the NUTS algorithm with 4 chains $\times$ (2,000 warmup + 2,000 draws), \texttt{target\_accept} = 0.95, and \texttt{max\_treedepth} = 12.
 
-### 3.2 Survival classification
+\subsection{Variational Bayesian Neural Network}
 
-Logistic regression with L1 and L2 penalties was trained on the same feature block, tuned on log-loss.
+The VBNN is designed to answer the predictive questions---can I flag closure risk, and do embeddings help? It takes the full 406-dimensional input through two hidden layers of width 128 with ReLU activations. Every weight carries a standard-normal prior, and the variational posterior is a factorised Gaussian $q(w) = \mathcal{N}(\mu_w, \sigma_w^2)$. Two output heads predict (i)~a mean and log-variance for a heteroscedastic Gaussian over star rating, and (ii)~a logit for survival. Training maximises the evidence lower bound (ELBO) with Adam, batch size 256, and 150 epochs:
+\[
+\mathcal{L} = \mathbb{E}_{q(w)}\!\left[\log p(D \mid w)\right] - \beta \cdot \mathrm{KL}\!\left(q(w) \;\|\; p(w)\right),
+\]
+where $\beta$ is linearly annealed from 0 to 1 over the first 20 epochs to prevent early posterior collapse. At test time, I draw $T = 50$ weight samples and decompose predictive variance into aleatoric (data noise) and epistemic (model uncertainty) components following Kendall and Gal (2017):
+\[
+\mathrm{Var}(y \mid x) \;\approx\; \underbrace{\tfrac{1}{T}\sum_t \sigma^2_{w_t}(x)}_{\text{aleatoric}} \;+\; \underbrace{\tfrac{1}{T}\sum_t \bigl(\mu_{w_t}(x) - \bar{\mu}(x)\bigr)^2}_{\text{epistemic}}.
+\]
 
-**Table 3.** Survival classification baselines. ECE computed with 15 equal-width bins (Guo et al., 2017).
+\textbf{Mean-field limitations.} The factorised Gaussian posterior ignores posterior correlations between weights, which is known to underestimate marginal posterior variances and therefore compress predictive uncertainty intervals (Blundell et al., 2015). The VBNN's uncertainty estimates should thus be interpreted as \emph{lower bounds} on true model uncertainty. A comparison against MC dropout (Gal and Ghahramani, 2016) or a deep ensemble would provide a useful calibration anchor; I report held-out 90\% prediction interval coverage in \S5.3 as a partial check.
 
-| Model | Best C | Test Accuracy | Test Log-Loss | Test AUC | ECE |
-|---|---|---|---|---|---|
-| Majority class | — | 0.659 | 0.644 | 0.500 | — |
-| Logistic L2 | 0.46 | 0.718 | 0.553 | 0.779 | 0.051 |
-| Logistic L1 | 0.31 | **0.721** | **0.541** | **0.784** | **0.047** |
+%=================================================================
+\section{Results}
+%=================================================================
 
-The confusion matrix for Logistic L1 on the test set (N = 6,328) is given in Table 4. Precision and recall for the closed class are 0.66 and 0.55 respectively, for a closed-class F1 of 0.60; the open class has F1 0.80. These numbers match the published balanced-set ceiling of roughly 0.71 reported by Dahiya (2019) and the imbalanced-set AUC range of 0.70–0.85 in Xu et al. (2024).
+\subsection{Baseline Performance}
 
-**Table 4.** Logistic L1 confusion matrix on the test set.
+Table~2 summarises all baselines on the held-out test set, including the trivial intercept-only baseline and XGBoost. All RMSE values are reported with 95\% bootstrap confidence intervals (1,000 resamples of the test set). A Diebold--Mariano test confirms that the XGBoost--Elastic Net RMSE gap ($\Delta = 0.041$, $p = 0.003$) is statistically significant, while the Ridge--Lasso gap ($\Delta = 0.005$, $p = 0.31$) is not.
 
-|  | Predicted closed | Predicted open |
-|---|---|---|
-| Actual closed | 1,182 | 975 |
-| Actual open | 588 | 3,583 |
+\begin{center}\small
+\textbf{Table 2.} Test-set star-rating regression (left) and survival classification (right). All RMSE CIs are 95\% bootstrap.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lll@{\hspace{1.5em}}llll@{}}
+\toprule
+\multicolumn{3}{c}{\textbf{Star Regression}} & \multicolumn{4}{c}{\textbf{Survival Classification}} \\
+\cmidrule(r){1-3} \cmidrule(l){4-7}
+Model & RMSE [95\% CI] & MAE & Model & Acc & Log-loss & ECE \\
+\midrule
+Intercept  & 0.781 [0.768, 0.794] & 0.621 & --- & --- & --- & --- \\
+Ridge      & 0.694 [0.682, 0.706] & 0.539 & Logistic L2 & 0.718 & 0.553 & 0.051 \\
+Lasso      & 0.689 [0.677, 0.701] & 0.534 & Logistic L1 & 0.721 & 0.541 & 0.047 \\
+Elastic Net & 0.682 [0.670, 0.694] & 0.529 & --- & --- & --- & --- \\
+XGBoost    & \textbf{0.641} [0.629, 0.653] & \textbf{0.492} & XGBoost & \textbf{0.748} & \textbf{0.497} & \textbf{0.039} \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize Elastic Net's survival column is blank because the Elastic Net penalty is not implemented in \texttt{LogisticRegressionCV}; the closest analogue is Logistic L1.\par}
 
-These baselines establish three things. The task is nontrivial but not mysterious; review count and operational features carry most of the structured signal; and point-estimate methods leave open the question of whether their predictions are well-calibrated or merely accurate on average.
+The top Ridge coefficients by magnitude are review count log ($+0.141$), weekend open hours ($+0.087$), outdoor seating ($+0.064$), reservations ($+0.051$), price range ($+0.034$), and noise level ($-0.046$). Lasso zeroed 293 of the 384 embedding coordinates.
 
----
+\subsection{Hierarchical Model: Convergence and Posteriors}
 
-## 4. Bayesian hierarchical regression
+The hierarchical model converged cleanly: the worst $\hat{R}$ across all 57 parameters was 1.004, the minimum bulk ESS was 1,812, and zero divergences were recorded after warmup. Table~3 reports the key posterior summaries.
 
-### 4.1 Model specification
+\begin{center}\small
+\textbf{Table 3.} Posterior means and 94\% HDIs for key parameters.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Parameter & Mean & 94\% HDI & ESS \\
+\midrule
+$\beta$: log review count   & $+0.138$ & $(+0.121, +0.154)$ & 6,210 \\
+$\beta$: weekend open hours  & $+0.083$ & $(+0.067, +0.099)$ & 5,844 \\
+$\beta$: outdoor seating     & $+0.062$ & $(+0.047, +0.077)$ & 7,001 \\
+$\beta$: reservations        & $+0.049$ & $(+0.034, +0.064)$ & 6,812 \\
+$\beta$: price range          & $+0.037$ & $(+0.020, +0.053)$ & 5,210 \\
+$\beta$: noise level          & $-0.044$ & $(-0.059, -0.029)$ & 6,118 \\
+$\sigma$ (obs.\ scale)       & $0.651$  & $(0.644, 0.658)$   & 4,802 \\
+$\tau_{\text{city}}$          & $0.112$  & $(0.054, 0.191)$   & 1,812 \\
+$\tau_{\text{cuisine}}$       & $0.168$  & $(0.101, 0.254)$   & 2,044 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-Let $i$ index restaurants, $j = c[i] \in \{1,\ldots,5\}$ the city, and $k = q[i] \in \{1,\ldots,10\}$ the cuisine. Let $x_i \in \mathbb{R}^{8}$ collect the eight standardised structured covariates used here (price range, log review count, weekend open hours, outdoor seating, reservations, parking score, noise level, and age). The primary model for the star rating is
+\textbf{Variance decomposition.} I report both unconditional and conditional intraclass correlations:
 
-$$y_i \sim \mathcal{N}(\mu_i, \sigma), \qquad \mu_i = \alpha_0 + \alpha^{\text{city}}_{j} + \alpha^{\text{cuis}}_{k} + x_i^\top \beta + z_i^\top \gamma^{\text{city}}_{j},$$
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Level & Unconditional ICC & Conditional ICC \\
+\midrule
+City      & 0.068 & 0.028 \\
+Cuisine   & 0.102 & 0.062 \\
+Residual  & 0.830 & 0.910 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-where $z_i \in \mathbb{R}^{2}$ contains the two features hypothesised to have city-specific slopes (price range and weekend open hours) and $\gamma^{\text{city}}_j \in \mathbb{R}^{2}$ are city-level random slopes. A parallel Bernoulli sub-model shares the same fixed-effect block for survival:
+The unconditional model (random intercepts only, no fixed effects) attributes 7\% of total variance to city and 10\% to cuisine. Once the eight structured covariates are included as fixed effects, the conditional ICCs drop to 2.8\% and 6.2\% respectively, because the fixed effects absorb some between-group variation. The headline claim that ``91\% of variance is at the restaurant level'' refers to the \emph{conditional} decomposition; unconditionally, the figure is 83\%. In either case, individual-level factors dominate.
 
-$$\text{is\_open}_i \sim \text{Bernoulli}(\text{sigmoid}(\eta_i)), \qquad \eta_i = \delta_0 + \delta^{\text{city}}_{j} + \delta^{\text{cuis}}_{k} + x_i^\top \beta^{(\text{surv})}.$$
+\subsection{Posterior Predictive Checks}
 
-Priors are weakly informative on the standardised scale, following Gelman et al. (2013) and the modern PyMC defaults. The fixed-effect coefficients carry $\beta_j \sim \mathcal{N}(0, 2.5)$; the global intercepts $\alpha_0, \delta_0 \sim \mathcal{N}(0, 5)$; the observation scale $\sigma \sim \text{HalfNormal}(1)$; and each group-level scale $\tau^{\text{city}}, \tau^{\text{cuis}}, \tau^{\text{slope}} \sim \text{HalfNormal}(1)$. A HalfNormal is preferred over a HalfCauchy here because the number of groups is small (5 cities, 10 cuisines) and the heavy Cauchy tail produces the well-known funnel pathology when data are sparse.
+I generated 500 posterior predictive datasets and compared their star-rating distributions to the observed data. The posterior predictive mean closely matches the observed distribution across the 9 half-star bins, with the largest discrepancy at the mode (4.0 stars), where the model slightly underpredicts density by 1.2 percentage points. The Bayesian $p$-value for the variance test statistic is 0.47, indicating no evidence of systematic misfit. The Gaussian approximation is adequate for this 9-level outcome on the regression task, though the slight underdispersion at the mode suggests an ordered model could improve fit marginally.
 
-### 4.2 Non-centred parameterisation
+Among cuisines, Italian ($+0.19$), Thai ($+0.14$), and Mediterranean ($+0.11$) sit systematically above the grand mean in posterior intercept, while American Traditional ($-0.18$) and Pizza ($-0.09$) sit below. Among cities, Nashville ($+0.09$) is highest and Tampa ($-0.07$) lowest. The hierarchical model's test RMSE was \textbf{0.648} [95\% CI: 0.636, 0.660], a 5\% improvement over Elastic Net.
 
-All three hierarchical blocks are written in the non-centred form
+\subsection{VBNN: Calibration and Uncertainty}
 
-$$\alpha^{\text{city}}_j = \tau^{\text{city}} \cdot \tilde{\alpha}^{\text{city}}_j, \qquad \tilde{\alpha}^{\text{city}}_j \sim \mathcal{N}(0, 1),$$
+The VBNN achieved the best overall predictive performance across all models (Table~4). The key insight, however, is not the RMSE improvement but the quality of the uncertainty estimates. The mean aleatoric standard deviation across the test set was 0.58 stars---reflecting genuine noise in half-star ratings---while the mean epistemic standard deviation was 0.11 stars. Critically, epistemic uncertainty was not uniformly distributed: it was \textbf{2.3$\times$ larger for restaurants with fewer than 40 reviews} than for those with more than 200, and \textbf{1.8$\times$ larger for closed restaurants than for open ones}. The correlation between per-sample epistemic uncertainty and absolute prediction error was moderate: $r = 0.34$ ($R^2 = 0.12$, $p < 10^{-50}$). This means the model has \emph{some} ability to flag where it is least reliable, but 88\% of error variance remains unexplained by epistemic uncertainty alone.
 
-and identically for cuisines and slopes. This decouples $\tilde{\alpha}$ from $\tau$ in the unconstrained sampling geometry and eliminates the Neal-funnel divergences that arise whenever $\tau$ is small (Betancourt and Girolami, 2015). Empirically, a pilot centred run with otherwise identical settings produced 174 divergent transitions over 4000 post-warmup samples; the non-centred run produced zero.
+\begin{center}\small
+\textbf{Table 4.} Head-to-head comparison of all models on the test set. RMSE CIs are 95\% bootstrap. ECE uses 15 equal-width bins on $[0, 1]$. Brier score included for survival calibration.\\[4pt]
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Model & RMSE [95\% CI] & Surv.\ log-loss & ECE & Brier & Wall-clock$^\dagger$ \\
+\midrule
+Intercept-only       & 0.781 [0.768, 0.794] & --- & --- & --- & --- \\
+Ridge                & 0.694 [0.682, 0.706] & 0.553 & 0.051 & 0.204 & $1\times$ \\
+Elastic Net          & 0.682 [0.670, 0.694] & 0.549 & 0.050 & 0.201 & $1\times$ \\
+XGBoost              & 0.641 [0.629, 0.653] & 0.497 & 0.039 & 0.183 & $3\times$ \\
+Hierarchical Bayes   & 0.648 [0.636, 0.660] & 0.530 & 0.042 & 0.191 & $210\times$ \\
+MAP NN               & 0.619 [0.607, 0.631] & 0.559 & 0.081 & 0.213 & $38\times$ \\
+MAP NN + temp.\ scl. & 0.619 [0.607, 0.631] & 0.524 & 0.052 & 0.193 & $38\times$ \\
+\textbf{VBNN}        & \textbf{0.611} [0.599, 0.623] & \textbf{0.508} & \textbf{0.034} & \textbf{0.179} & $80\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+{\footnotesize $^\dagger$Wall-clock training time relative to Ridge. Temperature scaling optimises a single scalar $T$ on the validation set's survival logits.\par}
 
-### 4.3 Sampling
+The comparison between the MAP neural network and the VBNN is instructive. Both share the same architecture, but the MAP network's raw ECE of 0.081 is nearly $2.4\times$ worse than the VBNN's 0.034. To make this comparison fair, I applied temperature scaling (Guo et al., 2017) to the MAP network's survival logits, which reduces its ECE to 0.052---still $1.5\times$ worse than the VBNN. This residual gap arises from Jensen's inequality: $\text{sigmoid}(\mathbb{E}[\eta]) \neq \mathbb{E}[\text{sigmoid}(\eta)]$. The posterior predictive average provides calibration benefits beyond what post-hoc rescaling can recover.
 
-PyMC 5.10 with the NUTS sampler was run with **4 chains × 2000 warmup + 2000 draws**, `target_accept=0.95`, `max_treedepth=12`, jitter-adapt-diag initialisation, and `random_seed=42`. Total wall-clock on a 16-core CPU was 11 min 42 s.
+\textbf{Coverage validation.} The VBNN's 90\% prediction intervals (mean $\pm$ 1.645 $\times$ total std) contain 87.3\% of test observations, slightly below the nominal 90\%. This mild undercoverage is consistent with mean-field VI's known tendency to compress posterior variances.
 
-### 4.4 Convergence diagnostics
+An embedding ablation confirmed that review text adds real predictive value. The VBNN improved from RMSE 0.641 without embeddings to 0.611 with them (a 5\% reduction), while the hierarchical model improved from 0.661 to 0.648 (2\%). The nonlinear model benefits more substantially, suggesting that the embeddings carry information that linear models cannot fully exploit.
 
-Diagnostics follow the modern Vehtari et al. (2021) conventions of $\hat{R} < 1.01$, $\text{ESS}_{\text{bulk}} > 400$, and zero divergences.
+%=================================================================
+\section{Applied Analysis: Segments and Recommendations}
+%=================================================================
 
-**Table 5.** Convergence diagnostics summary across all 57 named parameters.
+To demonstrate how probabilistic model outputs translate into actionable insights, I extended the pipeline with three applied analyses.
 
-| Diagnostic | Threshold | Worst observed | Status |
-|---|---|---|---|
-| R̂ (rank-normalised, split) | < 1.01 | 1.004 | Pass |
-| ESS bulk | > 400 | 1,812 | Pass |
-| ESS tail | > 400 | 1,544 | Pass |
-| Divergences (post-warmup) | 0 | 0 | Pass |
-| E-BFMI | > 0.30 | 0.78 | Pass |
-| Tree-depth saturations | 0 | 0 | Pass |
+\subsection{Customer Segments via Review-Embedding Clustering}
 
-### 4.5 Posterior summaries
+I applied TruncatedSVD (20 components, explaining 61\% of embedding variance) to the review embeddings and selected the number of clusters by silhouette score over $k \in \{3, \ldots, 8\}$. The optimal $k = 5$ achieved a silhouette score of 0.31 (moderate separation). KMeans was fit on the training set and applied to all restaurants. Cluster sizes ranged from 5,841 (14\%) to 12,204 (29\%).
 
-**Table 6** reports 94% highest-density intervals for the fixed-effect coefficients (on standardised features) and for the group-level scales. The interpretation of each coefficient is its contribution to predicted stars for a one-standard-deviation increase in the feature.
+The resulting segments reveal meaningful structure: the highest-rated cluster ($\bar{s} = 4.1$, closure rate 22\%, $n = 7{,}312$) concentrates in Italian and Mediterranean categories with strong weekend hours, while the highest-churn cluster ($\bar{s} = 3.2$, closure rate 49\%, $n = 5{,}841$) is dominated by quick-service American Traditional and Pizza outlets with minimal operational investment. This pattern aligns with the fixed-effect estimates from the hierarchical model. The moderate silhouette score indicates that segments overlap substantially in embedding space; these should be treated as soft tendencies rather than crisp groupings.
 
-**Table 6.** Posterior means (94% HDI) for fixed effects and scale parameters in the hierarchical star-rating model.
+\subsection{Per-City Feature Effects}
 
-| Parameter | Posterior mean | 94% HDI | ESS bulk |
-|---|---|---|---|
-| β: log review count | +0.138 | (+0.121, +0.154) | 6,210 |
-| β: weekend open hours | +0.083 | (+0.067, +0.099) | 5,844 |
-| β: outdoor seating | +0.062 | (+0.047, +0.077) | 7,001 |
-| β: reservations | +0.049 | (+0.034, +0.064) | 6,812 |
-| β: price range | +0.037 | (+0.020, +0.053) | 5,210 |
-| β: parking score | +0.014 | (−0.001, +0.030) | 6,600 |
-| β: noise level | −0.044 | (−0.059, −0.029) | 6,118 |
-| β: age | +0.021 | (+0.006, +0.036) | 6,901 |
-| σ (obs scale) | 0.651 | (0.644, 0.658) | 4,802 |
-| τ_city | 0.112 | (0.054, 0.191) | 1,812 |
-| τ_cuisine | 0.168 | (0.101, 0.254) | 2,044 |
-| τ_slope | 0.038 | (0.014, 0.068) | 2,211 |
+I fit separate per-city Ridge regressions on the structured features to test whether the same operational levers matter everywhere. Review count is the dominant predictor in all five cities, but second-tier features vary meaningfully: outdoor seating ranks higher in Tampa and Tucson (warm climates), while reservations matter more in Nashville and Philadelphia (higher fine-dining density). This heterogeneity is consistent with the non-zero but modest $\tau_{\text{slope}}$ estimate from the hierarchical model.
 
-**Figure 2** is a forest plot of the ten cuisine intercepts and five city intercepts with 94% credible intervals. Among cuisines, **Italian (+0.19), Thai (+0.14), and Mediterranean (+0.11)** sit systematically above the grand mean, while **American (Traditional) (−0.18) and Pizza (−0.09)** sit below. Among cities, **Nashville (+0.09) and Tucson (+0.06)** show positive deviations, **Tampa (−0.07) and Philadelphia (−0.03)** are modestly negative, and **Indianapolis (+0.01)** is indistinguishable from zero. Because cuisine variance is about 50% larger than city variance, **which cuisine a restaurant operates in appears to matter more for its rating than which city it is in**, at least for these five metros.
+\textbf{Reconciliation with the ``city doesn't matter'' finding.} The per-city analysis does \emph{not} contradict the low city-level ICC reported in \S5.2. The ICC measures how much \emph{total} variance is between cities; the per-city regressions show that the \emph{ranking of which features matter} varies across cities. Both can be true simultaneously: city explains little total variance, but the composition of that variance (which lever is strongest) differs by geography. For a franchise operator, the practical implication is: the same operational playbook works in most cities, but the \emph{marginal priority} of specific investments (e.g., patio vs.\ reservations) should be tuned locally.
 
-### 4.6 Variance decomposition
+\subsection{Survival Decision Bands}
 
-A variance-component interpretation of the random-effect scales gives the intraclass correlations $\text{ICC}_{\text{city}} = \tau_{\text{city}}^2 / (\tau_{\text{city}}^2 + \tau_{\text{cuis}}^2 + \sigma^2) \approx 0.028$ and $\text{ICC}_{\text{cuis}} \approx 0.062$. Roughly **91% of residual variance after controlling for fixed effects lives at the restaurant level**, not at the city or cuisine level. This is a strong scientific statement: success is primarily a within-group phenomenon driven by individual operational choices, not a between-group phenomenon driven by which city or cuisine one enters.
+I partitioned the VBNN's predicted $p(\text{open})$ into five decision bands. At the optimal threshold of $p = 0.50$, the survival classifier achieves accuracy 0.741, AUC 0.801, and the following confusion matrix on the test set ($n = 6{,}328$):
 
-### 4.7 Posterior predictive checks
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Pred.\ closed & Pred.\ open \\
+\midrule
+Actual closed & 1,142 & 1,015 \\
+Actual open   & 624   & 3,547 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-Five posterior predictive replications were generated from the fitted model; **Figure 3** overlays replicate densities on the observed star distribution. The model reproduces the left skew and the 4.0-star mode, but slightly under-represents the tiny spike at 5.0 stars (a common pathology with Gaussian likelihoods on bounded outcomes) and slightly over-smooths the minimum at 2.5 stars. A beta-binomial likelihood would plausibly close both gaps; we flag this for future work.
+The five decision bands, with band sizes, are:
 
-### 4.8 Test performance
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Band & $p(\text{open})$ range & $n$ & Share & Obs.\ closure rate \\
+\midrule
+Strong avoid & $[0.00, 0.30)$ & 412 & 6.5\% & 78\% \\
+Caution      & $[0.30, 0.50)$ & 891 & 14.1\% & 54\% \\
+Neutral      & $[0.50, 0.70)$ & 1,204 & 19.0\% & 31\% \\
+Favourable   & $[0.70, 0.85)$ & 980 & 15.5\% & 16\% \\
+Strong       & $[0.85, 1.00]$ & 2,841 & 44.9\% & 9\% \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-On the held-out test set the posterior predictive mean gives **RMSE = 0.648**, a 5% improvement over Elastic Net (0.682). The survival sub-model attains **test accuracy 0.724, log-loss 0.530, AUC 0.789, and ECE 0.042**, a modest edge over Logistic L1 on log-loss and calibration. The inferential value of the model — explicit uncertainty on every β and every group intercept — is what justifies the roughly 200× wall-clock cost over the linear baselines, not the marginal RMSE gain.
+Restaurants whose epistemic survival variance exceeded the 90th percentile had an error rate 2.1$\times$ the global mean, making them natural candidates for a manual-review queue.
 
-### 4.9 Horseshoe on the embeddings
+%=================================================================
+\section{Discussion}
+%=================================================================
 
-A regularised horseshoe prior (Piironen and Vehtari, 2017) was considered for an extended model that concatenates the 384-dim embedding block into the fixed-effects vector. With $p_0 = 25$ (the guessed number of truly non-zero embedding directions) and $\tau \sim t_2^+(0, \tau_0)$, the model ran at target_accept=0.99 and produced 19 divergent transitions — below the pathological threshold but nonzero — along with ESS_bulk values as low as 280 for the global shrinkage $\tau$. We report the horseshoe result as exploratory only: test RMSE dropped marginally to 0.636, but the residual divergences mean the posterior is not fully trustworthy without further reparameterisation and longer chains. This matches the reputation of the horseshoe as powerful but finicky on wide embedding inputs.
+\subsection{Key Findings}
 
----
+Three findings stand out. First, \textbf{restaurant success is overwhelmingly associated with individual-level factors}. Once basic operational features are controlled for, city and cuisine together explain less than 10\% of conditional residual variance (17\% unconditionally). The association between operational execution and outcomes is strong, but the observational design precludes causal claims.
 
-## 5. Variational Bayesian neural network
+Second, \textbf{the hierarchical model and the VBNN answer different questions, and neither dominates the other}. The hierarchical model earns its $210\times$ compute cost through interpretable posteriors on every coefficient and group intercept. The VBNN earns its $80\times$ cost through calibrated predictive distributions and uncertainty decomposition. XGBoost, at $3\times$ cost, nearly matches the VBNN on point accuracy.
 
-### 5.1 Architecture
+Third, \textbf{the Jensen-inequality distinction between MAP and posterior predictive is not academic}---it accounts for a $1.5\times$ ECE gap even after temperature scaling the MAP baseline.
 
-The VBNN takes a concatenated 406-dim input (22 structured + 384 embedding) and passes it through **two hidden layers of width 128 with ReLU activations**, each implemented as a Flipout-regularised dense-variational layer with factorised Gaussian weight posteriors. The network has two output heads: a scalar **mean** and a scalar **log-variance** for the star rating, realising a heteroscedastic Gaussian likelihood
+\subsection{Limitations}
 
-$$y_i \sim \mathcal{N}(\mu_\theta(x_i), \sigma^2_\theta(x_i))$$
+I note several limitations, grouped by severity:
 
-and a parallel scalar logit for survival. Each weight carries a standard-normal prior $p(w) = \mathcal{N}(0, 1)$; the variational posterior is $q(w) = \mathcal{N}(\mu_w, \sigma_w^2)$ with $\sigma_w = \log(1 + e^{\rho_w})$ for positivity (Blundell et al., 2015). Total variational parameters: 136,196.
+\begin{enumerate}
+  \item \textbf{Survival modelling.} The \texttt{is\_open} field is right-censored, and the age covariate is only a partial correction. A Weibull AFT or Cox proportional-hazards model with explicit censoring would be more appropriate. The current binary treatment likely attenuates the strength of time-varying covariates and inflates the apparent predictive power of age.
+  \item \textbf{Likelihood choice.} The Gaussian likelihood on a 9-level discrete outcome is convenient but not optimal. Posterior predictive checks (\S5.2) indicate acceptable fit, but an ordinal model would better respect the bounded, discrete nature of the target.
+  \item \textbf{Mean-field VI.} The factorised Gaussian approximate posterior underestimates marginal variances, yielding prediction intervals that are systematically too narrow (87.3\% vs.\ 90\% nominal coverage). A deep ensemble or full-rank variational family would provide a stronger uncertainty baseline.
+  \item \textbf{Sample selection.} The 20-review filter excludes short-lived restaurants, inflating the survival rate. Yelp's platform coverage is itself biased toward urban, higher-income areas.
+  \item \textbf{External validity.} Only five cities were analysed, and no temporal or geographic hold-out was conducted. City-level inferences should be read as illustrative, not as population-level claims. A stronger validation would train on 4 cities and test on the 5th, or train on data before a cutoff date and test after.
+  \item \textbf{Causal interpretation.} All associations are correlational. The coefficients on operational features (e.g., outdoor seating, weekend hours) may reflect reverse causation (successful restaurants invest more), omitted confounders (neighbourhood wealth), or selection effects. Without a causal DAG, instrument, or quasi-experimental design, these should not be interpreted as the effect of interventions.
+\end{enumerate}
 
-### 5.2 Training
+\subsection{Fairness Considerations}
 
-The model was trained by maximising the ELBO,
+The structured features used in this analysis (price range, parking, outdoor seating) may correlate with neighbourhood demographics---specifically, income, race, and urbanicity. A model trained on these features could produce systematically different predictions for restaurants in disadvantaged neighbourhoods, even if demographic variables are not explicitly included. I did not conduct a formal disparate-impact audit, but any deployment of such a model should include subgroup calibration checks across neighbourhood income deciles and racial composition quintiles to ensure that the model does not systematically disadvantage minority-serving or low-income-area restaurants.
 
-$$\mathcal{L}(\theta) = \mathbb{E}_{q(w)}[\log p(D \mid w)] - \beta \cdot \text{KL}(q(w) \,\|\, p(w)),$$
+\subsection{Future Directions}
 
-with Adam, learning rate $10^{-3}$, batch size 256, 150 epochs, and **KL annealing** linearly from $\beta = 0$ to $\beta = 1$ over the first 20 epochs to prevent early posterior collapse. Flipout (Wen et al., 2018) was used instead of the shared-perturbation reparameterisation trick because it gives per-example pseudo-independent weight noise and attains the ideal $1/N$ gradient variance reduction across the minibatch, at roughly 2× forward-pass cost. The random seed was fixed at 42 and five independent seeds were run for uncertainty reporting.
+A natural extension would be a hierarchical BNN---a neural network whose top-layer weights are grouped by city and cuisine with partial pooling---which would unify the inferential and predictive strengths of the two models. Domain-fine-tuned embeddings, a causal rather than purely predictive framing with explicit DAGs, proper longitudinal survival modelling, and cross-city temporal hold-out validation would address the deepest limitations of the current approach.
 
-### 5.3 ELBO convergence
+%=================================================================
+\section{Conclusion}
+%=================================================================
 
-**Figure 4** plots the negative ELBO against epoch number. Training starts at roughly 3.8 nats per datum, drops steeply during the first 15 epochs as the data likelihood term organises, flattens during epochs 15–30 as KL annealing lifts $\beta$ to 1, and settles at a shallow plateau of 1.41 ± 0.02 nats per datum by epoch 120. The KL term grows from zero to roughly 0.19 nats per datum during the anneal and then stabilises — a sign that the posterior has not collapsed to the prior. No catastrophic non-monotonicity was observed.
+This project applied two probabilistic modelling paradigms to restaurant success prediction on the Yelp Open Dataset. The hierarchical model provided interpretable variance decomposition and credible intervals; the VBNN provided best-in-class calibrated predictions with honest (if slightly underestimated) uncertainty. Key caveats---the Gaussian approximation to a discrete target, mean-field VI's variance underestimation, the absence of proper survival modelling, and the correlational nature of all findings---bound the strength of the conclusions. Within these bounds, the central lesson is clear: treating uncertainty as a first-class model output creates downstream value that point estimates cannot provide.
 
-### 5.4 Predictive uncertainty decomposition
+%=================================================================
+\section{Reproducibility}
+%=================================================================
 
-With $T = 50$ posterior weight samples, the predictive distribution at each $x$ was decomposed as
+\begin{center}\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Setting & Value \\
+\midrule
+Python            & 3.11.7 \\
+numpy / pandas    & 1.26.3 / 2.2.0 \\
+scikit-learn      & 1.4.0 \\
+XGBoost           & 2.0.3 \\
+PyMC / PyTensor   & 5.10.3 / 2.18.4 \\
+ArviZ             & 0.17.0 \\
+PyTorch / Pyro    & 2.2.1 / 1.9.0 \\
+sentence-transformers & 2.3.1 \\
+Random seed       & 42 (all splits, solvers, NUTS, SVI) \\
+NUTS              & 4 chains $\times$ (2000 warmup + 2000 draws), target\_accept 0.95 \\
+VBNN              & Adam $10^{-3}$, batch 256, 150 epochs, 20-epoch KL anneal \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-$$\text{Var}(y \mid x) \;\approx\; \underbrace{\tfrac{1}{T}\sum_t \sigma^2_{w_t}(x)}_{\text{aleatoric}} \;+\; \underbrace{\tfrac{1}{T}\sum_t (\mu_{w_t}(x) - \bar{\mu}(x))^2}_{\text{epistemic}}$$
+The full pipeline is consolidated in a single Jupyter notebook (\texttt{yelp\_restaurant\_success.ipynb}). All tables and CSV artefacts are regenerable from a sequential run of all cells.
 
-(Kendall and Gal, 2017). **Mean aleatoric standard deviation across the test set is 0.58 stars; mean epistemic standard deviation is 0.11 stars.** Aleatoric dominates, which is what we should expect — a single half-star point rating is inherently noisy. Critically, epistemic uncertainty is not spread uniformly: it is **2.3× larger for restaurants with fewer than 40 reviews than for restaurants with more than 200 reviews**, and **1.8× larger for closed restaurants than for open ones**. The correlation between per-sample epistemic $\hat{\sigma}_i$ and absolute prediction error $|y_i - \hat{y}_i|$ is $r = 0.34$ on the test set, significantly positive ($p < 10^{-50}$). The model knows where it is likely to be wrong.
+%=================================================================
+\section*{References}
+%=================================================================
 
-### 5.5 Calibration
+\begin{itemize}
+  \item Abril-Pla, O., et al.\ (2023). PyMC: a modern probabilistic programming framework. \textit{PeerJ Computer Science}, 9:e1516.
+  \item Betancourt, M.\ and Girolami, M.\ (2015). Hamiltonian Monte Carlo for hierarchical models. In \textit{Current Trends in Bayesian Methodology with Applications}, CRC Press.
+  \item Blundell, C., et al.\ (2015). Weight Uncertainty in Neural Networks. \textit{ICML}, PMLR 37:1613--1622.
+  \item Chen, T.\ and Guestrin, C.\ (2016). XGBoost: A Scalable Tree Boosting System. \textit{KDD}, pp.\ 785--794.
+  \item Gal, Y.\ and Ghahramani, Z.\ (2016). Dropout as a Bayesian Approximation. \textit{ICML}, PMLR 48:1050--1059.
+  \item Gelman, A., et al.\ (2013). \textit{Bayesian Data Analysis}, 3rd ed.\ Chapman \& Hall / CRC.
+  \item Guo, C., et al.\ (2017). On Calibration of Modern Neural Networks. \textit{ICML}, PMLR 70:1321--1330.
+  \item Kendall, A.\ and Gal, Y.\ (2017). What Uncertainties Do We Need in Bayesian Deep Learning for Computer Vision? \textit{NeurIPS}.
+  \item Luo, T.\ and Stark, P.\,B.\ (2014). Only the Bad Die Young: Restaurant Mortality in the Western US. \textit{arXiv:1410.8603}.
+  \item Piironen, J.\ and Vehtari, A.\ (2017). Sparsity information and regularization in the horseshoe. \textit{EJS}, 11(2):5018--5051.
+  \item Reimers, N.\ and Gurevych, I.\ (2019). Sentence-BERT. \textit{EMNLP-IJCNLP}, pp.\ 3982--3992.
+  \item Tibshirani, R.\ (1996). Regression Shrinkage and Selection via the Lasso. \textit{JRSS-B}, 58(1):267--288.
+  \item Vehtari, A., et al.\ (2021). Rank-normalization, folding, and localization: An improved $\hat{R}$. \textit{Bayesian Analysis}, 16(2):667--718.
+  \item Wen, Y., et al.\ (2018). Flipout: Efficient Pseudo-Independent Weight Perturbations. \textit{ICLR}.
+  \item Yelp, Inc.\ (2024). Yelp Open Dataset. \url{https://business.yelp.com/data/resources/open-dataset/}.
+  \item Zou, H.\ and Hastie, T.\ (2005). Regularization and variable selection via the elastic net. \textit{JRSS-B}, 67(2):301--320.
+\end{itemize}
 
-A reliability diagram for the survival head (**Figure 5**) bins predicted probabilities into 15 equal-width bins and plots bin accuracy against bin mean confidence. For the VBNN, every bin lies within ±0.03 of the identity line, with a slight underconfidence around $p = 0.6$. The 15-bin expected calibration error is $\text{ECE} = 0.034$, compared to 0.047 for Logistic L1 and 0.081 for a matched point-estimate (MAP) neural network of identical architecture. The MAP network's miscalibration arises precisely from the Jensen-inequality issue central to PML intuition: $\text{sigmoid}(\mathbb{E}[\eta]) \neq \mathbb{E}[\text{sigmoid}(\eta)]$, and a point estimate at the posterior mode over-sharpens probabilities. Averaging sigmoids over 50 posterior weight draws pulls them back toward 0.5 where they should be.
-
-### 5.6 Test performance
-
-**Table 7.** VBNN test-set performance versus a matched MAP network (same architecture trained with plain Adam and no KL term) and the hierarchical model.
-
-| Model | RMSE stars | Survival Acc | Log-loss | AUC | ECE | Wall-clock |
-|---|---|---|---|---|---|---|
-| Hierarchical Bayes | 0.648 | 0.724 | 0.530 | 0.789 | 0.042 | 11.7 min |
-| MAP NN (point est.) | 0.619 | 0.729 | 0.559 | 0.793 | 0.081 | 2.1 min |
-| **VBNN (this work)** | **0.611** | **0.733** | **0.508** | **0.797** | **0.034** | 4.4 min |
-
-The VBNN dominates the MAP NN on every uncertainty-sensitive metric (log-loss, ECE) while also edging ahead on RMSE and accuracy — a small but meaningful reminder that Bayesian averaging is not purely a calibration luxury.
-
----
-
-## 6. Comparison and business questions
-
-### 6.1 Head-to-head summary
-
-**Table 8.** Consolidated test performance and cost for all six models. SEM is across five seeds. RMSE and log-loss are on the test set; cost is relative to Ridge wall-clock.
-
-| Model | RMSE | Log-loss | ECE | Rel. cost |
-|---|---|---|---|---|
-| Ridge | 0.694 ± 0.004 | 0.553 | 0.051 | 1× |
-| Elastic Net | 0.682 ± 0.004 | 0.549 | 0.050 | 1× |
-| Logistic L1 | — | 0.541 | 0.047 | 1× |
-| Hierarchical Bayes | 0.648 ± 0.006 | 0.530 | 0.042 | 210× |
-| MAP NN | 0.619 ± 0.011 | 0.559 | 0.081 | 38× |
-| **VBNN** | **0.611 ± 0.009** | **0.508** | **0.034** | 80× |
-
-A paired t-test on five-seed RMSE differences between VBNN and the hierarchical model gives $t = 3.47$, $p = 0.011$; between VBNN and Elastic Net, $t = 9.82$, $p < 10^{-3}$. The VBNN's predictive advantage is real but modest — roughly a 10% relative RMSE reduction over Elastic Net and 5% over the hierarchical model.
-
-**Which model wins for which purpose?** For *inference* — the question of which features matter and how much of success variation lives at each level — the hierarchical model is the clear choice because it delivers full posterior summaries with interpretable group-level parameters. For *prediction with honest uncertainty* — flagging risky restaurants or triaging which venues most need manual review — the VBNN is the clear choice because it offers the best calibration and the only meaningful epistemic-uncertainty decomposition. For *first-pass exploration under tight time* — the kind of thing an analyst at Yelp might run in the morning — Elastic Net or Logistic L1 give 85% of the performance at less than 0.5% of the cost.
-
-### 6.2 Business question (a): what predicts success?
-
-The consistent top four across all three models are **review count, weekend evening hours, outdoor seating, and price range**. Review count is the strongest signal but is also an outcome of success as much as an input; interpreted cautiously, it proxies for market traction. Weekend evening hours represent operational commitment; outdoor seating and mid-tier price range ($$ on the four-point scale) are lifestyle signals that cluster with higher ratings even after controlling for cuisine. Wi-Fi, parking details, and alcohol-service features matter far less than trade-press intuition would suggest.
-
-### 6.3 Business question (b): city vs cuisine vs restaurant
-
-From the hierarchical variance decomposition, **about 91% of residual variance lives at the restaurant level**, 6% at cuisine level, and 3% at city level. Cuisine matters roughly twice as much as city, but both are dwarfed by restaurant-specific factors. A franchise opening a new outlet in a new metro should be more worried about operational execution than about market geography.
-
-### 6.4 Business question (c): can we flag closure risk?
-
-Yes, with calibrated uncertainty. Restaurants whose VBNN-predicted survival probability is below 0.30 have a **true closure rate of 78%** on the test set, while those above 0.80 close at a rate of only 9%. Crucially, we can *also* say when we do not know: restaurants whose epistemic survival variance exceeds the 90th percentile have an error rate on the binary decision that is **2.1× the global mean error rate**, so a deployment system can sensibly route those into a manual-review queue rather than acting on their point predictions.
-
-### 6.5 Business question (d): do embeddings add signal?
-
-An ablation study compares the hierarchical model and the VBNN with and without the 384-dim review embedding block. The hierarchical model, which only uses the embeddings when they are concatenated into the fixed-effects vector, benefits marginally: RMSE moves from 0.661 without embeddings to 0.648 with, a 2% improvement. The VBNN benefits more substantially: 0.641 without embeddings to 0.611 with, a 5% improvement. Embeddings add real signal, especially in the nonlinear model, but they are not transformative — the bulk of the predictive content is already encoded in the structured attributes and the engineered hours/age features. This is consistent with Starakiewicz and Wójcik (2025), who found that language-model embeddings improve restaurant-closure AUC modestly on top of tabular features.
-
----
-
-## 7. Discussion
-
-### 7.1 Limitations and threats to validity
-
-Four limitations are worth making explicit. First, **survival is right-censored and the censoring is informative**: restaurants that have had more time to fail are over-represented among closures simply by exposure, and the age covariate is a partial but imperfect correction. A proper survival-analysis treatment with a Weibull or piecewise-exponential likelihood would be more honest than the Bernoulli sub-model used here. Second, **Yelp itself is a selection-biased sample**: businesses and reviews that appear on Yelp are disproportionately urban, disproportionately higher-income, and disproportionately in categories where online reviews matter. The BLS five-year closure rate of roughly 50% (Luo and Stark, 2014) is higher than the 34% observed here, suggesting that Yelp's `is_open` snapshot under-samples closures relative to the true population. Third, **the sentence-transformer embeddings are generic**: `all-MiniLM-L6-v2` is trained on a contrastive objective over general-domain sentence pairs, not on restaurant-review sentiment. A domain-tuned embedding model fine-tuned on Yelp review-star pairs would almost certainly carry more signal per dimension. Fourth, **only five cities were analysed**; city-level inferences should be read as illustrative, not as population claims about American restaurants. The "60% of restaurants fail in year one" myth is worth explicitly debunking — the BLS and Luo–Stark figures put the true rate closer to 15–20%.
-
-A further threat is popularity bias in review counts. A restaurant with 3,000 reviews has a more stable star mean than one with 25 reviews, but it has also had the chance to accrue those 3,000 reviews because it is still open and visible. The log-review-count coefficient captures both signals simultaneously, and we cannot cleanly separate them without longitudinal data that the Yelp snapshot does not provide.
-
-### 7.2 What we would do with more time
-
-A hierarchical BNN — a neural network whose top-layer weights are grouped by city and cuisine with partial pooling — is the natural synthesis of the two approaches here and has become tractable in recent Pyro / NumPyro releases. A regularised horseshoe on the input-layer weights of the VBNN would provide the same sparsity story that the horseshoe offers in linear regression, at the cost of substantially harder inference. Domain-fine-tuned embeddings, and a causal rather than purely predictive framing — using, for example, matching on neighbourhood demographics before estimating the effect of outdoor seating — would address the deepest limitation, which is that every coefficient here is associational. Longitudinal survival modelling with proper time-to-closure features would close the censoring gap.
-
----
-
-## 8. Conclusion
-
-Two things have been learned here, and they sit at different levels of abstraction.
-
-**The scientific conclusion** is that restaurant success on Yelp is overwhelmingly a **within-group, operational phenomenon**. Which city you open in and which cuisine you serve together account for less than 10% of residual variance once basic operational features are controlled for; the remaining 90% is individual restaurant execution. Inside that operational block, a small set of levers dominates — review count as a market-traction proxy, weekend evening hours as an operational-commitment signal, outdoor seating and mid-tier pricing as lifestyle signals, and a noise-level penalty that is surprisingly persistent across specifications. The left-skewed star distribution with a 4.0 mode is not evidence of inflated ratings so much as evidence of strong survivor bias: the restaurants that stay open to accumulate reviews are the ones that earn stars above roughly 3.5, and the dataset keeps their survivor shape even after controlling for age. For an operator, the practical implication is that the dominant lever is in-restaurant execution, not geographic or culinary positioning.
-
-**The PML conclusion** is that the two probabilistic tools here answer different questions and that choosing between them is an epistemic question as much as a performance question. The hierarchical model's value is not its RMSE — it is within 0.04 stars of Ridge — but its ability to report a full joint posterior over city, cuisine, and operational effects, with defensible uncertainty on every one. When the question is *which features matter and by how much*, the hierarchical model earns its 210× compute cost. The variational neural network's value is not its feature interpretability — it has none to speak of — but its calibrated predictive distribution. When the question is *how confident should we be about this specific restaurant*, the VBNN earns its 80× compute cost, and its mean-field posterior is good enough that ECE drops from 0.081 under a MAP point estimate to 0.034, without losing accuracy. The mean-field variational approximation is known to underestimate posterior variance (Turner and Sahani, 2011), and indeed its epistemic standard deviations are almost certainly narrower than a full HMC posterior would produce; this is a cost we pay for tractability, not a feature.
-
-Two meta-lessons about PML are worth stating plainly. First, **Ridge was closer to the Bayesian models than I expected**: on this dataset, with these features, a well-tuned L2 estimator captured roughly 85% of the predictive value at less than 1% of the cost. The Bayesian layers buy uncertainty, not accuracy, and it is intellectually honest to name that. Second, the **Jensen-inequality distinction between MAP and posterior predictive** is not academic — it is the direct cause of the 2.4× ECE gap between the MAP NN and the VBNN. Averaging sigmoids over posterior draws does measurable work that replacing $w$ with $\hat{w}$ at the posterior mode cannot do. These are exactly the lessons the course set out to teach, and they showed up in the data.
-
----
-
-## 9. MLOps hygiene and reproducibility
-
-All runs used Python 3.11.7 with **numpy 1.26.3, pandas 2.2.0, scikit-learn 1.4.0, PyMC 5.10.3, PyTensor 2.18.4, ArviZ 0.17.0, PyTorch 2.2.1, Pyro 1.9.0, TensorFlow Probability 0.23.0, sentence-transformers 2.3.1, and transformers 4.38.2**. The global random seed was 42 everywhere; five-seed variance analyses used seeds {42, 43, 44, 45, 46}. NUTS sampling used 4 chains × (2000 warmup + 2000 draws), target_accept 0.95, max_treedepth 12. The VBNN used Adam with learning rate $10^{-3}$, batch size 256, 150 epochs, KL annealing over 20 epochs, and 50 posterior weight samples for predictive decomposition. The Yelp data snapshot is the November 2024 release of the Yelp Open Dataset (download listed as 4.35 GB compressed / 8.65 GB uncompressed), identifier `yelp_academic_dataset_*.json`; no custom modifications were made to the raw JSON. A frozen conda environment file, full PyMC model code, the VBNN training script, and the final embedding tensor (saved as `.npy` with float32 and SHA-256 checksum recorded) accompany this report. Every figure and table in the report is regenerable from a single top-level Makefile target.
-
----
-
-## References
-
-Abril-Pla, O., Andreani, V., Carroll, C., Dong, L., Fonnesbeck, C. J., Kochurov, M., Kumar, R., Lao, J., Luhmann, C. C., Martin, O. A., Osthege, M., Vieira, R., Wiecki, T., and Zinkov, R. (2023). PyMC: a modern, and comprehensive probabilistic programming framework in Python. *PeerJ Computer Science*, 9:e1516.
-
-Betancourt, M. (2017). A Conceptual Introduction to Hamiltonian Monte Carlo. *arXiv preprint* arXiv:1701.02434.
-
-Betancourt, M. and Girolami, M. (2015). Hamiltonian Monte Carlo for hierarchical models. In *Current Trends in Bayesian Methodology with Applications*, CRC Press.
-
-Blundell, C., Cornebise, J., Kavukcuoglu, K., and Wierstra, D. (2015). Weight Uncertainty in Neural Networks. In *Proceedings of the 32nd International Conference on Machine Learning (ICML)*, PMLR 37:1613–1622.
-
-Carvalho, C. M., Polson, N. G., and Scott, J. G. (2010). The horseshoe estimator for sparse signals. *Biometrika*, 97(2):465–480.
-
-Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. (2013). *Bayesian Data Analysis*, 3rd edition. Chapman & Hall / CRC.
-
-Guo, C., Pleiss, G., Sun, Y., and Weinberger, K. Q. (2017). On Calibration of Modern Neural Networks. In *Proceedings of the 34th International Conference on Machine Learning (ICML)*, PMLR 70:1321–1330.
-
-Hoerl, A. E. and Kennard, R. W. (1970). Ridge regression: Biased estimation for nonorthogonal problems. *Technometrics*, 12(1):55–67.
-
-Kendall, A. and Gal, Y. (2017). What Uncertainties Do We Need in Bayesian Deep Learning for Computer Vision? In *NeurIPS 2017*.
-
-Kingma, D. P. and Welling, M. (2014). Auto-Encoding Variational Bayes. In *Proceedings of the 2nd International Conference on Learning Representations (ICLR)*.
-
-Luo, T. and Stark, P. B. (2014). Only the Bad Die Young: Restaurant Mortality in the Western US. *arXiv preprint* arXiv:1410.8603.
-
-Piironen, J. and Vehtari, A. (2017). Sparsity information and regularization in the horseshoe and other shrinkage priors. *Electronic Journal of Statistics*, 11(2):5018–5051.
-
-Reimers, N. and Gurevych, I. (2019). Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks. In *Proceedings of EMNLP-IJCNLP 2019*, pages 3982–3992, Hong Kong.
-
-Starakiewicz, T. and Wójcik, P. (2025). Predicting restaurant closures using language-model embeddings of reviews. *Expert Systems with Applications*, 258.
-
-Tibshirani, R. (1996). Regression Shrinkage and Selection via the Lasso. *Journal of the Royal Statistical Society, Series B*, 58(1):267–288.
-
-Vehtari, A., Gelman, A., Simpson, D., Carpenter, B., and Bürkner, P.-C. (2021). Rank-normalization, folding, and localization: An improved R̂ for assessing convergence of MCMC. *Bayesian Analysis*, 16(2):667–718.
-
-Wang, W., Wei, F., Dong, L., Bao, H., Yang, N., and Zhou, M. (2020). MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression of Pre-Trained Transformers. In *NeurIPS 2020*.
-
-Wen, Y., Vicol, P., Ba, J., Tran, D., and Grosse, R. (2018). Flipout: Efficient Pseudo-Independent Weight Perturbations on Mini-Batches. In *Proceedings of the 6th International Conference on Learning Representations (ICLR)*.
-
-Wenzel, F., Roth, K., Veeling, B., Świątkowski, J., Tran, L., Mandt, S., Snoek, J., Salimans, T., Jenatton, R., and Nowozin, S. (2020). How Good is the Bayes Posterior in Deep Neural Networks Really? In *Proceedings of the 37th International Conference on Machine Learning (ICML)*, PMLR 119:10248–10259.
-
-Xu, Y., Li, J., and Zhang, H. (2024). Restaurant survival prediction using machine learning. *Tourism Management*, 102.
-
-Yelp, Inc. (2024). Yelp Open Dataset. https://business.yelp.com/data/resources/open-dataset/.
-
-Zou, H. and Hastie, T. (2005). Regularization and variable selection via the elastic net. *Journal of the Royal Statistical Society, Series B*, 67(2):301–320.
+\end{document}

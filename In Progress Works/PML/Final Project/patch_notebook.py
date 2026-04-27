@@ -1,0 +1,381 @@
+"""Patch the notebook to  match the revised report methodology."""
+import json, copy
+
+with open("yelp_restaurant_success.ipynb", "r") as f:
+    nb = json.load(f)
+
+cells = nb["cells"]
+
+# ── 1. Fix imports (cell 2): add xgboost, brier_score_loss, scipy ──
+old_imports = cells[2]["source"]
+new_imports = []
+for line in old_imports:
+    if line.startswith("     \"from pyro.infer import"):
+        new_imports.append("     \"import xgboost as xgb\\n\",\n")
+    if line.startswith("     \"from sentence_transformers"):
+        new_imports.append("     \"from scipy import stats as sp_stats\\n\",\n")
+    new_imports.append(
+        line.replace(
+            "    accuracy_score, confusion_matrix, log_loss,",
+            "    accuracy_score, brier_score_loss, confusion_matrix, log_loss,",
+        )
+    )
+cells[2]["source"] = new_imports
+
+# ── 2. Remove composite from Targets dataclass (cell 8) ──
+cells[8]["source"] = [
+    "@dataclass\n",
+    "class Targets:\n",
+    "    stars: np.ndarray\n",
+    "    is_open: np.ndarray\n",
+    "\n",
+    "\n",
+    "def build_targets(df):\n",
+    '    """Build the two prediction targets (star rating and survival)."""\n',
+    '    stars = df["stars"].astype(float).to_numpy()\n',
+    '    is_open = df["is_open"].astype(int).to_numpy()\n',
+    "    return Targets(stars=stars, is_open=is_open)\n",
+    "\n",
+    "\n",
+    "def stratified_split(df):\n",
+    '    strat = df["city"] + "|" + df["cuisine"] + "|" + df["is_open"].astype(str)\n',
+    "    idx = np.arange(len(df))\n",
+    "    train_idx, rest_idx = train_test_split(\n",
+    "        idx, test_size=0.30, stratify=strat, random_state=SEED\n",
+    "    )\n",
+    "    val_idx, test_idx = train_test_split(\n",
+    "        rest_idx, test_size=0.50, stratify=strat.iloc[rest_idx], random_state=SEED\n",
+    "    )\n",
+    "    return train_idx, val_idx, test_idx\n",
+]
+
+# ── 3. Remove composite from savez call (cell 9) ──
+cells[9]["source"] = [line.replace(
+    "    stars=targets.stars, is_open=targets.is_open, composite=targets.composite,",
+    "    stars=targets.stars, is_open=targets.is_open,",
+) for line in cells[9]["source"]]
+
+# ── 4. Add bootstrap CI and Brier helpers to metrics cell (cell 11) ──
+cells[11]["source"].extend([
+    "\n",
+    "\n",
+    "def bootstrap_rmse_ci(y, yhat, n_boot=1000, alpha=0.05):\n",
+    '    """95% bootstrap CI for RMSE."""\n',
+    "    rng = np.random.default_rng(SEED)\n",
+    "    vals = []\n",
+    "    for _ in range(n_boot):\n",
+    "        idx = rng.choice(len(y), size=len(y), replace=True)\n",
+    "        vals.append(rmse(y[idx], yhat[idx]))\n",
+    "    lo = np.percentile(vals, 100 * alpha / 2)\n",
+    "    hi = np.percentile(vals, 100 * (1 - alpha / 2))\n",
+    "    return lo, hi\n",
+    "\n",
+    "\n",
+    "def diebold_mariano(e1, e2):\n",
+    '    """Two-sided DM test on squared errors."""\n',
+    "    d = e1**2 - e2**2\n",
+    "    t_stat = d.mean() / (d.std(ddof=1) / np.sqrt(len(d)))\n",
+    "    p = 2 * (1 - sp_stats.norm.cdf(abs(t_stat)))\n",
+    "    return float(t_stat), float(p)\n",
+])
+
+# ── 5. Add intercept-only + XGBoost baselines after regression cell (insert after cell 12) ──
+xgb_cell = {
+    "cell_type": "code",
+    "execution_count": None,
+    "id": "xgb_baselines",
+    "metadata": {},
+    "outputs": [],
+    "source": [
+        "# --- Intercept-only baseline and XGBoost ---\n",
+        "intercept_rmse = rmse(yte_s, np.full_like(yte_s, ytr_s.mean()))\n",
+        "intercept_ci = bootstrap_rmse_ci(yte_s, np.full_like(yte_s, ytr_s.mean()))\n",
+        'print(f"Intercept-only RMSE: {intercept_rmse:.4f} [{intercept_ci[0]:.3f}, {intercept_ci[1]:.3f}]")\n',
+        "\n",
+        "# XGBoost star regression\n",
+        "xgb_star = xgb.XGBRegressor(\n",
+        "    n_estimators=500, max_depth=6, learning_rate=0.05,\n",
+        "    colsample_bytree=0.7, subsample=0.8,\n",
+        "    random_state=SEED, n_jobs=-1,\n",
+        ")\n",
+        "xgb_star.fit(Xtr, ytr_s, eval_set=[(d['X'][d['val']], d['stars'][d['val']])],\n",
+        "             verbose=False)\n",
+        "xgb_star_pred = xgb_star.predict(Xte)\n",
+        "xgb_star_rmse = rmse(yte_s, xgb_star_pred)\n",
+        "xgb_star_ci = bootstrap_rmse_ci(yte_s, xgb_star_pred)\n",
+        'print(f"XGBoost RMSE: {xgb_star_rmse:.4f} [{xgb_star_ci[0]:.3f}, {xgb_star_ci[1]:.3f}]")\n',
+        "\n",
+        "# XGBoost survival\n",
+        "xgb_surv = xgb.XGBClassifier(\n",
+        "    n_estimators=500, max_depth=6, learning_rate=0.05,\n",
+        "    colsample_bytree=0.7, subsample=0.8,\n",
+        "    random_state=SEED, n_jobs=-1, eval_metric='logloss',\n",
+        ")\n",
+        "xgb_surv.fit(Xtr, ytr_o, eval_set=[(d['X'][d['val']], d['is_open'][d['val']])],\n",
+        "             verbose=False)\n",
+        "xgb_surv_p = xgb_surv.predict_proba(Xte)[:, 1]\n",
+        "xgb_surv_metrics = {\n",
+        '    "model": "XGBoost",\n',
+        '    "test_acc": accuracy_score(yte_o, xgb_surv_p >= 0.5),\n',
+        '    "test_logloss": log_loss(yte_o, xgb_surv_p),\n',
+        '    "test_auc": roc_auc_score(yte_o, xgb_surv_p),\n',
+        '    "ece": expected_calibration_error(yte_o, xgb_surv_p),\n',
+        '    "brier": brier_score_loss(yte_o, xgb_surv_p),\n',
+        "}\n",
+        "print(f\"XGBoost survival: {xgb_surv_metrics}\")\n",
+        "\n",
+        "# Bootstrap CIs for all regression models\n",
+        "ridge_ci = bootstrap_rmse_ci(yte_s, ridge.predict(Xte))\n",
+        "lasso_ci = bootstrap_rmse_ci(yte_s, lasso.predict(Xte))\n",
+        "enet_ci = bootstrap_rmse_ci(yte_s, enet.predict(Xte))\n",
+        "\n",
+        "# Diebold-Mariano tests\n",
+        "e_ridge = yte_s - ridge.predict(Xte)\n",
+        "e_lasso = yte_s - lasso.predict(Xte)\n",
+        "e_enet = yte_s - enet.predict(Xte)\n",
+        "e_xgb = yte_s - xgb_star_pred\n",
+        "dm_rl = diebold_mariano(e_ridge, e_lasso)\n",
+        "dm_ex = diebold_mariano(e_enet, e_xgb)\n",
+        'print(f"DM Ridge vs Lasso: t={dm_rl[0]:.3f}, p={dm_rl[1]:.4f}")\n',
+        'print(f"DM ENet vs XGBoost: t={dm_ex[0]:.3f}, p={dm_ex[1]:.4f}")\n',
+    ],
+}
+cells.insert(13, xgb_cell)
+# Note: all subsequent cell indices shift by +1
+
+# ── 6. Update hierarchical sampling to enable log_likelihood for LOO (cell 17, was 16) ──
+cells[17]["source"] = [line.replace(
+    '        idata_kwargs={"log_likelihood": False},',
+    '        idata_kwargs={"log_likelihood": True},',
+) for line in cells[17]["source"]]
+
+# ── 7. Insert LOO-CV, unconditional ICC, PPC, and prior sensitivity after variance decomp (after cell 18) ──
+hier_extras_cell = {
+    "cell_type": "code",
+    "execution_count": None,
+    "id": "hier_extras",
+    "metadata": {},
+    "outputs": [],
+    "source": [
+        "# --- Unconditional ICC (intercept-only model) ---\n",
+        "# Fit a simpler model with only random intercepts, no fixed effects\n",
+        "tr = d['train']\n",
+        "city_idx_tr, cities_u = make_indices(d['city'][tr])\n",
+        "cuis_idx_tr, cuisines_u = make_indices(d['cuisine'][tr])\n",
+        "\n",
+        "with pm.Model() as uncond_model:\n",
+        "    a0 = pm.Normal('a0', 0, 5)\n",
+        "    tc = pm.HalfNormal('tc', 1.0)\n",
+        "    tq = pm.HalfNormal('tq', 1.0)\n",
+        "    ac_raw = pm.Normal('ac_raw', 0, 1, shape=len(cities_u))\n",
+        "    aq_raw = pm.Normal('aq_raw', 0, 1, shape=len(cuisines_u))\n",
+        "    sig_u = pm.HalfNormal('sig_u', 1.0)\n",
+        "    mu_u = a0 + tc * ac_raw[city_idx_tr] + tq * aq_raw[cuis_idx_tr]\n",
+        "    pm.Normal('y', mu=mu_u, sigma=sig_u, observed=d['stars'][tr])\n",
+        "    idata_u = pm.sample(draws=1000, tune=1000, chains=2,\n",
+        "                        target_accept=0.9, random_seed=SEED,\n",
+        "                        return_inferencedata=True,\n",
+        "                        idata_kwargs={'log_likelihood': False})\n",
+        "\n",
+        "tc_u = float(idata_u.posterior['tc'].mean())\n",
+        "tq_u = float(idata_u.posterior['tq'].mean())\n",
+        "sig_uu = float(idata_u.posterior['sig_u'].mean())\n",
+        "tot_u = tc_u**2 + tq_u**2 + sig_uu**2\n",
+        "print('Unconditional ICCs:')\n",
+        "print(f'  City:     {tc_u**2/tot_u:.3f}')\n",
+        "print(f'  Cuisine:  {tq_u**2/tot_u:.3f}')\n",
+        "print(f'  Residual: {sig_uu**2/tot_u:.3f}')\n",
+        "\n",
+        "# --- LOO-CV for model comparison ---\n",
+        "loo_full = az.loo(idata, pointwise=True)\n",
+        "print(f'\\nFull model LOO elpd: {loo_full.elpd_loo:.1f}')\n",
+        "\n",
+        "# --- Posterior predictive checks ---\n",
+        "with model:\n",
+        "    ppc = pm.sample_posterior_predictive(idata, random_seed=SEED)\n",
+        "\n",
+        "y_obs = d['stars'][tr]\n",
+        "y_rep = ppc.posterior_predictive['y_obs'].values.reshape(-1, len(y_obs))\n",
+        "# Bayesian p-value for variance\n",
+        "obs_var = np.var(y_obs)\n",
+        "rep_vars = np.var(y_rep, axis=1)\n",
+        "pval = float(np.mean(rep_vars >= obs_var))\n",
+        "print(f'\\nPPC variance Bayesian p-value: {pval:.3f}')\n",
+        "# Histogram comparison\n",
+        "bins = np.arange(0.75, 5.5, 0.5)\n",
+        "obs_counts, _ = np.histogram(y_obs, bins=bins, density=True)\n",
+        "rep_means = np.mean([np.histogram(y_rep[i], bins=bins, density=True)[0]\n",
+        "                     for i in range(min(500, len(y_rep)))], axis=0)\n",
+        "max_disc = np.max(np.abs(obs_counts - rep_means))\n",
+        "print(f'Max PPC density discrepancy: {max_disc:.4f}')\n",
+        "\n",
+        "# --- Prior sensitivity: beta ~ N(0,1) vs N(0,5) ---\n",
+        "print('\\n--- Prior sensitivity (quick check) ---')\n",
+        "for prior_sd in [1.0, 5.0]:\n",
+        "    with pm.Model() as sens_model:\n",
+        "        X_d = pm.Data('X', d['X_struct'][tr])\n",
+        "        a0s = pm.Normal('a0', 0, 5)\n",
+        "        bs = pm.Normal('beta', 0, prior_sd, shape=d['X_struct'].shape[1])\n",
+        "        sigs = pm.HalfNormal('sigma', 1.0)\n",
+        "        pm.Normal('y', mu=a0s + pm.math.dot(X_d, bs), sigma=sigs,\n",
+        "                  observed=d['stars'][tr])\n",
+        "        ids = pm.sample(draws=500, tune=500, chains=2,\n",
+        "                        target_accept=0.9, random_seed=SEED,\n",
+        "                        return_inferencedata=True,\n",
+        "                        idata_kwargs={'log_likelihood': False})\n",
+        "    betas_s = ids.posterior['beta'].mean(('chain','draw')).values\n",
+        "    print(f'  beta~N(0,{prior_sd}): top coefs = {np.round(betas_s[:6], 4)}')\n",
+    ],
+}
+cells.insert(19, hier_extras_cell)
+# Subsequent indices shift by +1 more (total +2 from original)
+
+# ── 8. Insert MAP NN + temperature scaling + coverage validation after VBNN eval ──
+# VBNN eval is now at cell 23 (was 21, +2 shifts)
+map_temp_cell = {
+    "cell_type": "code",
+    "execution_count": None,
+    "id": "map_temp_coverage",
+    "metadata": {},
+    "outputs": [],
+    "source": [
+        "# --- MAP Neural Network baseline with temperature scaling ---\n",
+        "class MapNN(nn.Module):\n",
+        "    def __init__(self, in_dim, hidden=128):\n",
+        "        super().__init__()\n",
+        "        self.net = nn.Sequential(\n",
+        "            nn.Linear(in_dim, hidden), nn.ReLU(),\n",
+        "            nn.Linear(hidden, hidden), nn.ReLU(),\n",
+        "        )\n",
+        "        self.mean_head = nn.Linear(hidden, 1)\n",
+        "        self.logit_head = nn.Linear(hidden, 1)\n",
+        "\n",
+        "    def forward(self, x):\n",
+        "        h = self.net(x)\n",
+        "        return self.mean_head(h).squeeze(-1), self.logit_head(h).squeeze(-1)\n",
+        "\n",
+        "# Train MAP NN\n",
+        "map_nn = MapNN(Xtr_t.shape[1])\n",
+        "opt = torch.optim.Adam(map_nn.parameters(), lr=1e-3)\n",
+        "ds_map = torch.utils.data.TensorDataset(Xtr_t, ys_tr, yo_tr)\n",
+        "loader_map = torch.utils.data.DataLoader(ds_map, batch_size=256, shuffle=True)\n",
+        "\n",
+        "for epoch in range(150):\n",
+        "    for xb, ysb, yob in loader_map:\n",
+        "        mu, logit = map_nn(xb)\n",
+        "        loss = nn.MSELoss()(mu, ysb) + nn.BCEWithLogitsLoss()(logit, yob)\n",
+        "        opt.zero_grad()\n",
+        "        loss.backward()\n",
+        "        opt.step()\n",
+        "\n",
+        "map_nn.eval()\n",
+        "with torch.no_grad():\n",
+        "    map_mu, map_logit = map_nn(Xte_t)\n",
+        "    map_mu = map_mu.numpy()\n",
+        "    map_logit_np = map_logit.numpy()\n",
+        "    map_p_raw = 1.0 / (1.0 + np.exp(-map_logit_np))\n",
+        "\n",
+        "map_rmse = rmse(yte_s_np, map_mu)\n",
+        "map_ece_raw = expected_calibration_error(yte_o_np, map_p_raw)\n",
+        "map_brier_raw = brier_score_loss(yte_o_np, map_p_raw)\n",
+        "print(f'MAP NN RMSE: {map_rmse:.4f}, raw ECE: {map_ece_raw:.4f}')\n",
+        "\n",
+        "# Temperature scaling on validation set\n",
+        "Xval_t = torch.from_numpy(X_all[d['val']])\n",
+        "with torch.no_grad():\n",
+        "    _, val_logit = map_nn(Xval_t)\n",
+        "    val_logit_np = val_logit.numpy()\n",
+        "yval_o = d['is_open'][d['val']]\n",
+        "\n",
+        "from scipy.optimize import minimize_scalar\n",
+        "def temp_nll(T):\n",
+        "    p = 1.0 / (1.0 + np.exp(-val_logit_np / T))\n",
+        "    return log_loss(yval_o, p)\n",
+        "\n",
+        "res = minimize_scalar(temp_nll, bounds=(0.1, 10.0), method='bounded')\n",
+        "T_opt = res.x\n",
+        "print(f'Optimal temperature: {T_opt:.3f}')\n",
+        "\n",
+        "map_p_scaled = 1.0 / (1.0 + np.exp(-map_logit_np / T_opt))\n",
+        "map_ece_scaled = expected_calibration_error(yte_o_np, map_p_scaled)\n",
+        "map_brier_scaled = brier_score_loss(yte_o_np, map_p_scaled)\n",
+        "print(f'MAP NN temp-scaled ECE: {map_ece_scaled:.4f}, Brier: {map_brier_scaled:.4f}')\n",
+        "\n",
+        "# --- 90% prediction interval coverage for VBNN ---\n",
+        "total_std = np.sqrt(preds['aleatoric_var'] + preds['epistemic_var'])\n",
+        "lo90 = preds['mean'] - 1.645 * total_std\n",
+        "hi90 = preds['mean'] + 1.645 * total_std\n",
+        "coverage = float(np.mean((yte_s_np >= lo90) & (yte_s_np <= hi90)))\n",
+        "print(f'\\nVBNN 90% PI coverage: {coverage:.4f} (nominal: 0.90)')\n",
+        "\n",
+        "# --- Brier scores for all survival models ---\n",
+        "vbnn_brier = brier_score_loss(yte_o_np, preds['prob_open'])\n",
+        "print(f'VBNN Brier: {vbnn_brier:.4f}')\n",
+        "\n",
+        "# --- Epistemic uncertainty vs error correlation ---\n",
+        "epist_std = np.sqrt(preds['epistemic_var'])\n",
+        "abs_err = np.abs(yte_s_np - preds['mean'])\n",
+        "r_corr = float(np.corrcoef(epist_std, abs_err)[0, 1])\n",
+        "print(f'Epistemic-error r={r_corr:.4f}, R²={r_corr**2:.4f}')\n",
+    ],
+}
+# Insert after VBNN eval (cell 23)
+cells.insert(24, map_temp_cell)
+# Total shifts: +3 from original
+
+# ── 9. Update head-to-head comparison cell (now cell 25, was 23) ──
+cells[25]["source"] = [
+    "# Full head-to-head comparison table\n",
+    "headline = pd.DataFrame([\n",
+    '    {"model": "Intercept-only",\n',
+    '     "test_rmse": intercept_rmse, "test_logloss": np.nan,\n',
+    '     "ece": np.nan, "brier": np.nan},\n',
+    '    {"model": "Ridge",\n',
+    '     "test_rmse": reg_results.loc[reg_results.model == "Ridge", "test_rmse"].iloc[0],\n',
+    '     "test_logloss": clf_results.loc[clf_results.model == "Logistic-L2", "test_logloss"].iloc[0],\n',
+    '     "ece": clf_results.loc[clf_results.model == "Logistic-L2", "ece"].iloc[0],\n',
+    '     "brier": brier_score_loss(yte_o, clf_rows[0]["p"]) if "p" in clf_rows[0] else np.nan},\n',
+    '    {"model": "Elastic Net",\n',
+    '     "test_rmse": reg_results.loc[reg_results.model == "ElasticNet", "test_rmse"].iloc[0],\n',
+    '     "test_logloss": clf_results.loc[clf_results.model == "Logistic-L1", "test_logloss"].iloc[0],\n',
+    '     "ece": clf_results.loc[clf_results.model == "Logistic-L1", "ece"].iloc[0],\n',
+    '     "brier": np.nan},\n',
+    '    {"model": "XGBoost",\n',
+    '     "test_rmse": xgb_star_rmse,\n',
+    '     "test_logloss": xgb_surv_metrics["test_logloss"],\n',
+    '     "ece": xgb_surv_metrics["ece"],\n',
+    '     "brier": xgb_surv_metrics["brier"]},\n',
+    '    {"model": "Hierarchical",\n',
+    '     "test_rmse": hier_rmse, "test_logloss": np.nan,\n',
+    '     "ece": np.nan, "brier": np.nan},\n',
+    '    {"model": "MAP NN (raw)",\n',
+    '     "test_rmse": map_rmse, "test_logloss": np.nan,\n',
+    '     "ece": map_ece_raw, "brier": map_brier_raw},\n',
+    '    {"model": "MAP NN (temp-scaled)",\n',
+    '     "test_rmse": map_rmse, "test_logloss": np.nan,\n',
+    '     "ece": map_ece_scaled, "brier": map_brier_scaled},\n',
+    '    {"model": "VBNN",\n',
+    '     "test_rmse": vbnn_rmse, "test_logloss": vbnn_ll,\n',
+    '     "ece": vbnn_ece, "brier": vbnn_brier},\n',
+    "])\n",
+    'headline.to_csv(FINAL / "headline_comparison.csv", index=False)\n',
+    "headline\n",
+]
+
+# ── 10. Update section 6 markdown header (now cell 26) ──
+cells[26]["source"] = [
+    "## 6. Customer segments, market-specific findings, and recommendations\n",
+    "\n",
+    "This section provides applied analyses with quantitative validation:\n",
+    "\n",
+    "- **Customer segments** with silhouette scores and cluster profiles\n",
+    "- **Market-specific findings** with reconciliation against the ICC result\n",
+    "- **Actionable recommendations** with confusion matrix and decision bands\n",
+]
+
+# Save
+with open("yelp_restaurant_success.ipynb", "w") as f:
+    json.dump(nb, f, indent=1)
+
+print("Notebook patched successfully.")
+print(f"Total cells: {len(cells)}")
