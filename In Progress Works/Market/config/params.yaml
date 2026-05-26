@@ -1,0 +1,77 @@
+# ============================================================
+# Central configuration for the Price Impact HTE project.
+# All tunable parameters live here so experiments are reproducible.
+# ============================================================
+
+# --- Random seed for full reproducibility ---
+random_seed: 42
+
+# --- Synthetic Data Generating Process ---
+dgp:
+  n_observations: 200000        # total number of synthetic trade events
+  train_fraction: 0.7           # train / test split ratio
+
+  # Market-state covariate distributions
+  spread_loc: -2.0              # LogNormal mu  (bid-ask spread)
+  spread_scale: 0.6             # LogNormal sigma
+  depth_scale: 50.0             # Exponential scale (order book depth, shares)
+  volatility_scale: 0.02        # Half-Normal scale (recent realized vol)
+
+  # Treatment (trade size) — confounded by market state
+  treatment_noise_scale: 5.0    # noise in T = f(X) + noise
+  treatment_depth_coef: 0.3     # traders submit larger orders when depth is high
+  treatment_vol_coef: -10.0     # traders shrink orders when volatility is high
+
+  # Outcome (price change) — true CATE function
+  baseline_drift_scale: 0.001   # g(X) baseline price drift magnitude
+  cate_intercept: 0.0005        # β₀ in τ(X) = β₀ + β₁/depth + β₂·vol
+  cate_depth_coef: 0.5          # β₁  (higher impact when depth is low)
+  cate_vol_coef: 0.05           # β₂  (higher impact when volatility is high)
+  outcome_noise_scale: 0.002    # ε noise standard deviation
+
+  # Time-series dependence (optional AR(1) in noise)
+  ar1_coefficient: 0.3          # autocorrelation in ε (0 = IID)
+
+# --- Feature engineering ---
+features:
+  volatility_window: 20         # rolling window for realized volatility proxy
+  winsorize_percentile: 0.01    # clip extreme values at this percentile
+
+# --- Estimators ---
+estimators:
+  causal_forest:
+    n_estimators: 1000
+    min_samples_leaf: 20
+    max_depth: null              # null = unlimited
+    discrete_treatment: false
+
+  s_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  t_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  x_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  dr_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  # For meta-learners that need binary treatment:
+  binary_treatment_quantile: 0.75  # top 25% of trade sizes = "treated"
+
+# --- Evaluation ---
+evaluation:
+  n_bootstrap: 200              # bootstrap replications for SE estimation
+  ci_level: 0.90                # confidence interval level
+  n_cate_bins: 5                # quintile bins for GATES analysis
+
+# --- Output ---
+output:
+  results_dir: "results"
+  figure_format: "png"
+  figure_dpi: 300

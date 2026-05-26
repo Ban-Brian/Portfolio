@@ -60,10 +60,10 @@ resume = {
             "Location": "Pago Pago, Eastern District, American Samoa",
             "Dates": "May 2025 - Present",
             "Responsibilities": [
-                "Supported economic research and data collection for local development projects.",
+                "Supported economic research and data collection for local development projects with .",
                 "Provided actionable recommendations that encouraged positive changes for approximately 2,000 businesses.",
                 "Collaborated with team members on-site to analyze and interpret economic trends.",
-                "Participated in community outreach and engagement initiatives."
+                "Used Excel to review data and organize findings into easy to understand graphs.",
             ]
         },
         {
@@ -87,7 +87,6 @@ resume = {
                 "Leading the expansion of National chapters by developing growth strategies and fostering collaboration among teams.",
                 "Provided training for on boarding chapters as well as other managers.",
                 "Delivering compelling presentations and driving alignment to achieve measurable outcomes.",
-                "Used Tableu to create reports and dashboards for stakeholders with data from R."
             ]
         },
     ],
