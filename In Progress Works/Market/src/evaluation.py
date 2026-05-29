@@ -1,10 +1,4 @@
-"""
-Evaluation metrics for HTE estimator performance.
-
-Since the synthetic DGP provides ground-truth CATE, we can directly
-measure estimation accuracy. Also includes diagnostics for
-time-series robustness and confidence interval calibration.
-"""
+"""Evaluation metrics — RMSE, MAE, rank correlation, CI coverage, GATES."""
 
 import numpy as np
 import pandas as pd
@@ -22,15 +16,12 @@ def cate_mae(estimated: np.ndarray, true: np.ndarray) -> float:
 
 
 def cate_bias(estimated: np.ndarray, true: np.ndarray) -> float:
-    """Mean bias (estimated - true). Positive = overestimation."""
+    """Mean bias (positive = overestimation)."""
     return np.mean(estimated - true)
 
 
 def rank_correlation(estimated: np.ndarray, true: np.ndarray) -> dict:
-    """
-    Spearman and Kendall rank correlations between estimated and true CATE.
-    Measures whether the estimator correctly ranks observations by effect size.
-    """
+    """Spearman and Kendall rank correlations between estimated and true CATE."""
     spearman_r, spearman_p = sp_stats.spearmanr(estimated, true)
     kendall_tau, kendall_p = sp_stats.kendalltau(estimated, true)
     return {
@@ -50,11 +41,7 @@ def ci_coverage(true: np.ndarray, lower: np.ndarray,
 
 def gates_analysis(estimated: np.ndarray, true: np.ndarray,
                     n_bins: int = 5) -> pd.DataFrame:
-    """
-    Group Average Treatment Effects (GATES) analysis.
-    Bin observations by estimated CATE quintile, then report
-    average estimated and true CATE within each bin.
-    """
+    """Bin by estimated CATE quintile, compare average estimated vs true."""
     bin_labels = pd.qcut(estimated, q=n_bins, labels=False, duplicates="drop")
     df = pd.DataFrame({
         "estimated": estimated,
@@ -72,10 +59,7 @@ def gates_analysis(estimated: np.ndarray, true: np.ndarray,
 
 def evaluate_all(cate_dict: dict, true_cate: np.ndarray,
                   ci_dict: dict = None, n_bins: int = 5) -> pd.DataFrame:
-    """
-    Run all evaluation metrics for every estimator.
-    Returns a summary DataFrame with one row per estimator.
-    """
+    """Run all metrics for every estimator, return summary DataFrame."""
     rows = []
     for name, est_cate in cate_dict.items():
         row = {"Estimator": name}
@@ -87,7 +71,6 @@ def evaluate_all(cate_dict: dict, true_cate: np.ndarray,
         row["Spearman_r"] = rank_corr["spearman_r"]
         row["Kendall_tau"] = rank_corr["kendall_tau"]
 
-        # Add CI coverage if available
         if ci_dict and name in ci_dict:
             lower, upper = ci_dict[name]
             row["CI_Coverage"] = ci_coverage(true_cate, lower, upper)
@@ -103,20 +86,15 @@ def evaluate_all(cate_dict: dict, true_cate: np.ndarray,
 
 def iid_vs_dependent_comparison(estimator_suite, X_test, true_cate,
                                   cfg, n_shuffles: int = 5):
-    """
-    Compare estimator performance on original (dependent) vs shuffled (IID) data.
-    Quantifies how much time-series dependence degrades CATE estimation.
-    """
+    """Compare performance on original (dependent) vs shuffled (IID) data."""
     from .dgp import generate_data, split_data
     from .features import engineer_features
 
     results = []
 
     for i in range(n_shuffles):
-        # Generate fresh data with same DGP but different seed
         cfg_copy = cfg.copy()
         df_shuffled = generate_data(cfg_copy, seed=cfg["random_seed"] + i + 100)
-        # Shuffle to break time dependence
         df_shuffled = df_shuffled.sample(frac=1.0, random_state=i).reset_index(drop=True)
 
         _, test_shuffled = split_data(df_shuffled, cfg_copy)
@@ -136,7 +114,6 @@ def iid_vs_dependent_comparison(estimator_suite, X_test, true_cate,
     return pd.DataFrame(results)
 
 
-# --- Quick check ---
 if __name__ == "__main__":
     rng = np.random.default_rng(42)
     true = rng.normal(0.001, 0.0005, 1000)
