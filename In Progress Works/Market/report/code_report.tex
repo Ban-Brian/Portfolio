@@ -1,0 +1,811 @@
+\documentclass[11pt, letterpaper]{article}
+
+%% ── Packages ──────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{amsmath, amssymb}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{tcolorbox}
+\usepackage{array}
+\usepackage{tabularx}
+
+%% ── Colour palette ───────────────────────────────────────────────────────
+\definecolor{codegreen}{rgb}{0.25,0.49,0.24}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.49,0.0,0.65}
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{highsev}{HTML}{D32F2F}
+\definecolor{medsev}{HTML}{F57C00}
+\definecolor{lowsev}{HTML}{388E3C}
+\definecolor{accentblue}{HTML}{1565C0}
+
+%% ── Code listing style ──────────────────────────────────────────────────
+\lstdefinestyle{pythonstyle}{
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{accentblue}\bfseries,
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    breakatwhitespace=false,
+    numbers=left,
+    numberstyle=\tiny\color{codegray},
+    numbersep=8pt,
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{codegray!40},
+    showstringspaces=false,
+    captionpos=b,
+    xleftmargin=1.5em,
+    framexleftmargin=1.5em,
+}
+\lstset{style=pythonstyle, language=Python}
+
+%% ── YAML listing style ─────────────────────────────────────────────────
+\lstdefinestyle{yamlstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    numbers=left,
+    numberstyle=\tiny\color{codegray},
+    numbersep=8pt,
+    frame=single,
+    rulecolor=\color{codegray!40},
+    showstringspaces=false,
+    xleftmargin=1.5em,
+    framexleftmargin=1.5em,
+    commentstyle=\color{codegreen}\itshape,
+    morecomment=[l]{\#},
+}
+
+%% ── Severity boxes ──────────────────────────────────────────────────────
+\newtcolorbox{highbox}{colback=highsev!8, colframe=highsev!80, title=\textbf{HIGH Severity}, fonttitle=\bfseries\color{white}, coltitle=white, colbacktitle=highsev}
+\newtcolorbox{medbox}{colback=medsev!8, colframe=medsev!80, title=\textbf{MEDIUM Severity}, fonttitle=\bfseries\color{white}, coltitle=white, colbacktitle=medsev}
+\newtcolorbox{lowbox}{colback=lowsev!8, colframe=lowsev!80, title=\textbf{LOW Severity}, fonttitle=\bfseries\color{white}, coltitle=white, colbacktitle=lowsev}
+
+%% ── Header / footer ────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textsc{Price Impact HTE Pipeline}}
+\rhead{\small Code Report}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% ── Section formatting ─────────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries\color{accentblue}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{accentblue!80}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accentblue,
+    urlcolor=accentblue!80,
+    citecolor=accentblue,
+}
+
+%% ═════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+%% ── Title page ──────────────────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Huge\bfseries Price Impact HTE\\Analysis Pipeline\par}
+    \vspace{0.8cm}
+    {\LARGE Code Review \& Error Analysis Report\par}
+    \vspace{2cm}
+    {\Large Brian Butler\par}
+    \vspace{0.5cm}
+    {\large June 3, 2026\par}
+    \vfill
+    {\large
+    \begin{tabular}{rl}
+        \textbf{Project:}  & \texttt{Market/} \\
+        \textbf{Language:} & Python 3.13 \\
+        \textbf{Libraries:}& econml, scikit-learn, DoWhy, pandas, NumPy \\
+        \textbf{Files:}    & 8 source files, 718 total lines \\
+    \end{tabular}
+    }
+    \vspace{1cm}
+\end{titlepage}
+
+%% ── Table of Contents ───────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+%% ═════════════════════════════════════════════════════════════════════════
+\section{Project Overview}
+%% ═════════════════════════════════════════════════════════════════════════
+
+This project implements a \textbf{Heterogeneous Treatment Effect (HTE)} analysis pipeline for measuring \textbf{price impact} in financial markets. It:
+
+\begin{enumerate}[leftmargin=2em]
+    \item Generates synthetic trade data with a known ground-truth CATE,
+    \item Engineers liquidity and volatility features,
+    \item Fits five causal ML estimators (CausalForest + four meta-learners),
+    \item Evaluates estimator accuracy against the known ground truth, and
+    \item Produces publication-quality visualizations.
+\end{enumerate}
+
+The ground-truth Conditional Average Treatment Effect is defined analytically as:
+\begin{equation}
+    \tau(\mathbf{X}) \;=\; \beta_0 \;+\; \frac{\beta_1}{\text{depth}} \;+\; \beta_2 \cdot \text{volatility}
+    \label{eq:cate}
+\end{equation}
+
+\noindent where $\beta_0 = 0.0005$, $\beta_1 = 0.5$, and $\beta_2 = 0.05$.
+
+\subsection{Data Flow}
+
+The pipeline executes six sequential steps, orchestrated by \texttt{main.py}:
+
+\begin{center}
+\begin{tabular}{clll}
+    \toprule
+    \textbf{Step} & \textbf{Module} & \textbf{Action} & \textbf{Output} \\
+    \midrule
+    1 & \texttt{dgp.py}           & Generate synthetic data      & DataFrame (200k rows) \\
+    2 & \texttt{features.py}      & Engineer features             & Standardised covariates \\
+    3 & \texttt{estimators.py}    & Fit 5 HTE estimators          & Trained model objects \\
+    4 & \texttt{estimators.py}    & Predict CATE on test set      & CATE arrays + CIs \\
+    5 & \texttt{evaluation.py}    & Compute accuracy metrics      & Results DataFrame \\
+    6 & \texttt{visualization.py} & Generate plots                & PNG files in \texttt{results/} \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{File Index}
+
+\begin{center}
+\begin{tabular}{llrl}
+    \toprule
+    \textbf{File} & \textbf{Path} & \textbf{Lines} & \textbf{Role} \\
+    \midrule
+    \texttt{params.yaml}       & \texttt{config/}  & 66  & All hyperparameters \\
+    \texttt{dgp.py}            & \texttt{src/}     & 98  & Synthetic data generation \\
+    \texttt{features.py}       & \texttt{src/}     & 86  & Feature engineering \\
+    \texttt{causal\_graph.py}  & \texttt{src/}     & 69  & Causal DAG \& assumptions \\
+    \texttt{estimators.py}     & \texttt{src/}     & 129 & Five HTE estimators \\
+    \texttt{evaluation.py}     & \texttt{src/}     & 127 & Metrics \& GATES analysis \\
+    \texttt{visualization.py}  & \texttt{src/}     & 193 & All plotting functions \\
+    \texttt{main.py}           & root              & 85  & Pipeline orchestration \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Configuration --- \texttt{config/params.yaml}}
+\label{sec:config}
+%% ═════════════════════════════════════════════════════════════════════════
+
+All hyperparameters are centralised in a single YAML file.
+The configuration is loaded by \texttt{dgp.load\_config()} and threaded through every module.
+
+\begin{lstlisting}[style=yamlstyle, caption={Full configuration file.}]
+random_seed: 42
+
+dgp:
+  n_observations: 200000
+  train_fraction: 0.7
+
+  # Covariate distributions
+  spread_loc: -2.0
+  spread_scale: 0.6
+  depth_scale: 50.0
+  volatility_scale: 0.02
+
+  # Treatment (confounded by market state)
+  treatment_noise_scale: 5.0
+  treatment_depth_coef: 0.3
+  treatment_vol_coef: -10.0
+
+  # Outcome -- true CATE: tau(X) = B0 + B1/depth + B2*vol
+  baseline_drift_scale: 0.001
+  cate_intercept: 0.0005
+  cate_depth_coef: 0.5
+  cate_vol_coef: 0.05
+  outcome_noise_scale: 0.002
+
+  # AR(1) autocorrelation in noise (0 = IID)
+  ar1_coefficient: 0.3
+
+features:
+  volatility_window: 20
+  winsorize_percentile: 0.01
+
+estimators:
+  causal_forest:
+    n_estimators: 1000
+    min_samples_leaf: 20
+    max_depth: null
+    discrete_treatment: false
+
+  s_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  t_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  x_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  dr_learner:
+    base_model: "GradientBoostingRegressor"
+    n_estimators: 200
+
+  binary_treatment_quantile: 0.75
+
+evaluation:
+  n_bootstrap: 200
+  ci_level: 0.90
+  n_cate_bins: 5
+
+output:
+  results_dir: "results"
+  figure_format: "png"
+  figure_dpi: 300
+\end{lstlisting}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Param} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    C1 & \texttt{n\_bootstrap} & \textcolor{lowsev}{Low} & Declared but never referenced in any code. Dead config. \\
+    C2 & \texttt{figure\_dpi}  & \textcolor{lowsev}{Low} & Never read; \texttt{visualization.py} hardcodes DPI to 300. \\
+    C3 & \texttt{load\_config} & \textcolor{medsev}{Med} & No schema validation. A config typo produces a cryptic \texttt{KeyError}. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Data Generation --- \texttt{src/dgp.py}}
+\label{sec:dgp}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+
+Generate synthetic trade data where the ground-truth CATE is known analytically (Equation~\ref{eq:cate}), allowing precise evaluation of estimator accuracy.
+
+\subsection{Key Functions}
+
+\subsubsection{\texttt{load\_config()}}
+Reads the YAML configuration file and returns a nested dictionary.
+
+\begin{lstlisting}[caption={Configuration loader.}]
+def load_config(config_path: str = "config/params.yaml") -> dict:
+    """Load the YAML configuration file."""
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
+\end{lstlisting}
+
+\subsubsection{\texttt{compute\_true\_cate()}}
+Implements Equation~\ref{eq:cate} with a small epsilon guard against division by zero.
+
+\begin{lstlisting}[caption={Ground-truth CATE computation.}]
+def compute_true_cate(depth, volatility, cfg) -> np.ndarray:
+    dgp = cfg["dgp"]
+    cate = (
+        dgp["cate_intercept"]
+        + dgp["cate_depth_coef"] / (depth + 1e-6)
+        + dgp["cate_vol_coef"] * volatility
+    )
+    return cate
+\end{lstlisting}
+
+\subsubsection{\texttt{generate\_data()}}
+Creates $n = 200{,}000$ observations with:
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Covariates:} spread $\sim \text{LogNormal}$, depth $\sim \text{Exp}(50)$, volatility $\sim |\mathcal{N}(0, 0.02)|$
+    \item \textbf{Treatment:} trade\_size $= 0.3 \cdot \text{depth} - 10 \cdot \text{volatility} + \varepsilon$ (confounded)
+    \item \textbf{Outcome:} $Y = g(\mathbf{X}) + \tau(\mathbf{X}) \cdot T + \varepsilon_{\text{AR}(1)}$
+\end{itemize}
+
+\begin{lstlisting}[caption={Core data generation logic (abbreviated).}]
+# Market-state covariates
+spread     = rng.lognormal(mean=spread_loc, sigma=spread_scale, size=n)
+depth      = rng.exponential(scale=depth_scale, size=n)
+volatility = np.abs(rng.normal(0, volatility_scale, size=n))
+
+# Treatment -- confounded by market state
+trade_size = np.maximum(depth_coef * depth + vol_coef * vol + noise, 1.0)
+
+# Outcome with optional AR(1) autocorrelation in noise
+price_change = baseline_drift + true_cate * trade_size + noise
+\end{lstlisting}
+
+\subsubsection{\texttt{split\_data()}}
+Performs a temporal (positional) train/test split at 70/30.
+
+\begin{lstlisting}[caption={Train/test split.}]
+def split_data(df, cfg):
+    frac = cfg["dgp"]["train_fraction"]
+    split_idx = int(len(df) * frac)
+    return df.iloc[:split_idx].copy(), df.iloc[split_idx:].copy()
+\end{lstlisting}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    D1 & 79--83 & \textcolor{medsev}{Med} &
+        \texttt{split\_data} is called ``temporal'' but \texttt{generate\_data} produces rows with no time index. The split relies on row order never being shuffled---a fragile assumption. \\
+    D2 & 21 & \textcolor{lowsev}{Low} &
+        \texttt{depth} drawn from Exp(50) can be near zero. The \texttt{1e-6} guard works, but very small depths produce enormous CATEs that may dominate evaluation metrics. \\
+    D3 & (eval 96) & \textcolor{medsev}{Med} &
+        \texttt{cfg.copy()} is shallow---nested dicts like \texttt{cfg["dgp"]} still reference the original. If any downstream code mutated \texttt{cfg\_copy["dgp"]}, it would corrupt the original config. Currently safe but latent. \\
+    D4 & --- & \textcolor{lowsev}{Low} &
+        No \texttt{\_\_init\_\_.py} in \texttt{src/}. The \texttt{sys.path} hack in \texttt{main.py} works around this, but relative imports (\texttt{from .dgp}) used in \texttt{evaluation.py} will fail. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Feature Engineering --- \texttt{src/features.py}}
+\label{sec:features}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+Transform raw covariates into modelling features: winsorise extremes, derive liquidity ratios, add rolling volatility, and Z-score standardise.
+
+\subsection{Key Functions}
+
+\subsubsection{\texttt{winsorize()}}
+\begin{lstlisting}[caption={Winsorisation: clip extreme values at tail percentiles.}]
+def winsorize(series, pct=0.01):
+    lower = series.quantile(pct)
+    upper = series.quantile(1 - pct)
+    return series.clip(lower, upper)
+\end{lstlisting}
+
+\subsubsection{\texttt{add\_liquidity\_features()}}
+\begin{lstlisting}[caption={Derived liquidity proxies.}]
+def add_liquidity_features(df):
+    df = df.copy()
+    df["log_spread"]         = np.log1p(df["spread"])
+    df["inv_depth"]          = 1.0 / (df["depth"] + 1e-6)
+    df["spread_depth_ratio"] = df["spread"] / (df["depth"] + 1e-6)
+    return df
+\end{lstlisting}
+
+\subsubsection{\texttt{standardize()}}
+Z-score normalisation that can reuse training statistics for the test set.
+\begin{lstlisting}[caption={Z-score standardisation with fit/transform pattern.}]
+def standardize(df, columns, fit_stats=None):
+    df = df.copy()
+    if fit_stats is None:
+        fit_stats = {}
+        for col in columns:
+            fit_stats[col] = {"mean": df[col].mean(),
+                              "std":  df[col].std()}
+    for col in columns:
+        mu    = fit_stats[col]["mean"]
+        sigma = fit_stats[col]["std"]
+        df[col] = (df[col] - mu) / (sigma + 1e-10)
+    return df, fit_stats
+\end{lstlisting}
+
+\subsubsection{\texttt{engineer\_features()} --- Full Pipeline}
+\begin{lstlisting}[caption={Master feature engineering function (abbreviated).}]
+def engineer_features(df, cfg, fit_stats=None):
+    pct = cfg["features"]["winsorize_percentile"]
+    for col in ["spread", "depth", "volatility", "trade_size"]:
+        df[col] = winsorize(df[col], pct)        # BUG: mutates input
+    df = add_liquidity_features(df)
+    df = add_rolling_volatility(df, window=...)
+    df, fit_stats = standardize(df, covariate_cols, fit_stats)
+    return df, fit_stats
+\end{lstlisting}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    F1 & 59--60 & \textcolor{highsev}{\textbf{High}} &
+        \textbf{Mutates input DataFrame.} \texttt{engineer\_features} applies \texttt{winsorize} to columns \emph{before} making a copy. The caller's original DataFrame (\texttt{train\_raw}, \texttt{test\_raw}) is silently modified in-place. \\[6pt]
+    F2 & 18--23 & \textcolor{highsev}{\textbf{High}} &
+        \textbf{Rolling volatility uses the outcome variable} (\texttt{price\_change}). In a real setting this would be data leakage. In this synthetic setup the feature is computed but not used by the estimators, so it wastes computation and creates confusion. \\[6pt]
+    F3 & 65--68 & \textcolor{medsev}{Med} &
+        \textbf{Feature mismatch.} Seven columns are standardised, but \texttt{main.py} only feeds three (\texttt{spread}, \texttt{depth}, \texttt{volatility}) to the estimators. The extra four features are never used. \\[6pt]
+    F4 & 59--60 & \textcolor{medsev}{Med} &
+        \textbf{Test-set quantile leakage.} \texttt{winsorize} recalculates quantile bounds from the test data instead of reusing training bounds. Inconsistent with the \texttt{standardize} function which correctly reuses \texttt{fit\_stats}. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Causal Graph --- \texttt{src/causal\_graph.py}}
+\label{sec:causalgraph}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+Encodes the assumed causal DAG and the four identifying assumptions. Provides a DoWhy \texttt{CausalModel} builder for refutation tests.
+
+\subsection{Causal DAG}
+
+The assumed causal structure is:
+
+\begin{center}
+\begin{tabular}{lcl}
+    spread      & $\longrightarrow$ & trade\_size \\
+    depth       & $\longrightarrow$ & trade\_size \\
+    volatility  & $\longrightarrow$ & trade\_size \\[4pt]
+    spread      & $\longrightarrow$ & price\_change \\
+    depth       & $\longrightarrow$ & price\_change \\
+    volatility  & $\longrightarrow$ & price\_change \\
+    trade\_size & $\longrightarrow$ & price\_change \\
+\end{tabular}
+\end{center}
+
+\noindent All three market-state variables are \textbf{common causes} (confounders) of both treatment and outcome.
+
+\subsection{Identifying Assumptions}
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Unconfoundedness:} Conditional on (spread, depth, volatility), \texttt{trade\_size} is as-good-as-random. No unobserved confounders affect both $T$ and $Y$.
+    \item \textbf{Overlap (Positivity):} For every market state $\mathbf{X}$, there is positive probability of observing any trade size $T$.
+    \item \textbf{SUTVA:} One trade's outcome does not depend on other trades' treatment assignments.
+    \item \textbf{Consistency:} The observed outcome under treatment $T = t$ equals the potential outcome $Y(t)$.
+\end{enumerate}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    G1 & --- & \textcolor{lowsev}{Low} &
+        Module is never imported in \texttt{main.py}. DoWhy refutation tests are defined but never run. Assumptions are documented but not programmatically verified. \\
+    G2 & 48--50 & \textcolor{lowsev}{Low} &
+        \texttt{build\_dowhy\_model} silently returns \texttt{None} if \texttt{dowhy} is not installed. Any caller that doesn't check for \texttt{None} would crash. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Estimators --- \texttt{src/estimators.py}}
+\label{sec:estimators}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+Wrap five HTE estimators from the \texttt{econml} library in a unified \texttt{EstimatorSuite} class.
+
+\subsection{Treatment Binarisation}
+
+The meta-learners require a binary treatment. Continuous \texttt{trade\_size} is converted at the 75th percentile:
+
+\begin{lstlisting}[caption={Binarise continuous treatment at a quantile threshold.}]
+def binarize_treatment(trade_size, quantile=0.75):
+    threshold = np.quantile(trade_size, quantile)
+    return (trade_size >= threshold).astype(int)
+\end{lstlisting}
+
+\begin{medbox}
+CausalForest uses the \textbf{continuous} treatment ($\partial Y / \partial T$), while all four meta-learners use a \textbf{binarised} treatment ($\mathbb{E}[Y(1) - Y(0)]$). These are \emph{different causal quantities}. Comparing their RMSE against the same ground-truth $\tau(\mathbf{X})$ is scientifically problematic (see issue E2).
+\end{medbox}
+
+\subsection{EstimatorSuite Class}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Method} & \textbf{Description} \\
+    \midrule
+    \texttt{fit\_all()}            & Fits all five estimators on training data \\
+    \texttt{\_fit\_causal\_forest()} & \texttt{econml.dml.CausalForestDML} --- continuous treatment \\
+    \texttt{\_fit\_s\_learner()}     & \texttt{econml.metalearners.SLearner} --- single model \\
+    \texttt{\_fit\_t\_learner()}     & \texttt{econml.metalearners.TLearner} --- separate models per arm \\
+    \texttt{\_fit\_x\_learner()}     & \texttt{econml.metalearners.XLearner} --- cross-fitted imputation \\
+    \texttt{\_fit\_dr\_learner()}    & \texttt{econml.metalearners.DRLearner} --- doubly robust \\
+    \texttt{estimate\_cate()}      & Predicts CATE on new covariates for all estimators \\
+    \texttt{confidence\_intervals()} & Returns CIs where supported (e.g.\ CausalForest) \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    E1 & 102 & \textcolor{highsev}{\textbf{High}} &
+        \textbf{Wrong import path.} \texttt{from econml.metalearners import DRLearner} is likely incorrect. In standard \texttt{econml}, \texttt{DRLearner} lives in \texttt{econml.dr}, not \texttt{econml.metalearners}. This will raise \texttt{ImportError} at runtime. \\[6pt]
+    E2 & 40--49 & \textcolor{highsev}{\textbf{High}} &
+        \textbf{Comparing apples to oranges.} CausalForest estimates a marginal effect of continuous treatment, while meta-learners estimate a binary ATE. Evaluating both against the same continuous ground-truth $\tau(\mathbf{X})$ is scientifically invalid. \\[6pt]
+    E3 & 105 & \textcolor{medsev}{Med} &
+        Even if the import were fixed, \texttt{DRLearner(models=base)} may not match the constructor---\texttt{econml.dr.DRLearner} typically requires \texttt{model\_regression} and \texttt{model\_propensity} separately. \\[6pt]
+    E4 & 126--127 & \textcolor{medsev}{Med} &
+        \texttt{confidence\_intervals} catches all exceptions with bare \texttt{except Exception: pass}. Numerical failures are silently swallowed. \\[6pt]
+    E5 & 21--23 & \textcolor{lowsev}{Low} &
+        \texttt{\_get\_base\_model} silently returns a default model for unknown names. Config typos go unnoticed. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Evaluation --- \texttt{src/evaluation.py}}
+\label{sec:evaluation}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+Compute accuracy metrics comparing estimated CATE to the ground-truth CATE.
+
+\subsection{Metrics}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l l X}
+    \toprule
+    \textbf{Metric} & \textbf{Function} & \textbf{What it Measures} \\
+    \midrule
+    RMSE          & \texttt{cate\_rmse}       & $\sqrt{\frac{1}{n}\sum(\hat{\tau}_i - \tau_i)^2}$ \\[4pt]
+    MAE           & \texttt{cate\_mae}        & $\frac{1}{n}\sum|\hat{\tau}_i - \tau_i|$ \\[4pt]
+    Bias          & \texttt{cate\_bias}       & $\frac{1}{n}\sum(\hat{\tau}_i - \tau_i)$ \; (positive = overestimation) \\[4pt]
+    Spearman $\rho$ & \texttt{rank\_correlation} & Monotonic rank correlation \\
+    Kendall $\tau$  & \texttt{rank\_correlation} & Concordance-based rank correlation \\
+    CI Coverage   & \texttt{ci\_coverage}     & Fraction of true CATEs inside the confidence interval \\
+    GATES         & \texttt{gates\_analysis}  & Binned estimated vs.\ true CATE by quintile \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Key Function: \texttt{evaluate\_all()}}
+
+\begin{lstlisting}[caption={Summary builder: runs all metrics for every estimator.}]
+def evaluate_all(cate_dict, true_cate, ci_dict=None, n_bins=5):
+    rows = []
+    for name, est_cate in cate_dict.items():
+        row = {"Estimator": name}
+        row["RMSE"]  = cate_rmse(est_cate, true_cate)
+        row["MAE"]   = cate_mae(est_cate, true_cate)
+        row["Bias"]  = cate_bias(est_cate, true_cate)
+        rank_corr = rank_correlation(est_cate, true_cate)
+        row["Spearman_r"]  = rank_corr["spearman_r"]
+        row["Kendall_tau"] = rank_corr["kendall_tau"]
+        if ci_dict and name in ci_dict:
+            lower, upper = ci_dict[name]
+            row["CI_Coverage"] = ci_coverage(true_cate, lower, upper)
+        else:
+            row["CI_Coverage"] = np.nan
+        rows.append(row)
+    return pd.DataFrame(rows).set_index("Estimator")
+\end{lstlisting}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    V1 & 90 & \textcolor{highsev}{\textbf{High}} &
+        \texttt{iid\_vs\_dependent\_comparison} uses relative import \texttt{from .dgp import ...}, which requires \texttt{src/} to be a proper package (with \texttt{\_\_init\_\_.py}). Will raise \texttt{ImportError} if called. \\[6pt]
+    V2 & 87--114 & \textcolor{lowsev}{Low} &
+        \texttt{iid\_vs\_dependent\_comparison} is defined but never invoked in \texttt{main.py}. Dead code. \\[6pt]
+    V3 & 45 & \textcolor{lowsev}{Low} &
+        GATES \texttt{pd.qcut} may fail if an estimator predicts a constant CATE (only one unique value). \\[6pt]
+    V4 & 29--31 & \textcolor{lowsev}{Low} &
+        \texttt{spearman\_p} and \texttt{kendall\_p} are computed but never included in the results DataFrame. Statistical significance goes unreported. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Visualization --- \texttt{src/visualization.py}}
+\label{sec:visualization}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Purpose}
+Generate publication-quality plots. All figures are saved to the \texttt{results/} directory.
+
+\subsection{Plot Functions}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l l X}
+    \toprule
+    \textbf{Function} & \textbf{Output File} & \textbf{Description} \\
+    \midrule
+    \texttt{plot\_cate\_heatmap}     & \texttt{cate\_heatmap\_true.png} & 2D heatmap of CATE across depth $\times$ volatility bins \\
+    \texttt{plot\_cate\_scatter}     & \texttt{scatter\_<est>.png}      & Estimated vs.\ True CATE with 45\textdegree{} reference line \\
+    \texttt{plot\_estimator\_comparison} & \texttt{estimator\_comparison\_*.png} & Horizontal bar chart comparing estimators \\
+    \texttt{plot\_gates}            & \texttt{gates\_<est>.png}        & Estimated vs.\ True CATE by quintile bin \\
+    \texttt{plot\_partial\_dependence} & \texttt{partial\_dependence\_*.png} & Binned avg.\ CATE vs.\ each covariate \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    P1 & 53 & \textcolor{medsev}{Med} &
+        \texttt{np.random.choice} uses the global random state. Scatter plots are non-reproducible across runs. \\[6pt]
+    P2 & 31--32 & \textcolor{medsev}{Med} &
+        Heatmap bins ``raw'' \texttt{depth} and \texttt{volatility}, but due to bug F1 these columns may already be winsorised. Axis labels are misleading. \\[6pt]
+    P3 & 19 & \textcolor{lowsev}{Low} &
+        \texttt{figure\_dpi} from config is ignored; style hardcodes \texttt{savefig.dpi: 300}. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Pipeline Orchestration --- \texttt{main.py}}
+\label{sec:main}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Pipeline Steps}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c l l X}
+    \toprule
+    \textbf{Step} & \textbf{Lines} & \textbf{Action} & \textbf{Detail} \\
+    \midrule
+    Config & 25--26  & Load config         & Read \texttt{params.yaml} \\
+    1/6    & 28--31  & Generate data       & 200k synthetic observations, temporal split \\
+    2/6    & 33--36  & Engineer features   & Winsorise, derive, standardise \\
+    3/6    & 38--47  & Fit estimators      & CausalForest + 4 meta-learners \\
+    4/6    & 49--51  & Estimate CATE       & Predict CATE and CIs on test set \\
+    5/6    & 53--66  & Evaluate            & All metrics + GATES analysis \\
+    6/6    & 68--75  & Visualise \& save   & Generate plots, write CSV \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Error Analysis}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c c c X}
+    \toprule
+    \textbf{ID} & \textbf{Lines} & \textbf{Sev.} & \textbf{Description} \\
+    \midrule
+    M1 & 39--41 & \textcolor{medsev}{Med} &
+        Only 3 of 7 engineered features are used as estimator covariates. Four features (\texttt{log\_spread}, \texttt{inv\_depth}, \texttt{spread\_depth\_ratio}, \texttt{rolling\_vol}) are computed but discarded. \\[6pt]
+    M2 & 51 & \textcolor{lowsev}{Low} &
+        CI alpha = $1 - 0.90 = 0.10$. This matches econml's convention---\textbf{correct}. \\[6pt]
+    M3 & 34--35 & \textcolor{highsev}{\textbf{High}} &
+        Consequence of F1: after \texttt{engineer\_features(train\_raw)}, the \texttt{train\_raw} DataFrame is silently mutated. When \texttt{test\_raw} is later passed to plotting functions, it too has been corrupted. \\[6pt]
+    M4 & --- & \textcolor{lowsev}{Low} &
+        \texttt{src/} has no \texttt{\_\_init\_\_.py}. The \texttt{sys.path.insert} hack is fragile. \\
+    \bottomrule
+\end{tabularx}
+\end{center}
+
+
+%% ═════════════════════════════════════════════════════════════════════════
+\newpage
+\section{Cross-Cutting Issues \& Summary}
+\label{sec:summary}
+%% ═════════════════════════════════════════════════════════════════════════
+
+\subsection{Issue Severity Summary}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lcl}
+    \toprule
+    \textbf{Severity} & \textbf{Count} & \textbf{Action} \\
+    \midrule
+    \textcolor{highsev}{\rule{12pt}{12pt}} \; HIGH   & 5 & Fix before trusting results \\
+    \textcolor{medsev}{\rule{12pt}{12pt}} \; MEDIUM  & 8 & Fix for correctness and robustness \\
+    \textcolor{lowsev}{\rule{12pt}{12pt}} \; LOW     & 7 & Nice to fix, non-critical \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{All High-Severity Issues}
+
+\begin{highbox}
+\begin{tabularx}{\textwidth}{c l X}
+    \toprule
+    \textbf{ID} & \textbf{File} & \textbf{Issue} \\
+    \midrule
+    E1  & \texttt{estimators.py:102}  & \texttt{DRLearner} import path is wrong $\rightarrow$ \texttt{ImportError} at runtime \\
+    E2  & \texttt{estimators.py:40--49} & Comparing continuous vs.\ binary treatment effects against the same ground truth \\
+    F1  & \texttt{features.py:59--60} & \texttt{engineer\_features} mutates the input DataFrame in-place \\
+    M3  & \texttt{main.py:34--35}     & Raw data used in visualisation is silently corrupted (consequence of F1) \\
+    V1  & \texttt{evaluation.py:90}   & Relative import \texttt{from .dgp} will fail without \texttt{\_\_init\_\_.py} \\
+    \bottomrule
+\end{tabularx}
+\end{highbox}
+
+\subsection{All Medium-Severity Issues}
+
+\begin{medbox}
+\begin{tabularx}{\textwidth}{c l X}
+    \toprule
+    \textbf{ID} & \textbf{File} & \textbf{Issue} \\
+    \midrule
+    F2  & \texttt{features.py:18--23} & Rolling volatility computed from outcome variable (leakage) \\
+    F3  & \texttt{features.py + main.py} & 4 engineered features computed but never used \\
+    F4  & \texttt{features.py:59--60} & Winsorisation uses test-set quantiles instead of training bounds \\
+    D1  & \texttt{dgp.py:79--83} & ``Temporal'' split on non-temporal data \\
+    D3  & \texttt{dgp.py (via eval)} & Shallow \texttt{cfg.copy()} leaves nested dicts shared \\
+    E3  & \texttt{estimators.py:105} & \texttt{DRLearner(models=base)} may not match constructor API \\
+    E4  & \texttt{estimators.py:126--127} & CI exceptions silently swallowed \\
+    P1  & \texttt{visualization.py:53} & Non-reproducible scatter sampling \\
+    \bottomrule
+\end{tabularx}
+\end{medbox}
+
+\subsection{Recommended Fix Order}
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Fix DRLearner import (E1)} --- the pipeline will crash without this fix.
+    \begin{lstlisting}[numbers=none]
+# Change:
+from econml.metalearners import DRLearner
+# To:
+from econml.dr import DRLearner
+    \end{lstlisting}
+
+    \item \textbf{Fix DataFrame mutation (F1 / M3)} --- add \texttt{df = df.copy()} at the top of \texttt{engineer\_features}, before winsorisation.
+    \begin{lstlisting}[numbers=none]
+def engineer_features(df, cfg, fit_stats=None):
+    df = df.copy()      # <-- add this line
+    feat_cfg = cfg["features"]
+    pct = feat_cfg["winsorize_percentile"]
+    ...
+    \end{lstlisting}
+
+    \item \textbf{Add \texttt{src/\_\_init\_\_.py} (V1 / M4)} --- create an empty file:
+    \begin{lstlisting}[language=bash, numbers=none]
+touch src/__init__.py
+    \end{lstlisting}
+
+    \item \textbf{Address continuous vs.\ binary CATE comparison (E2)} --- either:
+    \begin{itemize}
+        \item Compute a separate binary ground-truth CATE for the meta-learners, \emph{or}
+        \item Use the same treatment type for all estimators.
+    \end{itemize}
+
+    \item \textbf{Reuse training winsorisation bounds (F4)} --- store quantile bounds in \texttt{fit\_stats} and reuse for the test set (same pattern as \texttt{standardize}).
+
+    \item \textbf{Remove or use extra features (F3)} --- either add the four unused columns to the estimator covariates, or remove them from \texttt{engineer\_features}.
+\end{enumerate}
+
+%% ═════════════════════════════════════════════════════════════════════════
+
+\end{document}
