@@ -1,7 +1,0 @@
-__pycache__/
-*.pyc
-.DS_Store
-results/*.png
-results/*.csv
-*.egg-info/
-.venv/
