@@ -1,0 +1,349 @@
+---
+title: "Final Project"
+author: "Brian Butler "
+date: "`r Sys.Date()`"
+documentclass: article
+geometry: margin=1in
+fontsize: 11pt
+output:
+  pdf_document:
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    dev: pdf
+    highlight: tango
+  html_document:
+    theme: default
+    self_contained: true
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    smart: true
+    dev: svg
+---
+
+```{r setup, include = FALSE}
+# DO NOT ALTER THIS CHUNK
+# Set knitr options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.width = 5,
+  fig.asp = 0.618,
+  out.width = "70%",
+  dpi = 120, 
+  fig.align = "center",
+  cache = FALSE
+)
+# Load required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(infer))
+suppressPackageStartupMessages(library(modelr))
+suppressPackageStartupMessages(library(broom))
+# Load dataset
+college <- read_rds("college.rds") %>%
+  type_convert(
+    na=combine("", "NA", "PrivacySuppressed")
+  )
+# Set seed
+set.seed(98261936)
+```
+
+## Introduction
+
+linear regression Test 
+
+Is there a correlation between the number of branch and college acceptance rates?
+in this analysis ?
+
+In this analysis, I am going to explore the relationship between the number of
+university branches (numbranch) and college acceptance rates (adm_rate). The
+explanatory variable is the number of branches, which is a continuous variable 
+and the response variable is the acceptance rate, also a continuous variable. To 
+examine this relationship, I would carry out a linear regression test to 
+determine whether there exists a statistically significant correlation between 
+these two variables.
+
+I expect that this comparison will help reveal how the spread of university 
+branches can affect the admission prospects of students. While it is generally 
+believed that the reputation and selectivity of a university have the most 
+bearing on acceptance rates, analyzing the role of having multiple branches 
+can provide a different perspective. Specifically, universities with more 
+branches might provide students with more options for acceptance, which can 
+change acceptance rates in general.
+
+
+## Preprocessing
+
+
+```{r}
+college_data <- readRDS("college.rds")
+
+college <- college_data %>%
+  select(INSTNM, NUMBRANCH, ADM_RATE, REGION, CITY, STABBR, HIGHDEG, 
+         SATVR25, SATMT25, ACTCM25)
+
+college_reduced <- college %>%
+  rename(
+    institution = INSTNM,
+    num_branch = NUMBRANCH,
+    adm_rate = ADM_RATE,
+    region = REGION,
+  )
+
+college_reduced <- college_reduced %>%
+  mutate(
+    region = recode(
+      region,
+      `0` = "U.S. Service Schools",
+      `1` = "New England",
+      `2` = "Mid East",
+      `3` = "Great Lakes",
+      `4` = "Plains",
+      `5` = "Southeast",
+      `6` = "Southwest",
+      `7` = "Rocky Mountains",
+      `8` = "Far West",
+      `9` = "Outlying Areas"
+    )
+  )
+```
+
+
+## Visualization
+
+I would like to examine what the relationship between the number of branches and 
+admission rates, and I believe a a scatter plot does that adequately. 
+```{r}
+college_reduced %>%
+  ggplot(aes(x = num_branch, y = adm_rate)) +
+  geom_point(color = "blue", alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, color = "green")
+  labs(
+    title = "Scatterplot of Number of Branches vs. Admission Rate",
+    x = "Number of Branches", 
+    y = "Admission Rate"
+  ) +
+  theme_minimal()
+```
+
+The scatter plot suggests that, on first impression, the number of branches 
+does indeed rise with increased rates of admissions, albeit that this trend is 
+not one hundred percent consistent as can be seen in the spread of blue dots. 
+Nevertheless, beyond approximately 20 or so branches, the trend appears to level 
+out and, in fact, to decline according to the green line. This is a hypothesis 
+that the positive impact of increasing the number of branches on the admissions 
+rate would have diminishing returns, and beyond a certain point, adding more 
+branches might not lead to an increase, or could even be linked to a marginal 
+decline in the admissions rate.
+
+
+I am using this graph to to show the distribution across different institutions 
+for admission rates. 
+```{r}
+college_reduced %>%
+  ggplot(aes(x = adm_rate)) +
+  geom_histogram(binwidth = 0.05, fill = "blue", color = "green") +
+  labs(
+    title = "Distribution of Admission Rates",
+    x = "Admission Rate",
+    y = "Number of Institutions"
+  ) +
+  theme_minimal()
+```
+
+By looking at the histogram of the distribution of admission rates, we see that 
+the distribution's peak is shifted in the direction of more admissions, 
+with the mode being at 0.75, meaning most institutions admit about 
+three-quarters of their applicants. It is unimodal and slightly right-skewed, 
+meaning that there is a cluster of institutions with high admissions and a tail 
+that shifts to the left in terms of lower admissions. One trend that is 
+particularly notable is the decreasing number of institutions with admission 
+rates falling below 0.75. There are very few institutions at the two extremes, 
+namely highly selective institutions admitting less than 0.25 and admitting 
+nearly all applicants (close to 1.00), which are likely to be possible outliers 
+from the overall cluster. This distribution reflects a pattern in which a 
+considerable number of institutions have fairly high acceptance rates, while the
+truly highly selective institutions are less common among this sample.
+
+
+
+I used a faceted scatter plot to see the relationship between branches and 
+admissions rates to see how they differ by region, checking to see if it is a 
+factor to consider. 
+```{r}
+college_reduced %>%
+  ggplot(aes(x = num_branch, y = adm_rate)) + 
+  geom_point(alpha = 0.3, color = "purple") +
+  facet_wrap(~ region) +
+  labs(
+    title = "Admission Rate vs. Branches by the Region",
+    x = "Branch Number ",
+    y = "Admission Rate"
+  ) +
+  theme_minimal()
+```
+Referring to the faceted scatter plot, that breaks up the relationship between 
+the number of branches and admission rate across regions, we can observe 
+distinct patterns by regions. In each regional subplot, we can observe the range
+of admission rates for a given number of branches. For instance, some regions, 
+e.g., the 'Far West' and 'Great Lakes', have a wider spread of admission rates 
+than others, e.g., 'New England' or the 'Southeast', whose admission rates are 
+more clustered. Further, the regional central tendency of admission rates 
+varies; some regions have institutions whose admission rates are higher on 
+average than others. We can also see differing levels of the apparent 
+correlation of the two variables. Whereas some regions show a weak positive or
+negative trend, other regions show no recognizable linear relationship. 
+The 'I.S. Service School' region is particularly sparse with very few data 
+points, and it is difficult to see any recognizable patterns. By reporting the 
+data in this way, it is possible to see quite easily that the relationship 
+between branch number and admission rate is not the same everywhere, which 
+ proves the influence of geographic context.
+
+
+## Summary Statistics
+
+This  would tell me the amount of colleges per region.
+```{r}
+college_reduced %>%
+  group_by(region) %>%
+  summarise(count = n ()) %>%
+  arrange(desc(count))
+```
+
+```{r}
+college_reduced %>%
+  group_by(region) %>%
+  summarise(
+    count = n(),
+    mean = mean(adm_rate, na.rm = TRUE),
+    median = median(adm_rate, na.rm = TRUE),
+    min  = min(adm_rate, na.rm = TRUE),
+    max = max(adm_rate, na.rm = TRUE),
+    sd = sd(adm_rate, na.rm = TRUE),
+    iqr = IQR(adm_rate, na.rm = TRUE),
+    range = max(adm_rate, na.rm = TRUE) - min(adm_rate, na.rm = TRUE)
+  )
+```
+
+```{r}
+college_reduced %>%
+  summarise(
+    count = n(),
+    mean = mean(adm_rate, na.rm = TRUE),
+    median = median(adm_rate, na.rm = TRUE),
+    min  = min(adm_rate, na.rm = TRUE),
+    max = max(adm_rate, na.rm = TRUE),
+    sd = sd(adm_rate, na.rm = TRUE),
+    iqr = IQR(adm_rate, na.rm = TRUE),
+    range = max(adm_rate, na.rm = TRUE) - min(adm_rate, na.rm = TRUE)
+  )
+```
+## Data Analysis
+
+```{r}
+model <- lm(adm_rate ~ num_branch, data = college_reduced)
+
+tidy(model)
+glance(model)
+```
+
+
+The model has a statistically significant though weak positive relationship 
+between the number of branches and the outcome from the low p-value for 
+'num_branch' (1.51e-06) and its positive coefficient (around 0.0072). This shows 
+that the estimated outcome slightly increases as the number of branches 
+increases. But the extremely low R-squared (about 0.01) in the above output 
+tells us that this relationship explains only a very minor fraction of the total 
+variation in the outcome. The intercept of about 0.67 is the predicted outcome 
+when the number of branches is zero. That is, while the effect of the number of 
+branches is statistically significant, its real effect on the prediction of the 
+outcome from this model alone is extremely small.
+
+
+```{r}
+college_clean <- college_reduced %>%
+  filter(!is.na(adm_rate), !is.na(num_branch))
+
+college_clean %>%
+  mutate(predicted = predict(model)) %>%
+  ggplot(aes(x = predicted, y = adm_rate)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, color = "pink") +
+  labs(
+    title = "Observed vs. Predicted Acceptance Rate",
+       x = "Predicted",
+       y = "Observed") +
+  theme_minimal()
+```
+This graph compares the observed admission rates to the predicted rates based on 
+our model. Each black dot is an institution, with its x-coordinate displaying 
+the predicted rate and its y-coordinate displaying the actual observed rate. 
+Ideally, if our model were ideal, all the points would lie along the pink line 
+(where predicted = observed). But we can notice a lot of scatter of points 
+around this line that informs us that our model's predictions are not quite 
+right at the level of individual institutions. Even though there may be some 
+sort of trend being pointed to by the spread of the points, the large spread 
+would imply that other variables not outlined by our model influence admission 
+rates.
+ 
+```{r}
+augment(model) %>%
+  ggplot(aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "pink") +
+  labs(title = "Residuals vs. Fitted Values",
+       x = "Fitted Values",
+       y = "Residuals")
+```
+This graph plots the residuals on the y-axis against the fitted values from our 
+model on the x-axis. If our model was a decent fit, we would hope that the 
+residuals appeared randomly scattered about the horizontal red line at zero with 
+no distinguishable patterns. We notice several things here, however. First, there 
+is a bunching of points on the left, indicating more variability in the 
+residuals for lower fitted values. Second, there may be some faint patterns or 
+curvature in the spread of the residuals as the fitted values get larger, but 
+it's not very pronounced. Ideally, the spread of the residuals should be 
+approximately constant across all fitted values (homoscedasticity). The 
+departures from a scatter around zero would indicate that possibly our model 
+may not be detecting all the inherent patterns in data, and how accurate our 
+prediction is may also depend on which admission rate is being predicted.
+
+```{r}
+qqnorm(residuals(model))
+qqline(residuals(model), col = "purple")
+```
+This Q-Q plot indicates that our model's errors are not totally normally 
+distributed. The clear curve of the points away from the straight line, 
+specifically at the tails, indicates a departure from normality. Therefore, 
+statistical tests assuming normally distributed errors are to be viewed with 
+caution for this model.
+
+
+## Conclusion
+
+This analysis tested whether there is correlation between college acceptance 
+rates and number of branches that an institution possesses. I observed high 
+variation between institutions and possible weak positive correlation with 
+number of branches by graphical inspection and summary statistics. This was 
+supported by a linear model with a statistically significant but extremely small 
+positive coefficient of num_branch. The low p-value indicates there is an 
+effect, but the close to zero value of the measure of fit which was R-squared 
+measure ~0.01 so it would indicate that number of branches explains virtually 
+none of the variance of acceptance rates. What this means is that institutions 
+with higher numbers of branches have slightly higher acceptance rates, but this 
+effect of this variable itself is incredibly small.
+
+Further model assumption testing showed that model predictive power was low. 
+Observed vs. predicted identified widespread scattering, and residuals vs. 
+fitted identified possible heteroscedasticity, i.e., that residuals of the model 
+vary as fitted values vary. The Q-Q plot similarly identified that residuals 
+were not normally distributed, especially at both ends of the tail, at the 
+expense of validity of inference. All of these confirm that there exist other, 
+and larger, variables involved in determining acceptance rates such as 
+institution reputation, student population, and facilities. Essentially, college 
+acceptance rates barely depend on college number of branches. This research 
+contributes to overall awareness that college admissions depend on a complicated 
+array of variables and just not institutional size.

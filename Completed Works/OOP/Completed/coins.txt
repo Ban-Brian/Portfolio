@@ -1,0 +1,6 @@
+penny 1
+nickel 5
+dime 10
+quarter 25
+half-dollar 50
+dollar 100
