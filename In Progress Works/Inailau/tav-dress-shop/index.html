@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ina'ilau Shop — Modern Island-Inspired Polynesian Fashion</title>
+  <meta name="description" content="Ina'ilau Shop offers handcrafted, elegant Polynesian dresses and island wear. Celebrating Pacific heritage with authentic prints, modern silhouettes, and rich earthy tones." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement">
+    <p>Handcrafted Pacific Island Elegance &bull; Inquire Online for Custom Orders &amp; Sizing</p>
+  </div>
+
+  <!-- Main Navigation Bar -->
+  <header class="header" id="header">
+    <div class="nav-container">
+      <a href="#home" class="brand-logo" aria-label="Ina'ilau Shop Home">
+        <img src="images/logo.jpg" alt="Ina'ilau Shop Logo" class="brand-logo-img" />
+        <span class="brand-name">Ina'ilau <em>Shop</em></span>
+      </a>
+
+      <nav class="nav-menu" id="navMenu" aria-label="Primary Navigation">
+        <ul class="nav-list">
+          <li><a href="#home" class="nav-link">Home</a></li>
+          <li><a href="#categories" class="nav-link">Categories</a></li>
+          <li><a href="#collection" class="nav-link">Collection</a></li>
+          <li><a href="#about" class="nav-link">About</a></li>
+          <li><a href="#contact" class="nav-link">Inquire</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="nav-action-btn" id="searchBtn" aria-label="Search Collection" title="Search">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        <button class="nav-action-btn" id="accountBtn" aria-label="Customer Account" title="Account">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
+        <button class="nav-action-btn" id="bagBtn" aria-label="Shopping Bag" title="Shopping Bag">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span class="bag-count" id="bagCount" style="display:none;">0</span>
+        </button>
+        <button class="menu-toggle" id="menuToggle" aria-label="Open navigation menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Banner Section -->
+  <section class="hero-section" id="home">
+    <div class="hero-container">
+      <div class="hero-content">
+        <span class="hero-eyebrow">Island Inspired &bull; Modern &bull; Tropical</span>
+        <h1 class="hero-title">Island Style for Every Occasion</h1>
+        <p class="hero-subtitle">
+          Experience authentic Polynesian craftsmanship. Each dress is thoughtfully created with iconic cultural prints, rich earthy tones, and flattering silhouettes designed for effortless elegance.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#collection" class="btn btn-terracotta">SHOP NOW</a>
+          <a href="#about" class="btn btn-outline">Our Story</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <div class="hero-frame">
+          <img src="images/Orange Aimata Long Size 12_1.jpg" alt="Orange Aimata Long Dress - Polynesian Island print dress" class="hero-image" />
+          <div class="hero-card-badge">
+            <span class="badge-title">Handcrafted Elegance</span>
+            <span class="badge-sub">Authentic Pacific Motifs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Value Pillars Bar -->
+  <section class="pillars-section" aria-label="Brand Highlights">
+    <div class="pillars-container">
+      <div class="pillar-item">
+        <div class="pillar-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"></path>
+          </svg>
+        </div>
+        <div class="pillar-text">
+          <h3>Unique Island Designs</h3>
+          <p>Authentic Polynesian motifs &amp; prints</p>
+        </div>
+      </div>
+
+      <div class="pillar-divider"></div>
+
+      <div class="pillar-item">
+        <div class="pillar-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="pillar-text">
+          <h3>Quality &amp; Comfort</h3>
+          <p>Breathable, premium quality fabrics</p>
+        </div>
+      </div>
+
+      <div class="pillar-divider"></div>
+
+      <div class="pillar-item">
+        <div class="pillar-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 12c4-8 8-8 12 0s8 8 12 0"></path>
+            <path d="M2 18c4-8 8-8 12 0s8 8 12 0"></path>
+          </svg>
+        </div>
+        <div class="pillar-text">
+          <h3>For Every Occasion</h3>
+          <p>Casual sundresses to evening gowns</p>
+        </div>
+      </div>
+
+      <div class="pillar-divider"></div>
+
+      <div class="pillar-item">
+        <div class="pillar-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 8v8M8 12h8"></path>
+          </svg>
+        </div>
+        <div class="pillar-text">
+          <h3>Clothing &amp; Accessories</h3>
+          <p>Full curated collections for the family</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Showcase Section -->
+  <section class="categories-section" id="categories">
+    <div class="section-container">
+      <div class="section-heading text-center">
+        <span class="sub-label">Explore Our Lines</span>
+        <h2 class="main-title">Category Collections</h2>
+        <p class="description">Artisanal Polynesian designs crafted for everyday wear, formal events, and island celebrations.</p>
+      </div>
+
+      <div class="categories-grid">
+        <!-- Category 1: Women's -->
+        <a href="#collection" class="category-card" aria-label="Browse Women's Collection">
+          <div class="category-image-wrap">
+            <img src="images/Green Maine Mid Size 10_1.jpg" alt="Shop Women's Collection" class="category-image" />
+          </div>
+          <div class="category-overlay">
+            <h3 class="category-title">SHOP WOMEN'S</h3>
+            <span class="category-btn" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Category 2: Men's -->
+        <a href="#collection" class="category-card" aria-label="Browse Men's Collection">
+          <div class="category-image-wrap">
+            <img src="images/Blue Terii Long Size 10_1.jpg" alt="Shop Men's Collection" class="category-image" />
+          </div>
+          <div class="category-overlay">
+            <h3 class="category-title">SHOP MEN'S</h3>
+            <span class="category-btn" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Category 3: Accessories -->
+        <a href="#collection" class="category-card" aria-label="Browse Accessories Collection">
+          <div class="category-image-wrap">
+            <img src="images/Brown Aimata Long Size 14_1.jpg" alt="Shop Accessories Collection" class="category-image" />
+          </div>
+          <div class="category-overlay">
+            <h3 class="category-title">SHOP ACCESSORIES</h3>
+            <span class="category-btn" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Collection Section (All 11 Dresses) -->
+  <section class="collection-section" id="collection">
+    <div class="section-container">
+      <div class="section-heading">
+        <span class="sub-label">Handcrafted Showcase</span>
+        <h2 class="main-title">Featured Dress Collection</h2>
+        <p class="description">Browse our authentic 11 dress styles. Each piece features custom island artwork, premium tailoring, and tailored sizing. Prices available upon request.</p>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="collection-filter-bar" role="tablist" aria-label="Dress style filters">
+        <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true">All Styles (11)</button>
+        <button class="filter-btn" data-filter="long" role="tab" aria-selected="false">Long Maxis</button>
+        <button class="filter-btn" data-filter="mid" role="tab" aria-selected="false">Mid Dresses</button>
+        <button class="filter-btn" data-filter="warm" role="tab" aria-selected="false">Warm &amp; Earth Tones</button>
+        <button class="filter-btn" data-filter="cool" role="tab" aria-selected="false">Cool Tones</button>
+      </div>
+
+      <!-- 11 Product Grid -->
+      <div class="dresses-grid">
+
+        <!-- Dress 1: Blue Aimata Long -->
+        <article class="dress-card" data-category="long cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Blue Aimata Long Size 12_2.jpg" alt="Blue Aimata Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Blue Aimata Long Size 12_1.jpg" alt="Blue Aimata Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Blue Aimata Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Blue Aimata Long (Size 12)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 2: Blue Mina Long -->
+        <article class="dress-card" data-category="long cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Blue Mina Long Size 16_2.jpg" alt="Blue Mina Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Blue Mina Long Size 16_1.jpg" alt="Blue Mina Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Blue Mina Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Blue Mina Long (Size 16)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 3: Blue Mina Mid -->
+        <article class="dress-card" data-category="mid cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Blue Mina Mid Size 14_1.jpg" alt="Blue Mina Mid Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Blue Mina Mid Size 14_2.jpg" alt="Blue Mina Mid Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Blue Mina Mid</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Mid Length Cut</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Blue Mina Mid (Size 14)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 4: Blue Terii Long -->
+        <article class="dress-card" data-category="long cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Blue Terii Long Size 10_2.jpg" alt="Blue Terii Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Blue Terii Long Size 10_1.jpg" alt="Blue Terii Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Blue Terii Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Blue Terii Long (Size 10)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 5: Brown Aimata Long -->
+        <article class="dress-card" data-category="long warm">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Brown Aimata Long Size 14_2.jpg" alt="Brown Aimata Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Brown Aimata Long Size 14_1.jpg" alt="Brown Aimata Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Brown Aimata Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Brown Aimata Long (Size 14)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 6: Green Maine Mid -->
+        <article class="dress-card" data-category="mid warm">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Green Maine Mid Size 10_1.jpg" alt="Green Maine Mid Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Green Maine Mid Size 10_2.jpg" alt="Green Maine Mid Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Green Maine Mid</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Mid Length Cut</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Green Maine Mid (Size 10)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 7: Green Mina Mid -->
+        <article class="dress-card" data-category="mid warm">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Green Mina Mid Size 14_1.jpg" alt="Green Mina Mid Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Green Mina Mid Size 14_2.jpg" alt="Green Mina Mid Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Green Mina Mid</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Mid Length Cut</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Green Mina Mid (Size 14)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 8: Orange Aimata Long -->
+        <article class="dress-card" data-category="long warm">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Orange Aimata Long Size 12_2.jpg" alt="Orange Aimata Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Orange Aimata Long Size 12_1.jpg" alt="Orange Aimata Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Orange Aimata Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Orange Aimata Long (Size 12)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 9: Purple Chrystalla -->
+        <article class="dress-card" data-category="cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Purple Chrystalla Size 14_1.jpg" alt="Purple Chrystalla Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Purple Chrystalla Size 14_2.jpg" alt="Purple Chrystalla Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Purple Chrystalla</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Tailored Cut</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Purple Chrystalla (Size 14)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 10: Purple Mina Long -->
+        <article class="dress-card" data-category="long cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Purple Mina Long Size 16_1.jpg" alt="Purple Mina Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Purple Mina Long Size 16_2.jpg" alt="Purple Mina Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Purple Mina Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Purple Mina Long (Size 16)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Dress 11: Purple Terii Long -->
+        <article class="dress-card" data-category="long cool">
+          <div class="dress-image-container" title="Click or hover to flip view">
+            <img src="images/Purple Terii Long Size 12_2.jpg" alt="Purple Terii Long Dress - Front View" class="dress-image dress-image-primary" loading="lazy" />
+            <img src="images/Purple Terii Long Size 12_1.jpg" alt="Purple Terii Long Dress - Alternate View" class="dress-image dress-image-secondary" loading="lazy" />
+          </div>
+          <div class="dress-details">
+            <h3 class="dress-name">Purple Terii Long</h3>
+            <div class="dress-meta">
+              <span class="dress-style-tag">Maxi Silhouette</span>
+            </div>
+            <div class="dress-price-box">
+              <span class="price-placeholder">Price Upon Request</span>
+              <a href="#contact" class="inquire-btn" data-dress="Purple Terii Long (Size 12)">Inquire</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- About / Brand Story Section -->
+  <section class="about-section" id="about">
+    <div class="section-container">
+      <div class="about-grid">
+        <div class="about-media">
+          <div class="about-image-card">
+            <img src="images/Green Mina Mid Size 14_1.jpg" alt="Ina'ilau Shop Craftsmanship" class="about-image" />
+          </div>
+          <div class="about-badge-card">
+            <div class="about-badge-inner">
+              <img src="images/logo.jpg" alt="Ina'ilau crest" class="about-crest" />
+              <p>Authentic Pacific Heritage</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-content">
+          <span class="sub-label">Our Story &amp; Heritage</span>
+          <h2 class="main-title">Modern Polynesian Elegance Rooted in Heritage</h2>
+          <p class="about-lead">
+            Ina'ilau Shop was founded with a passion to honor Pacific Island traditions while designing effortless, modern silhouettes for women and families everywhere.
+          </p>
+          <p class="about-paragraph">
+            Each garment features intricate Polynesian prints inspired by traditional tapa cloth, tropical flora, and island narratives. We believe in empowering women through comfortable fits, rich natural tones, and garments crafted with enduring pride.
+          </p>
+
+          <div class="about-highlights">
+            <div class="highlight-item">
+              <span class="highlight-num">100%</span>
+              <span class="highlight-label">Island-Inspired Designs</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-num">11</span>
+              <span class="highlight-label">Exclusive Dress Styles</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-num">All</span>
+              <span class="highlight-label">Inclusive Sizing Options</span>
+            </div>
+          </div>
+
+          <div class="about-actions">
+            <a href="#contact" class="btn btn-terracotta">INQUIRE ABOUT SIZING</a>
+            <a href="#collection" class="btn btn-outline">VIEW CATALOG</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Moodboard & Aesthetic Visual Feature -->
+  <section class="moodboard-section" aria-label="Brand Visual Showcase">
+    <div class="section-container">
+      <div class="moodboard-banner">
+        <div class="moodboard-content">
+          <span class="sub-label">Identity &amp; Palette</span>
+          <h2 class="moodboard-title">Warm Earth, Lush Palms &amp; Sun-Kissed Ivory</h2>
+          <p class="moodboard-text">
+            Our signature aesthetic balances modern sophistication with organic island textures. From warm terracotta and sandy shores to deep palm botanicals, every detail echoes paradise.
+          </p>
+          <div class="palette-swatches">
+            <div class="swatch" style="background: #F5EBDD;" title="Ivory #F5EBDD">
+              <span class="swatch-name">Ivory</span>
+            </div>
+            <div class="swatch" style="background: #D6BDA5;" title="Sand #D6BDA5">
+              <span class="swatch-name">Sand</span>
+            </div>
+            <div class="swatch" style="background: #B94F16; color: #fff;" title="Terracotta #B94F16">
+              <span class="swatch-name">Terracotta</span>
+            </div>
+            <div class="swatch" style="background: #45633B; color: #fff;" title="Palm Green #45633B">
+              <span class="swatch-name">Palm Green</span>
+            </div>
+            <div class="swatch" style="background: #242622; color: #fff;" title="Charcoal #242622">
+              <span class="swatch-name">Charcoal</span>
+            </div>
+          </div>
+        </div>
+        <div class="moodboard-image-wrap">
+          <img src="images/brand-board.jpg" alt="Ina'ilau Shop Brand Aesthetic Board" class="moodboard-image" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inquire / Contact Section -->
+  <section class="contact-section" id="contact">
+    <div class="section-container">
+      <div class="contact-card">
+        <div class="contact-info">
+          <span class="sub-label">Connect With Us</span>
+          <h2 class="main-title">Place an Inquiry or Order</h2>
+          <p class="contact-desc">
+            Interested in one of our 11 featured dresses, custom fittings, or special island occasions? Send us a message and our team will get in touch with pricing and availability.
+          </p>
+
+          <div class="contact-meta-list">
+            <div class="contact-meta-item">
+              <div class="meta-icon">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <div>
+                <strong>Email Inquiries</strong>
+                <p><a href="mailto:contact@inailaushop.com">contact@inailaushop.com</a></p>
+              </div>
+            </div>
+
+            <div class="contact-meta-item">
+              <div class="meta-icon">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div>
+                <strong>Inquiry Response</strong>
+                <p>Monday &ndash; Saturday &bull; Within 24 Hours</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-form-wrap">
+          <form class="contact-form" id="inquiryForm" aria-label="Dress inquiry form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fullName">Your Name</label>
+                <input type="text" id="fullName" name="name" placeholder="First &amp; Last Name" required />
+              </div>
+              <div class="form-group">
+                <label for="emailAddress">Email Address</label>
+                <input type="email" id="emailAddress" name="email" placeholder="you@domain.com" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="dressSelection">Selected Dress Style</label>
+              <select id="dressSelection" name="dress">
+                <option value="">-- Choose a dress style (optional) --</option>
+                <option value="Blue Aimata Long (Size 12)">Blue Aimata Long (Size 12)</option>
+                <option value="Blue Mina Long (Size 16)">Blue Mina Long (Size 16)</option>
+                <option value="Blue Mina Mid (Size 14)">Blue Mina Mid (Size 14)</option>
+                <option value="Blue Terii Long (Size 10)">Blue Terii Long (Size 10)</option>
+                <option value="Brown Aimata Long (Size 14)">Brown Aimata Long (Size 14)</option>
+                <option value="Green Maine Mid (Size 10)">Green Maine Mid (Size 10)</option>
+                <option value="Green Mina Mid (Size 14)">Green Mina Mid (Size 14)</option>
+                <option value="Orange Aimata Long (Size 12)">Orange Aimata Long (Size 12)</option>
+                <option value="Purple Chrystalla (Size 14)">Purple Chrystalla (Size 14)</option>
+                <option value="Purple Mina Long (Size 16)">Purple Mina Long (Size 16)</option>
+                <option value="Purple Terii Long (Size 12)">Purple Terii Long (Size 12)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="messageText">Inquiry Details / Sizing Questions</label>
+              <textarea id="messageText" name="message" rows="4" placeholder="Let us know your size preference, shipping destination, or custom requests…" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-terracotta btn-block">SUBMIT INQUIRY</button>
+            <div class="form-feedback" id="formFeedback" role="alert" style="display: none;"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Website Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-top">
+        <div class="footer-brand-column">
+          <div class="footer-logo">
+            <img src="images/logo.jpg" alt="Ina'ilau Shop Logo" class="footer-logo-img" />
+            <span class="footer-logo-text">Ina'ilau <em>Shop</em></span>
+          </div>
+          <p class="footer-tagline">
+            Modern, tropical, elegant, and island inspired. Proudly celebrating authentic Pacific heritage through timeless handcrafted apparel.
+          </p>
+        </div>
+
+        <div class="footer-links-column">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#categories">Categories</a></li>
+            <li><a href="#collection">Featured Collection</a></li>
+            <li><a href="#about">Our Story</a></li>
+            <li><a href="#contact">Inquire</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-column">
+          <h4>Collection</h4>
+          <ul>
+            <li><a href="#collection">Long Maxi Dresses</a></li>
+            <li><a href="#collection">Mid Length Styles</a></li>
+            <li><a href="#collection">Earth Tones</a></li>
+            <li><a href="#collection">Island Prints</a></li>
+            <li><a href="#contact">Custom Sizing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-column">
+          <h4>Customer Care</h4>
+          <ul>
+            <li><a href="#contact">Price Inquiries</a></li>
+            <li><a href="#contact">Size Guide</a></li>
+            <li><a href="#contact">Care Instructions</a></li>
+            <li><a href="#contact">Shipping &amp; Delivery</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Ina'ilau Shop. All rights reserved. Designed with island elegance.</p>
+        <div class="footer-bottom-links">
+          <a href="#">Privacy Policy</a>
+          <span>&bull;</span>
+          <a href="#">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Search Modal Overlay -->
+  <div class="site-modal-overlay" id="searchOverlay" aria-hidden="true">
+    <div class="search-modal-container" role="dialog" aria-modal="true" aria-label="Search the Collection">
+      <div class="search-modal-header">
+        <div class="search-field-wrapper">
+          <svg class="search-field-icon" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="search" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Search dresses by name, cut, or tone (e.g. Aimata, Mid, Green)..." 
+            autocomplete="off" 
+            aria-label="Search dresses"
+          />
+          <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="Clear search" style="display:none;">&times;</button>
+        </div>
+        <button type="button" class="modal-close-icon-btn" id="searchCloseBtn" aria-label="Close search modal">&times;</button>
+      </div>
+
+      <div class="search-modal-body">
+        <div class="search-quick-tags">
+          <span class="tags-heading">Popular Searches:</span>
+          <div class="tags-list">
+            <button type="button" class="search-tag-chip" data-query="Aimata">Aimata</button>
+            <button type="button" class="search-tag-chip" data-query="Mina">Mina</button>
+            <button type="button" class="search-tag-chip" data-query="Terii">Terii</button>
+            <button type="button" class="search-tag-chip" data-query="Long">Maxi Long</button>
+            <button type="button" class="search-tag-chip" data-query="Mid">Mid Length</button>
+            <button type="button" class="search-tag-chip" data-query="Green">Palm Green</button>
+            <button type="button" class="search-tag-chip" data-query="Blue">Island Blue</button>
+            <button type="button" class="search-tag-chip" data-query="Orange">Terracotta / Orange</button>
+          </div>
+        </div>
+
+        <div class="search-status-bar" id="searchStatusBar">Showing all 11 handcrafted dresses</div>
+        <div class="search-results-grid" id="searchResultsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Account / Client Portal Modal -->
+  <div class="site-modal-overlay" id="accountOverlay" aria-hidden="true">
+    <div class="account-modal-container" role="dialog" aria-modal="true" aria-label="Client Account Portal">
+      <div class="account-modal-header">
+        <div>
+          <span class="account-eyebrow">Client Services</span>
+          <h2 class="account-modal-title">Client Account Portal</h2>
+        </div>
+        <button type="button" class="modal-close-icon-btn" id="accountCloseBtn" aria-label="Close client portal">&times;</button>
+      </div>
+
+      <div class="account-tabs-nav" role="tablist">
+        <button type="button" class="account-tab-btn active" data-tab="lookupTab" role="tab" aria-selected="true">Inquiry Lookup</button>
+        <button type="button" class="account-tab-btn" data-tab="signinTab" role="tab" aria-selected="false">Client Sign In</button>
+        <button type="button" class="account-tab-btn" data-tab="fittingTab" role="tab" aria-selected="false">Book Fitting</button>
+      </div>
+
+      <div class="account-tab-content">
+        <!-- Tab 1: Inquiry Lookup -->
+        <div class="account-panel active" id="lookupTab">
+          <p class="panel-subtitle">Check the tailoring or reservation status of an active inquiry.</p>
+          <form id="inquiryLookupForm" class="client-form">
+            <div class="form-group">
+              <label for="lookupEmail">Email Address</label>
+              <input type="email" id="lookupEmail" required placeholder="name@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="lookupRef">Inquiry Reference Number (Optional)</label>
+              <input type="text" id="lookupRef" placeholder="e.g. INA-8492" />
+            </div>
+            <button type="submit" class="btn btn-terracotta btn-full">CHECK INQUIRY STATUS</button>
+          </form>
+          <div class="client-portal-feedback" id="lookupFeedback" style="display:none;"></div>
+        </div>
+
+        <!-- Tab 2: Client Sign In -->
+        <div class="account-panel" id="signinTab">
+          <p class="panel-subtitle">Sign in to your client profile to manage saved island styles.</p>
+          <form id="clientSignInForm" class="client-form">
+            <div class="form-group">
+              <label for="clientEmail">Email Address</label>
+              <input type="email" id="clientEmail" required placeholder="name@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="clientPassword">Password</label>
+              <input type="password" id="clientPassword" required placeholder="••••••••" />
+            </div>
+            <button type="submit" class="btn btn-terracotta btn-full">SIGN IN</button>
+          </form>
+          <div class="client-portal-feedback" id="signInFeedback" style="display:none;"></div>
+        </div>
+
+        <!-- Tab 3: Book Private Fitting -->
+        <div class="account-panel" id="fittingTab">
+          <p class="panel-subtitle">Schedule a virtual consultation with our Polynesian dressmaker.</p>
+          <form id="bookFittingForm" class="client-form">
+            <div class="form-group">
+              <label for="fittingClientName">Full Name</label>
+              <input type="text" id="fittingClientName" required placeholder="Your full name" />
+            </div>
+            <div class="form-group">
+              <label for="fittingClientEmail">Email Address</label>
+              <input type="email" id="fittingClientEmail" required placeholder="name@example.com" />
+            </div>
+            <div class="form-group">
+              <label for="fittingDressChoice">Dress Style of Interest</label>
+              <select id="fittingDressChoice">
+                <option value="Aimata Long Maxi">Aimata Long Maxi</option>
+                <option value="Mina Long Maxi">Mina Long Maxi</option>
+                <option value="Mina Mid Length">Mina Mid Length</option>
+                <option value="Terii Long Maxi">Terii Long Maxi</option>
+                <option value="Maine Mid Length">Maine Mid Length</option>
+                <option value="Purple Chrystalla">Purple Chrystalla</option>
+                <option value="Custom Bespoke Silhouette">Custom Bespoke Silhouette</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-palm btn-full">REQUEST CONSULTATION</button>
+          </form>
+          <div class="client-portal-feedback" id="fittingFeedback" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shopping / Inquiry Bag Modal -->
+  <div class="site-modal-overlay" id="bagOverlay" aria-hidden="true">
+    <div class="bag-drawer-container" role="dialog" aria-modal="true" aria-label="Your Inquiry Bag">
+      <div class="account-modal-header">
+        <div>
+          <span class="account-eyebrow">Curated Selection</span>
+          <h2 class="account-modal-title">Inquiry Bag</h2>
+        </div>
+        <button type="button" class="modal-close-icon-btn" id="bagCloseBtn" aria-label="Close inquiry bag">&times;</button>
+      </div>
+      <div class="bag-drawer-body" id="bagDrawerBody">
+        <!-- Inquired items dynamically rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
